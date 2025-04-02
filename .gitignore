@@ -1,0 +1,55 @@
+# Dependencies
+node_modules/
+.pnp/
+.pnp.js
+
+# Testing
+coverage/
+
+# Production
+dist/
+build/
+.next/
+out/
+
+# Environment files
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# Logs
+logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Editor directories and files
+.idea/
+.vscode/
+*.swp
+*.swo
+.DS_Store
+.env.local
+*.pem
+
+# TypeScript
+*.tsbuildinfo
+
+# Debug
+.debug/
+
+# System files
+.DS_Store
+Thumbs.db
+
+# MinIO local data
+.minio.sys/
+
+# Project specific
+apps/backend/dist/
+apps/frontend/dist/
+apps/backend/logs/
+apps/frontend/.next/
