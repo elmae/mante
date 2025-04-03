@@ -1,32 +1,26 @@
-import { Application, Router } from "express";
-import { notFoundHandler } from "../middleware/error.middleware";
-import authRouter from "./auth.routes";
-import userRouter from "./user.routes";
-import atmRouter from "./atm.routes";
-import ticketRouter from "./ticket.routes";
-import maintenanceRouter from "./maintenance.routes";
-import slaRouter from "./sla.routes";
+import { Router } from "express";
+import { DataSource } from "typeorm";
+import { createUserRouter } from "./user.routes";
+import { createAuthRouter } from "./auth.routes";
+import { createAtmRouter } from "./atm.routes";
+import { createTicketRouter } from "./ticket.routes";
+import { createMaintenanceRouter } from "./maintenance.routes";
+import { createSlaRouter } from "./sla.routes";
 
-export const setupRoutes = (app: Application) => {
-  // API Version prefix
-  const API_PREFIX = "/api/v1";
+export function createRoutes(dataSource: DataSource): Router {
+  const router = Router();
 
-  // Health check endpoint
-  app.get("/health", (req, res) => {
-    res.status(200).json({
-      status: "ok",
-      timestamp: new Date().toISOString(),
-    });
-  });
+  // Rutas públicas y de autenticación
+  router.use("/auth", createAuthRouter(dataSource));
 
-  // API Routes
-  app.use(`${API_PREFIX}/auth`, authRouter);
-  app.use(`${API_PREFIX}/users`, userRouter);
-  app.use(`${API_PREFIX}/atms`, atmRouter);
-  app.use(`${API_PREFIX}/tickets`, ticketRouter);
-  app.use(`${API_PREFIX}/maintenance`, maintenanceRouter);
-  app.use(`${API_PREFIX}/sla`, slaRouter);
+  // Rutas protegidas
+  router.use("/users", createUserRouter(dataSource));
+  router.use("/atms", createAtmRouter(dataSource));
+  router.use("/tickets", createTicketRouter(dataSource));
+  router.use("/maintenance", createMaintenanceRouter(dataSource));
+  router.use("/sla", createSlaRouter(dataSource));
 
-  // Handle 404 routes
-  app.use(notFoundHandler);
-};
+  return router;
+}
+
+export default createRoutes;

@@ -1,0 +1,22 @@
+#!/usr/bin/env sh
+. "$(dirname -- "$0")/_/husky.sh"
+
+# Validate commit message format
+echo '📝 Validating commit message format...'
+npx --no -- commitlint --edit ${1} || {
+    echo '❌ Commit message validation failed. Please follow the commit message convention:'
+    echo ''
+    echo 'format: <type>(<scope>): <subject>'
+    echo ''
+    echo 'types: feat, fix, docs, style, refactor, perf, test, build, ci, chore, revert'
+    echo 'scope: optional, lowercase'
+    echo 'subject: lowercase, no period at end'
+    echo ''
+    echo 'examples:'
+    echo '  feat(auth): add jwt authentication'
+    echo '  fix(user): handle email validation properly'
+    echo '  docs: update api documentation'
+    exit 1
+}
+
+echo '✅ Commit message validation passed!'

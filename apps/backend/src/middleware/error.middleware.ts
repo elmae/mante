@@ -1,58 +1,89 @@
 import { Request, Response, NextFunction } from "express";
-import { AppError } from "../types/error.types";
-import Logger from "../config/logger.config";
+import { ValidationException } from "../common/exceptions/validation.exception";
+import { UnauthorizedException } from "../common/exceptions/unauthorized.exception";
 
-export const errorHandler = (
-  error: Error,
+interface ErrorResponse {
+  statusCode: number;
+  error: string;
+  message: string;
+  errors?: any[];
+  stack?: string;
+}
+
+export function errorHandler(
+  err: Error,
   req: Request,
   res: Response,
   next: NextFunction
-) => {
-  Logger.error(error);
+) {
+  let response: ErrorResponse;
 
-  if (error instanceof AppError) {
-    return res.status(error.statusCode).json({
-      success: false,
-      error: {
-        code: error.errorCode,
-        message: error.message,
-      },
+  // Handle specific error types
+  if (err instanceof ValidationException) {
+    response = err.getResponse();
+  } else if (err instanceof UnauthorizedException) {
+    response = {
+      statusCode: 401,
+      error: "Unauthorized",
+      message: err.message,
+    };
+  } else {
+    // Default error handling
+    response = {
+      statusCode: 500,
+      error: "Internal Server Error",
+      message: "An unexpected error occurred",
+    };
+  }
+
+  // Add stack trace in development
+  if (process.env.NODE_ENV === "development") {
+    response.stack = err.stack;
+
+    // Log the error
+    console.error("Error:", {
+      ...response,
+      timestamp: new Date().toISOString(),
+      path: req.path,
+      method: req.method,
     });
   }
 
-  // Error de validación de TypeORM
-  if (error.name === "QueryFailedError") {
-    return res.status(400).json({
-      success: false,
-      error: {
-        code: "DATABASE_ERROR",
-        message: "Error en la operación de base de datos",
-      },
-    });
+  res.status(response.statusCode).json(response);
+}
+
+// Handle 404 errors
+export function notFoundHandler(req: Request, res: Response) {
+  const response: ErrorResponse = {
+    statusCode: 404,
+    error: "Not Found",
+    message: `Cannot ${req.method} ${req.path}`,
+  };
+
+  res.status(404).json(response);
+}
+
+// Handle validation errors from express-validator
+export function validationErrorHandler(
+  err: any,
+  req: Request,
+  res: Response,
+  next: NextFunction
+) {
+  if (err?.validation) {
+    const response: ErrorResponse = {
+      statusCode: 400,
+      error: "Bad Request",
+      message: "Validation failed",
+      errors: err.validation,
+    };
+    return res.status(400).json(response);
   }
+  next(err);
+}
 
-  // Error inesperado
-  return res.status(500).json({
-    success: false,
-    error: {
-      code: "INTERNAL_SERVER_ERROR",
-      message: "Error interno del servidor",
-    },
-  });
-};
-
-export const notFoundHandler = (req: Request, res: Response) => {
-  res.status(404).json({
-    success: false,
-    error: {
-      code: "NOT_FOUND",
-      message: "Recurso no encontrado",
-    },
-  });
-};
-
-export const asyncHandler = (fn: Function) => {
-  return (req: Request, res: Response, next: NextFunction) => {
+// Handle async errors
+export const asyncHandler =
+  (fn: Function) => (req: Request, res: Response, next: NextFunction) => {
     Promise.resolve(fn(req, res, next)).catch(next);
   };
-};

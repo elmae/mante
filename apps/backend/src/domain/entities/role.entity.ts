@@ -9,26 +9,37 @@ import {
 } from "typeorm";
 import { Permission } from "./permission.entity";
 
+export enum RoleType {
+  ADMIN = "admin",
+  OPERATOR = "operator",
+  TECHNICIAN = "technician",
+  CLIENT = "client",
+}
+
 @Entity("roles")
 export class Role {
   @PrimaryGeneratedColumn("uuid")
-  id: string;
+  id!: string;
 
-  @Column({ type: "varchar", unique: true })
-  name: string;
+  @Column({
+    type: "enum",
+    enum: RoleType,
+    default: RoleType.TECHNICIAN,
+  })
+  name!: RoleType;
 
-  @Column({ type: "varchar", nullable: true })
-  description: string;
+  @Column({ type: "varchar" })
+  description!: string;
 
   @CreateDateColumn({ type: "timestamp" })
-  created_at: Date;
+  created_at!: Date;
 
   @UpdateDateColumn({ type: "timestamp" })
-  updated_at: Date;
+  updated_at!: Date;
 
   @ManyToMany(() => Permission)
   @JoinTable({
-    name: "roles_permissions",
+    name: "role_permissions",
     joinColumn: {
       name: "role_id",
       referencedColumnName: "id",
@@ -38,5 +49,5 @@ export class Role {
       referencedColumnName: "id",
     },
   })
-  permissions: Permission[];
+  permissions!: Permission[];
 }

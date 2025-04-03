@@ -6,67 +6,39 @@ import {
   UpdateDateColumn,
   ManyToOne,
   JoinColumn,
-  OneToMany,
 } from "typeorm";
+import { Role } from "./role.entity";
 
 @Entity("users")
 export class User {
   @PrimaryGeneratedColumn("uuid")
-  id: string;
+  id!: string;
 
   @Column({ type: "varchar", unique: true })
-  email: string;
+  username!: string;
+
+  @Column({ type: "varchar", unique: true })
+  email!: string;
 
   @Column({ type: "varchar" })
-  password_hash: string;
-
-  @Column({ type: "varchar" })
-  first_name: string;
-
-  @Column({ type: "varchar" })
-  last_name: string;
+  password!: string;
 
   @Column({ type: "varchar", nullable: true })
-  phone: string;
-
-  @Column({
-    type: "enum",
-    enum: ["admin", "operator", "technician", "client"],
-    default: "technician",
-  })
-  role: "admin" | "operator" | "technician" | "client";
+  full_name?: string;
 
   @Column({ type: "boolean", default: true })
-  is_active: boolean;
+  is_active!: boolean;
+
+  @Column({ type: "uuid" })
+  role_id!: string;
 
   @CreateDateColumn({ type: "timestamp" })
-  created_at: Date;
+  created_at!: Date;
 
   @UpdateDateColumn({ type: "timestamp" })
-  updated_at: Date;
+  updated_at!: Date;
 
-  @ManyToOne(() => User, { nullable: true })
-  @JoinColumn({ name: "created_by" })
-  created_by: User | null;
-
-  @ManyToOne(() => User, { nullable: true })
-  @JoinColumn({ name: "updated_by" })
-  updated_by: User | null;
-
-  // Relaciones inversas que se definirán cuando creemos las otras entidades
-  @OneToMany(() => User, (user) => user.created_by)
-  created_users: User[];
-
-  @OneToMany(() => User, (user) => user.updated_by)
-  updated_users: User[];
-
-  // Métodos de utilidad
-  getFullName(): string {
-    return `${this.first_name} ${this.last_name}`;
-  }
-
-  toJSON(): Partial<User> {
-    const { password_hash, ...user } = this;
-    return user;
-  }
+  @ManyToOne(() => Role)
+  @JoinColumn({ name: "role_id" })
+  role!: Role;
 }

@@ -1,0 +1,23 @@
+{
+  "watch": ["src", "tests"],
+  "ext": ".ts,.js",
+  "ignore": [
+    "src/**/*.spec.ts",
+    "src/**/*.test.ts",
+    "tests/**/*.spec.ts",
+    "tests/**/*.test.ts",
+    "node_modules",
+    "dist",
+    "coverage"
+  ],
+  "exec": "ts-node ./src/index.ts",
+  "env": {
+    "NODE_ENV": "development"
+  },
+  "events": {
+    "start": "clear || cls",
+    "restart": "clear || cls"
+  },
+  "delay": "1000",
+  "legacyWatch": true
+}

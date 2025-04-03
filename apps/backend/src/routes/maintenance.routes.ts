@@ -1,70 +1,102 @@
-import { Router, Request, Response } from "express";
-import { asyncHandler } from "../middleware/error.middleware";
+import { Router } from "express";
+import multer from "multer";
+import { MaintenanceController } from "../controllers/maintenance.controller";
+import { MaintenanceService } from "../services/maintenance/adapters/input/maintenance.service";
+import { MaintenanceRepository } from "../services/maintenance/adapters/output/maintenance.repository";
+import { AuthMiddleware } from "../middleware/auth.middleware";
+import { DataSource } from "typeorm";
 
-const router = Router();
+export function createMaintenanceRouter(dataSource: DataSource): Router {
+  const router = Router();
 
-router.get(
-  "/",
-  asyncHandler(async (req: Request, res: Response) => {
-    res.status(501).json({ message: "No implementado" });
-  })
-);
+  // Inicializar dependencias
+  const maintenanceRepository = new MaintenanceRepository(dataSource);
+  const maintenanceService = new MaintenanceService(maintenanceRepository);
+  const maintenanceController = new MaintenanceController(maintenanceService);
 
-router.get(
-  "/:id",
-  asyncHandler(async (req: Request, res: Response) => {
-    res.status(501).json({ message: "No implementado" });
-  })
-);
+  // Configuración de multer para archivos adjuntos
+  const storage = multer.diskStorage({
+    destination: "./uploads/maintenance",
+    filename: (req, file, cb) => {
+      const uniqueSuffix = `${Date.now()}-${Math.round(Math.random() * 1e9)}`;
+      cb(null, `${uniqueSuffix}-${file.originalname}`);
+    },
+  });
 
-router.post(
-  "/",
-  asyncHandler(async (req: Request, res: Response) => {
-    res.status(501).json({ message: "No implementado" });
-  })
-);
+  const upload = multer({ storage });
 
-router.put(
-  "/:id",
-  asyncHandler(async (req: Request, res: Response) => {
-    res.status(501).json({ message: "No implementado" });
-  })
-);
+  // Middleware de autenticación para todas las rutas
+  router.use(AuthMiddleware.authenticate());
 
-// Endpoints específicos para mantenimientos
-router.post(
-  "/:id/start",
-  asyncHandler(async (req: Request, res: Response) => {
-    res.status(501).json({ message: "No implementado" });
-  })
-);
+  // Rutas para administradores y operadores
+  router.get(
+    "/",
+    AuthMiddleware.requireAnyRole(["admin", "operator"]),
+    maintenanceController.listMaintenances
+  );
 
-router.post(
-  "/:id/complete",
-  asyncHandler(async (req: Request, res: Response) => {
-    res.status(501).json({ message: "No implementado" });
-  })
-);
+  router.get(
+    "/stats",
+    AuthMiddleware.requireAnyRole(["admin", "operator"]),
+    maintenanceController.getMaintenanceStats
+  );
 
-router.post(
-  "/:id/parts-used",
-  asyncHandler(async (req: Request, res: Response) => {
-    res.status(501).json({ message: "No implementado" });
-  })
-);
+  router.get(
+    "/in-progress",
+    AuthMiddleware.requireAnyRole(["admin", "operator"]),
+    maintenanceController.getInProgressMaintenances
+  );
 
-router.get(
-  "/:id/diagnosis",
-  asyncHandler(async (req: Request, res: Response) => {
-    res.status(501).json({ message: "No implementado" });
-  })
-);
+  // Rutas para gestión de mantenimientos
+  router.post(
+    "/",
+    AuthMiddleware.requireAnyRole(["admin", "operator"]),
+    maintenanceController.createMaintenance
+  );
 
-router.post(
-  "/:id/photos",
-  asyncHandler(async (req: Request, res: Response) => {
-    res.status(501).json({ message: "No implementado" });
-  })
-);
+  router.post(
+    "/ticket/:ticketId/start",
+    AuthMiddleware.requireAnyRole(["admin", "operator", "technician"]),
+    maintenanceController.startMaintenance
+  );
 
-export default router;
+  router.put(
+    "/:id/complete",
+    AuthMiddleware.requireAnyRole(["admin", "operator", "technician"]),
+    maintenanceController.completeMaintenance
+  );
+
+  router.post(
+    "/:id/parts",
+    AuthMiddleware.requireAnyRole(["admin", "operator", "technician"]),
+    maintenanceController.addParts
+  );
+
+  // Rutas de consulta
+  router.get(
+    "/:id",
+    AuthMiddleware.requireAnyRole(["admin", "operator", "technician"]),
+    maintenanceController.getMaintenance
+  );
+
+  router.get(
+    "/atm/:atmId",
+    AuthMiddleware.requireAnyRole(["admin", "operator", "technician"]),
+    maintenanceController.getMaintenancesByATM
+  );
+
+  router.get(
+    "/technician/:technicianId",
+    AuthMiddleware.requireAnyRole(["admin", "operator", "technician"]),
+    maintenanceController.getMaintenancesByTechnician
+  );
+
+  // Rutas administrativas
+  router.delete(
+    "/:id",
+    AuthMiddleware.requireRole("admin"),
+    maintenanceController.deleteMaintenance
+  );
+
+  return router;
+}

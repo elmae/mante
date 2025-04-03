@@ -1,41 +1,63 @@
-import { Router, Request, Response } from "express";
-import { asyncHandler } from "../middleware/error.middleware";
+import { Router } from "express";
+import { UserController } from "../controllers/user.controller";
+import { UserService } from "../services/user/adapters/input/user.service";
+import { UserRepository } from "../services/user/adapters/output/user.repository";
+import { getRepository } from "typeorm";
+import { User } from "../domain/entities/user.entity";
+import { validate } from "../middleware/validation.middleware";
+import { CreateUserDto } from "../services/user/dtos/create-user.dto";
+import { UpdateUserDto } from "../services/user/dtos/update-user.dto";
+import { createAuthMiddleware } from "../middleware/auth.middleware";
+import { JwtService } from "../services/auth/adapters/input/jwt.service";
+import { RoleType } from "../domain/entities/role.entity";
 
-const router = Router();
+export function setupUserRoutes(): Router {
+  const router = Router();
 
-router.get(
-  "/",
-  asyncHandler(async (req: Request, res: Response) => {
-    res.status(501).json({ message: "No implementado" });
-  })
-);
+  // Initialize dependencies
+  const userRepository = new UserRepository(getRepository(User));
+  const userService = new UserService(userRepository);
+  const jwtService = new JwtService();
+  const authMiddleware = createAuthMiddleware(jwtService, userService);
+  const userController = new UserController(userService);
 
-router.get(
-  "/:id",
-  asyncHandler(async (req: Request, res: Response) => {
-    res.status(501).json({ message: "No implementado" });
-  })
-);
+  // Apply auth middleware to all routes
+  router.use(authMiddleware.authenticate);
 
-router.post(
-  "/",
-  asyncHandler(async (req: Request, res: Response) => {
-    res.status(501).json({ message: "No implementado" });
-  })
-);
+  // Define routes
+  router.get(
+    "/",
+    authMiddleware.hasPermission(["read:users"]),
+    userController.list.bind(userController)
+  );
 
-router.put(
-  "/:id",
-  asyncHandler(async (req: Request, res: Response) => {
-    res.status(501).json({ message: "No implementado" });
-  })
-);
+  router.get(
+    "/:id",
+    authMiddleware.hasPermission(["read:users"]),
+    userController.findById.bind(userController)
+  );
 
-router.delete(
-  "/:id",
-  asyncHandler(async (req: Request, res: Response) => {
-    res.status(501).json({ message: "No implementado" });
-  })
-);
+  router.post(
+    "/",
+    authMiddleware.hasRole([RoleType.ADMIN]),
+    validate(CreateUserDto),
+    userController.create.bind(userController)
+  );
 
-export default router;
+  router.patch(
+    "/:id",
+    authMiddleware.hasPermission(["update:users"]),
+    validate(UpdateUserDto),
+    userController.update.bind(userController)
+  );
+
+  router.delete(
+    "/:id",
+    authMiddleware.hasRole([RoleType.ADMIN]),
+    userController.delete.bind(userController)
+  );
+
+  return router;
+}
+
+export const userRoutes = setupUserRoutes();

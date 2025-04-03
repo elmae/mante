@@ -1,0 +1,30 @@
+#!/usr/bin/env sh
+. "$(dirname -- "$0")/_/husky.sh"
+
+echo '🏗️ Running pre-commit checks...'
+
+# Check TypeScript types
+echo '👀 Checking types...'
+npm run typecheck || {
+    echo '❌ Type check failed. Please fix TypeScript errors before committing.'
+    exit 1
+}
+
+# Run lint-staged
+echo '🧹 Running lint-staged...'
+npx lint-staged || {
+    echo '❌ Lint-staged failed. Please fix code style issues before committing.'
+    exit 1
+}
+
+# Run tests related to staged files
+echo '🧪 Running tests for changed files...'
+files=$(git diff --cached --name-only --diff-filter=ACMR "*.ts" "*.tsx" | tr '\n' ' ')
+if [ -n "$files" ]; then
+    npm test -- --findRelatedTests $files --passWithNoTests || {
+        echo '❌ Tests failed. Please fix failing tests before committing.'
+        exit 1
+    }
+fi
+
+echo '✅ Pre-commit checks passed!'

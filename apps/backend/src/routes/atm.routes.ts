@@ -1,56 +1,74 @@
-import { Router, Request, Response } from "express";
-import { asyncHandler } from "../middleware/error.middleware";
+import { Router } from "express";
+import { AtmController } from "../controllers/atm.controller";
+import { AtmService } from "../services/atm/adapters/input/atm.service";
+import { AtmRepository } from "../services/atm/adapters/output/atm.repository";
+import { AuthMiddleware } from "../middleware/auth.middleware";
+import { DataSource } from "typeorm";
 
-const router = Router();
+export function createAtmRouter(dataSource: DataSource): Router {
+  const router = Router();
 
-router.get(
-  "/",
-  asyncHandler(async (req: Request, res: Response) => {
-    res.status(501).json({ message: "No implementado" });
-  })
-);
+  // Inicializar dependencias
+  const atmRepository = new AtmRepository(dataSource);
+  const atmService = new AtmService(atmRepository);
+  const atmController = new AtmController(atmService);
 
-router.get(
-  "/:id",
-  asyncHandler(async (req: Request, res: Response) => {
-    res.status(501).json({ message: "No implementado" });
-  })
-);
+  // Rutas protegidas - Solo administradores y operadores pueden gestionar ATMs
+  router.post(
+    "/",
+    AuthMiddleware.requireRole("admin"),
+    atmController.createAtm
+  );
 
-router.post(
-  "/",
-  asyncHandler(async (req: Request, res: Response) => {
-    res.status(501).json({ message: "No implementado" });
-  })
-);
+  router.put(
+    "/:id",
+    AuthMiddleware.requireRole("admin"),
+    atmController.updateAtm
+  );
 
-router.put(
-  "/:id",
-  asyncHandler(async (req: Request, res: Response) => {
-    res.status(501).json({ message: "No implementado" });
-  })
-);
+  router.delete(
+    "/:id",
+    AuthMiddleware.requireRole("admin"),
+    atmController.deleteAtm
+  );
 
-router.delete(
-  "/:id",
-  asyncHandler(async (req: Request, res: Response) => {
-    res.status(501).json({ message: "No implementado" });
-  })
-);
+  // Rutas de consulta - Accesibles para administradores y operadores
+  router.get(
+    "/",
+    AuthMiddleware.requireAnyRole(["admin", "operator"]),
+    atmController.getAtms
+  );
 
-// Endpoints específicos para ATMs
-router.get(
-  "/:id/maintenance-history",
-  asyncHandler(async (req: Request, res: Response) => {
-    res.status(501).json({ message: "No implementado" });
-  })
-);
+  router.get(
+    "/:id",
+    AuthMiddleware.requireAnyRole(["admin", "operator"]),
+    atmController.getAtmById
+  );
 
-router.get(
-  "/:id/status",
-  asyncHandler(async (req: Request, res: Response) => {
-    res.status(501).json({ message: "No implementado" });
-  })
-);
+  router.get(
+    "/location/search",
+    AuthMiddleware.requireAnyRole(["admin", "operator"]),
+    atmController.findByLocation
+  );
 
-export default router;
+  router.get(
+    "/:id/status",
+    AuthMiddleware.requireAnyRole(["admin", "operator"]),
+    atmController.getAtmStatus
+  );
+
+  // Rutas para búsquedas específicas
+  router.get(
+    "/client/:clientId",
+    AuthMiddleware.requireAnyRole(["admin", "operator"]),
+    atmController.findByClient
+  );
+
+  router.get(
+    "/zone/:zoneId",
+    AuthMiddleware.requireAnyRole(["admin", "operator"]),
+    atmController.findByZone
+  );
+
+  return router;
+}
