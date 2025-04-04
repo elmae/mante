@@ -13,7 +13,7 @@ import { User } from "./user.entity";
 import { ATM } from "./atm.entity";
 import { MaintenanceRecord } from "./maintenance-record.entity";
 import { Attachment } from "./attachment.entity";
-// Necesitamos asegurarnos de que estos archivos existan en el directorio
+import { Comment } from "./comment.entity";
 
 export enum TicketType {
   PREVENTIVE = "preventive",
@@ -111,6 +111,23 @@ export class Ticket {
 
   @OneToMany(() => Attachment, (attachment: Attachment) => attachment.ticket)
   attachments: Attachment[];
+
+  @OneToMany(() => Comment, (comment: Comment) => comment.ticket)
+  comments: Comment[];
+
+  @Column({ type: "boolean", default: false })
+  met_sla: boolean;
+
+  @Column({ type: "timestamp", nullable: true })
+  sla_due_date: Date;
+
+  checkSLA(): boolean {
+    if (!this.sla_due_date) return true;
+    if (this.status === TicketStatus.CLOSED) {
+      return this.completion_date! <= this.sla_due_date;
+    }
+    return new Date() <= this.sla_due_date;
+  }
 
   // Métodos de utilidad
   isOverdue(): boolean {

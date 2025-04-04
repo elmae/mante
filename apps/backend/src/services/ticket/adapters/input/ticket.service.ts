@@ -3,7 +3,14 @@ import {
   TicketStatus,
   TicketPriority,
 } from "../../../../domain/entities/ticket.entity";
-import { ITicketInputPort, TicketFilters } from "../../ports/input/ticket.port";
+import {
+  ITicketInputPort,
+  TicketFilters,
+  TicketComment,
+  TicketMetrics,
+  MetricsFilters,
+  SearchResult
+} from "../../ports/input/ticket.port";
 import { ITicketRepositoryPort } from "../../ports/output/ticket-repository.port";
 
 export class TicketService implements ITicketInputPort {
@@ -145,5 +152,56 @@ export class TicketService implements ITicketInputPort {
   private async notifyStakeholders(ticket: Ticket): Promise<void> {
     // Implementar notificaciones a las partes interesadas
     // Por ejemplo: enviar emails, notificaciones push, etc.
+  }
+
+  // Implementación de métodos para comentarios
+  async addComment(id: string, commentData: Partial<TicketComment>): Promise<TicketComment> {
+    const ticket = await this.findById(id);
+    if (!ticket) {
+      throw new Error("Ticket not found");
+    }
+    return this.ticketRepository.addComment(id, commentData);
+  }
+
+  async getComments(id: string): Promise<TicketComment[]> {
+    const ticket = await this.findById(id);
+    if (!ticket) {
+      throw new Error("Ticket not found");
+    }
+    return this.ticketRepository.getComments(id);
+  }
+
+  async deleteComment(ticketId: string, commentId: string): Promise<void> {
+    const ticket = await this.findById(ticketId);
+    if (!ticket) {
+      throw new Error("Ticket not found");
+    }
+    await this.ticketRepository.deleteComment(ticketId, commentId);
+  }
+
+  // Implementación de métodos para adjuntos
+  async getAttachments(id: string): Promise<Attachment[]> {
+    const ticket = await this.findById(id);
+    if (!ticket) {
+      throw new Error("Ticket not found");
+    }
+    return this.ticketRepository.getAttachments(id);
+  }
+
+  async deleteAttachment(ticketId: string, attachmentId: string): Promise<void> {
+    const ticket = await this.findById(ticketId);
+    if (!ticket) {
+      throw new Error("Ticket not found");
+    }
+    await this.ticketRepository.deleteAttachment(ticketId, attachmentId);
+  }
+
+  // Implementación de métricas y búsqueda avanzada
+  async getMetrics(filters: MetricsFilters): Promise<TicketMetrics> {
+    return this.ticketRepository.getMetrics(filters);
+  }
+
+  async search(filters: TicketFilters): Promise<SearchResult> {
+    return this.ticketRepository.search(filters);
   }
 }

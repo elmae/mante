@@ -67,12 +67,48 @@ Vista de ATMs - Fase Final:
     - Confirmación para mantenimiento
   - Historial de mantenimientos
 
-#### Próximas Rutas a Implementar:
+#### Rutas Implementadas:
 
-- /tickets (siguiente)
-- /maintenance (pendiente)
+##### /tickets ✅
+
+- Rutas para CRUD básico:
+
+  - GET / - Listar tickets con filtros
+  - POST / - Crear nuevo ticket
+  - GET /:id - Obtener ticket por ID
+  - PUT /:id - Actualizar ticket
+  - DELETE /:id - Eliminar ticket
+
+- Rutas para gestión de estados y asignaciones:
+
+  - POST /:id/assign - Asignar técnico
+  - PUT /:id/status - Actualizar estado
+
+- Rutas para comentarios:
+
+  - POST /:id/comments - Agregar comentario
+  - GET /:id/comments - Listar comentarios
+  - DELETE /:id/comments/:commentId - Eliminar comentario
+
+- Rutas para adjuntos:
+
+  - POST /:id/attachments - Subir adjunto
+  - GET /:id/attachments - Listar adjuntos
+  - DELETE /:id/attachments/:attachmentId - Eliminar adjunto
+
+- Rutas para métricas y búsqueda:
+  - GET /metrics - Obtener métricas
+  - GET /search - Búsqueda avanzada
+  - GET /overdue - Tickets vencidos
+  - GET /requiring-attention - Tickets que requieren atención
+
+##### Próximas Rutas a Implementar:
+
+- /maintenance (siguiente)
 - /clients (pendiente)
 - /settings (pendiente)
+
+#### Plan de Desarrollo:
 
 #### Plan de Desarrollo:
 
@@ -83,12 +119,19 @@ Vista de ATMs - Fase Final:
    - Mejorar manejo de errores
    - Probar integración con backend
 
-2. Continuar con vista de tickets siguiendo el patrón establecido:
-   - Servicio de API con tipos TypeScript
-   - Custom hooks para estado
-   - Componentes UI reutilizables
-   - Estados de carga y error
-   - Formularios con validaciones
+2. Rutas de Tickets Completadas ✅:
+
+   - API RESTful implementada
+   - Autenticación y autorización
+   - Gestión de comentarios y adjuntos
+   - Métricas y búsqueda avanzada
+   - Validaciones completas
+
+3. Continuar con vista de mantenimiento:
+   - Seguir el patrón establecido en ATMs y Tickets
+   - Implementar API RESTful
+   - Diseñar componentes UI reutilizables
+   - Integrar con el sistema de autorización
 
 ### Fase 2: Testing Backend (100% Completado)
 

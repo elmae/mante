@@ -1,18 +1,26 @@
-import { Repository, DataSource, Between, In, Like, Not } from "typeorm";
+import { Repository, DataSource } from "typeorm";
 import {
   Ticket,
   TicketStatus,
   TicketType,
   TicketPriority,
 } from "../../../../domain/entities/ticket.entity";
+import { Comment } from "../../../../domain/entities/comment.entity";
 import { ITicketRepositoryPort } from "../../ports/output/ticket-repository.port";
-import { TicketFilters } from "../../ports/input/ticket.port";
+import {
+  TicketFilters,
+  TicketMetrics,
+  MetricsFilters,
+  SearchResult,
+} from "../../ports/input/ticket.port";
 
 export class TicketRepository implements ITicketRepositoryPort {
   private repository: Repository<Ticket>;
+  private commentRepository: Repository<Comment>;
 
   constructor(dataSource: DataSource) {
     this.repository = dataSource.getRepository(Ticket);
+    this.commentRepository = dataSource.getRepository(Comment);
   }
 
   async findById(id: string): Promise<Ticket | null> {
@@ -25,6 +33,7 @@ export class TicketRepository implements ITicketRepositoryPort {
         "updated_by",
         "attachments",
         "maintenanceRecord",
+        "comments",
       ],
     });
   }
@@ -47,16 +56,18 @@ export class TicketRepository implements ITicketRepositoryPort {
     await this.repository.delete(id);
   }
 
-  async list(
-    filters: TicketFilters
-  ): Promise<{ tickets: Ticket[]; total: number }> {
+  async search(filters: TicketFilters): Promise<SearchResult> {
+    return this.list(filters);
+  }
+
+  async list(filters: TicketFilters): Promise<SearchResult> {
     const queryBuilder = this.repository
       .createQueryBuilder("ticket")
       .leftJoinAndSelect("ticket.atm", "atm")
       .leftJoinAndSelect("ticket.assignedTo", "assignedTo")
-      .leftJoinAndSelect("ticket.attachments", "attachments");
+      .leftJoinAndSelect("ticket.attachments", "attachments")
+      .leftJoinAndSelect("ticket.comments", "comments");
 
-    // Aplicar filtros
     if (filters.status?.length) {
       queryBuilder.andWhere("ticket.status IN (:...status)", {
         status: filters.status,
@@ -109,7 +120,6 @@ export class TicketRepository implements ITicketRepositoryPort {
       );
     }
 
-    // Paginación
     const page = filters.page || 1;
     const limit = filters.limit || 10;
     queryBuilder
@@ -122,38 +132,51 @@ export class TicketRepository implements ITicketRepositoryPort {
     return { tickets, total };
   }
 
+  async addComment(ticketId: string, commentData: Partial<Comment>): Promise<Comment> {
+    const ticket = await this.findById(ticketId);
+    if (!ticket) {
+      throw new Error("Ticket not found");
+    }
+
+    const comment = this.commentRepository.create({
+      ...commentData,
+      ticket_id: ticketId,
+    });
+
+    return this.commentRepository.save(comment);
+  }
+
+  async getComments(ticketId: string): Promise<Comment[]> {
+    return this.commentRepository.find({
+      where: { ticket_id: ticketId },
+      relations: ["created_by"],
+      order: { created_at: "DESC" },
+    });
+  }
+
+  async deleteComment(ticketId: string, commentId: string): Promise<void> {
+    const comment = await this.commentRepository.findOne({
+      where: { id: commentId, ticket_id: ticketId },
+    });
+
+    if (!comment) {
+      throw new Error("Comment not found");
+    }
+
+    await this.commentRepository.remove(comment);
+  }
+
   async findByAtm(atmId: string): Promise<Ticket[]> {
     return this.repository.find({
       where: { atm_id: atmId },
-      relations: ["assignedTo", "attachments"],
+      relations: ["assignedTo", "attachments", "comments"],
     });
   }
 
   async findByTechnician(technicianId: string): Promise<Ticket[]> {
     return this.repository.find({
       where: { assigned_to: technicianId },
-      relations: ["atm", "attachments"],
-    });
-  }
-
-  async findByStatus(status: TicketStatus[]): Promise<Ticket[]> {
-    return this.repository.find({
-      where: { status: In(status) },
-      relations: ["atm", "assignedTo"],
-    });
-  }
-
-  async findByType(type: TicketType[]): Promise<Ticket[]> {
-    return this.repository.find({
-      where: { type: In(type) },
-      relations: ["atm", "assignedTo"],
-    });
-  }
-
-  async findByPriority(priority: TicketPriority[]): Promise<Ticket[]> {
-    return this.repository.find({
-      where: { priority: In(priority) },
-      relations: ["atm", "assignedTo"],
+      relations: ["atm", "attachments", "comments"],
     });
   }
 
@@ -185,76 +208,61 @@ export class TicketRepository implements ITicketRepositoryPort {
       .getMany();
   }
 
-  async getTicketStats(filters: TicketFilters): Promise<any> {
-    // Implementar estadísticas usando agregaciones SQL
-    const stats = await this.repository
-      .createQueryBuilder("ticket")
-      .select([
-        "COUNT(*) as total",
-        "ticket.status",
-        "ticket.type",
-        "ticket.priority",
-        "AVG(EXTRACT(EPOCH FROM (completion_date - created_at))) as avg_resolution_time",
-      ])
-      .where(filters)
-      .groupBy("ticket.status, ticket.type, ticket.priority")
-      .getRawMany();
+  async getMetrics(filters: MetricsFilters): Promise<TicketMetrics> {
+    const queryBuilder = this.repository.createQueryBuilder("ticket");
 
-    return this.processTicketStats(stats);
-  }
-
-  async addAttachment(ticketId: string, attachmentData: any): Promise<Ticket> {
-    const ticket = await this.findById(ticketId);
-    if (!ticket) {
-      throw new Error("Ticket not found");
+    if (filters.start_date && filters.end_date) {
+      queryBuilder.andWhere(
+        "ticket.created_at BETWEEN :startDate AND :endDate",
+        {
+          startDate: filters.start_date,
+          endDate: filters.end_date,
+        }
+      );
     }
 
-    // La lógica específica de attachments se implementará cuando tengamos el servicio de archivos
-    return ticket;
-  }
+    if (filters.atm_id) {
+      queryBuilder.andWhere("ticket.atm_id = :atmId", {
+        atmId: filters.atm_id,
+      });
+    }
 
-  async getAttachments(ticketId: string): Promise<any[]> {
-    const ticket = await this.repository.findOne({
-      where: { id: ticketId },
-      relations: ["attachments"],
+    if (filters.technician_id) {
+      queryBuilder.andWhere("ticket.assigned_to = :technicianId", {
+        technicianId: filters.technician_id,
+      });
+    }
+
+    const tickets = await queryBuilder.getMany();
+    
+    const statusCount: Record<TicketStatus, number> = {} as Record<TicketStatus, number>;
+    const priorityCount: Record<TicketPriority, number> = {} as Record<TicketPriority, number>;
+    let totalResolutionTime = 0;
+    let resolvedCount = 0;
+    let slaCompliantCount = 0;
+
+    tickets.forEach(ticket => {
+      statusCount[ticket.status] = (statusCount[ticket.status] || 0) + 1;
+      priorityCount[ticket.priority] = (priorityCount[ticket.priority] || 0) + 1;
+
+      if (ticket.status === TicketStatus.CLOSED && ticket.completion_date) {
+        const resolutionTime = ticket.completion_date.getTime() - ticket.created_at.getTime();
+        totalResolutionTime += resolutionTime;
+        resolvedCount++;
+
+        if (ticket.met_sla) {
+          slaCompliantCount++;
+        }
+      }
     });
 
-    return ticket?.attachments || [];
-  }
-
-  async getMaintenanceRecord(ticketId: string): Promise<any | null> {
-    const ticket = await this.repository.findOne({
-      where: { id: ticketId },
-      relations: ["maintenanceRecord"],
-    });
-
-    return ticket?.maintenanceRecord || null;
-  }
-
-  async search(query: string): Promise<Ticket[]> {
-    return this.repository.find({
-      where: [
-        { title: Like(`%${query}%`) },
-        { description: Like(`%${query}%`) },
-      ],
-      relations: ["atm", "assignedTo"],
-    });
-  }
-
-  async findByDateRange(fromDate: Date, toDate: Date): Promise<Ticket[]> {
-    return this.repository.find({
-      where: {
-        created_at: Between(fromDate, toDate),
-      },
-      relations: ["atm", "assignedTo"],
-    });
-  }
-
-  async findByMultipleStatuses(statuses: TicketStatus[]): Promise<Ticket[]> {
-    return this.repository.find({
-      where: { status: In(statuses) },
-      relations: ["atm", "assignedTo"],
-    });
+    return {
+      total: tickets.length,
+      by_status: statusCount,
+      by_priority: priorityCount,
+      average_resolution_time: resolvedCount ? totalResolutionTime / resolvedCount : 0,
+      sla_compliance: resolvedCount ? (slaCompliantCount / resolvedCount) * 100 : 0,
+    };
   }
 
   async validateStatusTransition(
@@ -276,9 +284,33 @@ export class TicketRepository implements ITicketRepositoryPort {
     return ticket.canBeAssigned();
   }
 
-  private processTicketStats(rawStats: any[]): any {
-    // Procesar los datos crudos de las estadísticas y formatearlos según necesitemos
-    // Esta implementación dependerá de cómo queramos presentar los datos
-    return rawStats;
+  async addAttachment(ticketId: string, attachmentData: any): Promise<Ticket> {
+    const ticket = await this.findById(ticketId);
+    if (!ticket) {
+      throw new Error("Ticket not found");
+    }
+    return this.update(ticketId, {
+      attachments: [...(ticket.attachments || []), attachmentData],
+    });
+  }
+
+  async getAttachments(ticketId: string): Promise<any[]> {
+    const ticket = await this.repository.findOne({
+      where: { id: ticketId },
+      relations: ["attachments"],
+    });
+    return ticket?.attachments || [];
+  }
+
+  async deleteAttachment(ticketId: string, attachmentId: string): Promise<void> {
+    const ticket = await this.findById(ticketId);
+    if (!ticket || !ticket.attachments) {
+      throw new Error("Ticket or attachments not found");
+    }
+
+    ticket.attachments = ticket.attachments.filter(
+      attachment => attachment.id !== attachmentId
+    );
+    await this.repository.save(ticket);
   }
 }

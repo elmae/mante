@@ -1,46 +1,42 @@
 import {
   Ticket,
   TicketStatus,
-  TicketType,
-  TicketPriority,
 } from "../../../../domain/entities/ticket.entity";
-import { TicketFilters } from "../input/ticket.port";
+import { Comment } from "../../../../domain/entities/comment.entity";
+import {
+  TicketFilters,
+  TicketMetrics,
+  MetricsFilters,
+  SearchResult,
+} from "../input/ticket.port";
 
 export interface ITicketRepositoryPort {
+  // Operaciones CRUD básicas
   findById(id: string): Promise<Ticket | null>;
   create(ticketData: Partial<Ticket>): Promise<Ticket>;
   update(id: string, ticketData: Partial<Ticket>): Promise<Ticket>;
   delete(id: string): Promise<void>;
-  list(filters: TicketFilters): Promise<{ tickets: Ticket[]; total: number }>;
+  list(filters: TicketFilters): Promise<SearchResult>;
 
   // Métodos específicos para consultas
   findByAtm(atmId: string): Promise<Ticket[]>;
   findByTechnician(technicianId: string): Promise<Ticket[]>;
-  findByStatus(status: TicketStatus[]): Promise<Ticket[]>;
-  findByType(type: TicketType[]): Promise<Ticket[]>;
-  findByPriority(priority: TicketPriority[]): Promise<Ticket[]>;
   findOverdue(): Promise<Ticket[]>;
   findRequiringAttention(): Promise<Ticket[]>;
 
-  // Métodos para reportes y análisis
-  getTicketStats(filters: TicketFilters): Promise<{
-    total: number;
-    byStatus: Record<TicketStatus, number>;
-    byType: Record<TicketType, number>;
-    byPriority: Record<TicketPriority, number>;
-    averageResolutionTime: number;
-    overdueCount: number;
-  }>;
+  // Métodos para comentarios
+  addComment(ticketId: string, commentData: Partial<Comment>): Promise<Comment>;
+  getComments(ticketId: string): Promise<Comment[]>;
+  deleteComment(ticketId: string, commentId: string): Promise<void>;
 
-  // Métodos para relaciones
+  // Métodos para adjuntos
   addAttachment(ticketId: string, attachmentData: any): Promise<Ticket>;
   getAttachments(ticketId: string): Promise<any[]>;
-  getMaintenanceRecord(ticketId: string): Promise<any | null>;
+  deleteAttachment(ticketId: string, attachmentId: string): Promise<void>;
 
-  // Búsqueda avanzada
-  search(query: string): Promise<Ticket[]>;
-  findByDateRange(fromDate: Date, toDate: Date): Promise<Ticket[]>;
-  findByMultipleStatuses(statuses: TicketStatus[]): Promise<Ticket[]>;
+  // Búsqueda y métricas
+  search(filters: TicketFilters): Promise<SearchResult>;
+  getMetrics(filters: MetricsFilters): Promise<TicketMetrics>;
 
   // Validaciones de estado
   validateStatusTransition(
