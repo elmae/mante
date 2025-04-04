@@ -7,13 +7,17 @@ import {
   CompleteMaintenanceDto,
   AddPartsDto,
   MaintenanceFilterDto,
+  UpdateMeasurementsDto,
+  SetFollowUpDto,
+  AddCommentDto,
 } from "../services/maintenance/dtos/maintenance.dto";
 import { User } from "../domain/entities/user.entity";
 
 interface RequestWithUser extends Request {
   user?: {
-    sub: string;
+    id: string;
     role: string;
+    permissions: string[];
   };
 }
 
@@ -40,10 +44,52 @@ export class MaintenanceController {
 
       const maintenance = await this.maintenanceService.create({
         ...maintenanceDto,
-        created_by: { id: req.user?.sub } as User,
+        created_by: { id: req.user?.id } as User,
       });
 
       res.status(201).json(maintenance);
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  async listMaintenances(
+    req: RequestWithUser,
+    res: Response,
+    next: NextFunction
+  ): Promise<void> {
+    try {
+      const filterDto = plainToClass(MaintenanceFilterDto, req.query);
+      await this.validateDto(filterDto);
+
+      const { records, total } = await this.maintenanceService.list(filterDto);
+
+      res.json({
+        data: records,
+        meta: {
+          total,
+          page: filterDto.page || 1,
+          limit: filterDto.limit || 10,
+          pages: Math.ceil(total / (filterDto.limit || 10)),
+        },
+      });
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  async getMaintenance(
+    req: Request,
+    res: Response,
+    next: NextFunction
+  ): Promise<void> {
+    try {
+      const maintenance = await this.maintenanceService.findById(req.params.id);
+      if (!maintenance) {
+        res.status(404).json({ message: "Maintenance record not found" });
+        return;
+      }
+      res.json(maintenance);
     } catch (error) {
       next(error);
     }
@@ -56,7 +102,7 @@ export class MaintenanceController {
   ): Promise<void> {
     try {
       const { ticketId } = req.params;
-      const technicianId = req.body.technician_id || req.user?.sub;
+      const technicianId = req.body.technician_id || req.user?.id;
 
       const maintenance = await this.maintenanceService.startMaintenance(
         ticketId,
@@ -76,10 +122,6 @@ export class MaintenanceController {
     try {
       const completionDto = plainToClass(CompleteMaintenanceDto, req.body);
       await this.validateDto(completionDto);
-
-      if (!completionDto.end_time) {
-        completionDto.end_time = new Date();
-      }
 
       const maintenance = await this.maintenanceService.completeMaintenance(
         req.params.id,
@@ -112,24 +154,126 @@ export class MaintenanceController {
     }
   }
 
-  async getMaintenance(
-    req: Request,
+  async updateMeasurements(
+    req: RequestWithUser,
     res: Response,
     next: NextFunction
   ): Promise<void> {
     try {
-      const maintenance = await this.maintenanceService.findById(req.params.id);
-      if (!maintenance) {
-        res.status(404).json({ message: "Maintenance record not found" });
-        return;
-      }
+      const measurementsDto = plainToClass(UpdateMeasurementsDto, req.body);
+      await this.validateDto(measurementsDto);
+
+      const maintenance = await this.maintenanceService.updateMeasurements(
+        req.params.id,
+        measurementsDto.measurements
+      );
+
       res.json(maintenance);
     } catch (error) {
       next(error);
     }
   }
 
-  async listMaintenances(
+  async setFollowUpStatus(
+    req: RequestWithUser,
+    res: Response,
+    next: NextFunction
+  ): Promise<void> {
+    try {
+      const followUpDto = plainToClass(SetFollowUpDto, req.body);
+      await this.validateDto(followUpDto);
+
+      const maintenance = await this.maintenanceService.setFollowUpStatus(
+        req.params.id,
+        followUpDto.requires_follow_up,
+        followUpDto.follow_up_notes
+      );
+
+      res.json(maintenance);
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  async addComment(
+    req: RequestWithUser,
+    res: Response,
+    next: NextFunction
+  ): Promise<void> {
+    try {
+      const commentDto = plainToClass(AddCommentDto, req.body);
+      await this.validateDto(commentDto);
+
+      const comment = await this.maintenanceService.addComment(req.params.id, {
+        ...commentDto,
+        created_by: { id: req.user?.id } as User,
+      });
+
+      res.status(201).json(comment);
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  async listComments(
+    req: Request,
+    res: Response,
+    next: NextFunction
+  ): Promise<void> {
+    try {
+      const comments = await this.maintenanceService.getComments(req.params.id);
+      res.json(comments);
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  async deleteComment(
+    req: RequestWithUser,
+    res: Response,
+    next: NextFunction
+  ): Promise<void> {
+    try {
+      await this.maintenanceService.deleteComment(
+        req.params.id,
+        req.params.commentId
+      );
+      res.status(204).send();
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  async addAttachment(
+    req: RequestWithUser & { file?: Express.Multer.File },
+    res: Response,
+    next: NextFunction
+  ): Promise<void> {
+    try {
+      if (!req.file) {
+        res.status(400).json({ message: "No file uploaded" });
+        return;
+      }
+
+      const attachment = {
+        file_name: req.file.originalname,
+        file_path: req.file.path,
+        mime_type: req.file.mimetype,
+        file_size: req.file.size,
+        created_by_id: req.user?.id,
+      };
+
+      const maintenance = await this.maintenanceService.addAttachment(
+        req.params.id,
+        attachment
+      );
+      res.json(maintenance);
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  async getMaintenanceStats(
     req: Request,
     res: Response,
     next: NextFunction
@@ -138,17 +282,34 @@ export class MaintenanceController {
       const filterDto = plainToClass(MaintenanceFilterDto, req.query);
       await this.validateDto(filterDto);
 
-      const { records, total } = await this.maintenanceService.list(filterDto);
+      const stats = await this.maintenanceService.getMaintenanceStats(filterDto);
+      res.json(stats);
+    } catch (error) {
+      next(error);
+    }
+  }
 
-      res.json({
-        data: records,
-        meta: {
-          total,
-          page: filterDto.page || 1,
-          limit: filterDto.limit || 10,
-          pages: Math.ceil(total / (filterDto.limit || 10)),
-        },
-      });
+  async getInProgressMaintenances(
+    req: Request,
+    res: Response,
+    next: NextFunction
+  ): Promise<void> {
+    try {
+      const maintenances = await this.maintenanceService.findInProgress();
+      res.json(maintenances);
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  async getRequiringFollowUp(
+    req: Request,
+    res: Response,
+    next: NextFunction
+  ): Promise<void> {
+    try {
+      const maintenances = await this.maintenanceService.findRequiringFollowUp();
+      res.json(maintenances);
     } catch (error) {
       next(error);
     }
@@ -178,37 +339,6 @@ export class MaintenanceController {
       const maintenances = await this.maintenanceService.findByTechnician(
         req.params.technicianId
       );
-      res.json(maintenances);
-    } catch (error) {
-      next(error);
-    }
-  }
-
-  async getMaintenanceStats(
-    req: Request,
-    res: Response,
-    next: NextFunction
-  ): Promise<void> {
-    try {
-      const filterDto = plainToClass(MaintenanceFilterDto, req.query);
-      await this.validateDto(filterDto);
-
-      const stats = await this.maintenanceService.getMaintenanceStats(
-        filterDto
-      );
-      res.json(stats);
-    } catch (error) {
-      next(error);
-    }
-  }
-
-  async getInProgressMaintenances(
-    req: Request,
-    res: Response,
-    next: NextFunction
-  ): Promise<void> {
-    try {
-      const maintenances = await this.maintenanceService.findInProgress();
       res.json(maintenances);
     } catch (error) {
       next(error);
