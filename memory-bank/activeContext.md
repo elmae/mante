@@ -42,8 +42,14 @@
 
 Vista de ATMs - Fase Final:
 
+- Completado:
+
+  - Vista detallada de ATM ✅
+    - Componente ATMDetails
+    - Integración con modal
+    - Visualización de información completa
+
 - Funcionalidades pendientes:
-  - Vista detallada de ATM
   - Interfaz de registro de mantenimiento
   - Implementar diálogos de confirmación
   - Integración con backend real

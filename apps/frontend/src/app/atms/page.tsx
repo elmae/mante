@@ -4,16 +4,18 @@ import { useState } from "react";
 import { useATMs } from "@/hooks/useATMs";
 import { ATMFilters } from "@/components/atms/ATMFilters";
 import { ATMTable } from "@/components/atms/ATMTable";
-import { Pagination } from "@/components/common/Pagination";
-import { Modal } from "@/components/common/Modal";
 import { ATMForm } from "@/components/atms/ATMForm";
+import { ATMDetails } from "@/components/atms/ATMDetails";
+import { Modal } from "@/components/common/Modal";
+import { Pagination } from "@/components/common/Pagination";
 import type { ATM } from "@/services/api/atm";
 import { DashboardSkeleton } from "@/components/dashboard/DashboardSkeleton";
 import { DashboardError } from "@/components/dashboard/DashboardError";
 
 export default function ATMsPage() {
-  // Estado del modal
-  const [isModalOpen, setIsModalOpen] = useState(false);
+  // Estado de modales y ATM seleccionado
+  const [isFormOpen, setIsFormOpen] = useState(false);
+  const [isDetailsOpen, setIsDetailsOpen] = useState(false);
   const [selectedATM, setSelectedATM] = useState<ATM | undefined>();
 
   // Estado y operaciones de ATMs
@@ -42,13 +44,13 @@ export default function ATMsPage() {
   }
 
   const handleView = (atm: ATM) => {
-    // TODO: Implementar vista detallada en un componente separado
-    console.log("Ver ATM:", atm);
+    setSelectedATM(atm);
+    setIsDetailsOpen(true);
   };
 
   const handleEdit = (atm: ATM) => {
     setSelectedATM(atm);
-    setIsModalOpen(true);
+    setIsFormOpen(true);
   };
 
   const handleDelete = async (atm: ATM) => {
@@ -85,7 +87,7 @@ export default function ATMsPage() {
             type="button"
             onClick={() => {
               setSelectedATM(undefined);
-              setIsModalOpen(true);
+              setIsFormOpen(true);
             }}
             className="inline-flex items-center rounded-md bg-primary-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-primary-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary-600"
           >
@@ -120,11 +122,23 @@ export default function ATMsPage() {
         Mostrando {atms.length} de {total} ATMs
       </div>
 
+      {/* Modal de Detalles */}
+      <Modal
+        isOpen={isDetailsOpen}
+        onClose={() => {
+          setIsDetailsOpen(false);
+          setSelectedATM(undefined);
+        }}
+        title={`Detalles del ATM ${selectedATM?.code || ""}`}
+      >
+        {selectedATM && <ATMDetails atm={selectedATM} />}
+      </Modal>
+
       {/* Modal de Crear/Editar ATM */}
       <Modal
-        isOpen={isModalOpen}
+        isOpen={isFormOpen}
         onClose={() => {
-          setIsModalOpen(false);
+          setIsFormOpen(false);
           setSelectedATM(undefined);
         }}
         title={selectedATM ? "Editar ATM" : "Crear ATM"}
@@ -138,7 +152,7 @@ export default function ATMsPage() {
               } else {
                 await createATM(data);
               }
-              setIsModalOpen(false);
+              setIsFormOpen(false);
               setSelectedATM(undefined);
             } catch (error) {
               console.error("Error al guardar ATM:", error);
@@ -148,7 +162,7 @@ export default function ATMsPage() {
             }
           }}
           onCancel={() => {
-            setIsModalOpen(false);
+            setIsFormOpen(false);
             setSelectedATM(undefined);
           }}
           isSubmitting={isCreating || isUpdating}
