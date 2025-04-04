@@ -1,145 +1,139 @@
-import {
-  IsString,
-  IsNotEmpty,
-  IsUUID,
-  IsEnum,
-  IsArray,
-  ValidateNested,
-  IsDate,
-  IsNumber,
-  IsOptional,
-  Min,
-  IsObject,
-} from "class-validator";
-import { Type } from "class-transformer";
-import { MaintenanceType } from "../../../domain/entities/maintenance-record.entity";
-
-export class MaintenancePartDto {
-  @IsString()
-  @IsNotEmpty()
-  name!: string;
-
-  @IsNumber()
-  @Min(1)
-  quantity!: number;
-
-  @IsString()
-  @IsOptional()
-  serialNumber?: string;
-
-  @IsString()
-  @IsOptional()
-  notes?: string;
-}
+import { IsString, IsBoolean, IsOptional, IsNumber, IsArray, ValidateNested, IsUUID } from 'class-validator';
+import { Type } from 'class-transformer';
 
 export class StartMaintenanceDto {
-  @IsUUID()
-  @IsNotEmpty()
-  ticket_id!: string;
+  @IsString()
+  ticket_id: string;
 
-  @IsUUID()
-  @IsNotEmpty()
-  atm_id!: string;
+  @IsString()
+  atm_id: string;
 
-  @IsUUID()
-  @IsNotEmpty()
-  technician_id!: string;
-
-  @IsEnum(MaintenanceType)
-  type!: MaintenanceType;
-
-  @IsDate()
-  @Type(() => Date)
+  @IsString()
   @IsOptional()
-  start_time?: Date = new Date();
+  technician_id?: string;
+
+  @IsString()
+  initial_diagnosis: string;
 }
 
 export class CompleteMaintenanceDto {
   @IsString()
-  @IsNotEmpty()
-  diagnosis!: string;
+  work_performed: string;
 
+  @IsOptional()
   @IsString()
-  @IsNotEmpty()
-  work_performed!: string;
+  notes?: string;
 
-  @IsArray()
-  @ValidateNested({ each: true })
-  @Type(() => MaintenancePartDto)
-  parts_used!: MaintenancePartDto[];
-
-  @IsDate()
+  @IsOptional()
   @Type(() => Date)
-  end_time!: Date;
+  end_time?: Date;
+}
+
+export class PartDto {
+  @IsString()
+  name: string;
+
+  @IsNumber()
+  quantity: number;
+
+  @IsOptional()
+  @IsString()
+  serialNumber?: string;
+
+  @IsOptional()
+  @IsString()
+  notes?: string;
 }
 
 export class AddPartsDto {
   @IsArray()
   @ValidateNested({ each: true })
-  @Type(() => MaintenancePartDto)
-  parts!: MaintenancePartDto[];
+  @Type(() => PartDto)
+  parts: PartDto[];
+}
+
+export class TechnicalMeasurementDto {
+  @IsString()
+  name: string;
+
+  @IsNumber()
+  value: number;
+
+  @IsString()
+  unit: string;
+
+  @IsOptional()
+  @IsNumber()
+  threshold?: number;
+}
+
+export class UpdateMeasurementsDto {
+  @IsArray()
+  @ValidateNested({ each: true })
+  @Type(() => TechnicalMeasurementDto)
+  measurements: TechnicalMeasurementDto[];
+}
+
+export class SetFollowUpDto {
+  @IsBoolean()
+  requires_follow_up: boolean;
+
+  @IsString()
+  @IsOptional()
+  follow_up_notes?: string;
+}
+
+export class AddCommentDto {
+  @IsString()
+  content: string;
+
+  @IsBoolean()
+  @IsOptional()
+  is_technical?: boolean;
+
+  @IsOptional()
+  technical_details?: {
+    parts_used?: string[];
+    measurements?: Record<string, number>;
+    issues_found?: string[];
+    recommendations?: string[];
+  };
 }
 
 export class MaintenanceFilterDto {
   @IsOptional()
-  @Type(() => Number)
-  page?: number = 1;
+  @IsNumber()
+  page?: number;
 
   @IsOptional()
-  @Type(() => Number)
-  limit?: number = 10;
+  @IsNumber()
+  limit?: number;
 
-  @IsEnum(MaintenanceType, { each: true })
   @IsOptional()
-  type?: MaintenanceType[];
+  @IsString({ each: true })
+  status?: string[];
 
+  @IsOptional()
   @IsUUID()
-  @IsOptional()
-  atmId?: string;
+  atm_id?: string;
 
+  @IsOptional()
   @IsUUID()
-  @IsOptional()
-  technicianId?: string;
+  technician_id?: string;
 
-  @IsDate()
+  @IsOptional()
   @Type(() => Date)
-  @IsOptional()
-  fromDate?: Date;
+  from_date?: Date;
 
-  @IsDate()
+  @IsOptional()
   @Type(() => Date)
-  @IsOptional()
-  toDate?: Date;
+  to_date?: Date;
 
   @IsOptional()
-  isComplete?: boolean;
-}
+  @IsBoolean()
+  requires_follow_up?: boolean;
 
-export class MaintenanceStatsDto {
-  @IsNumber()
-  totalCount!: number;
-
-  @IsNumber()
-  completedCount!: number;
-
-  @IsNumber()
-  averageDuration!: number;
-
-  @IsObject()
-  byType!: Record<MaintenanceType, number>;
-
-  @IsArray()
-  @ValidateNested({ each: true })
-  mostCommonParts!: Array<{
-    name: string;
-    count: number;
-  }>;
-
-  @IsArray()
-  @ValidateNested({ each: true })
-  technicianPerformance!: Array<{
-    technician_id: string;
-    completed_count: number;
-    average_duration: number;
-  }>;
+  @IsOptional()
+  @IsString()
+  search_term?: string;
 }

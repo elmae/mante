@@ -2,10 +2,15 @@ import {
   MaintenanceRecord,
   MaintenanceType,
 } from "../../../../domain/entities/maintenance-record.entity";
+import { Attachment } from "../../../../domain/entities/attachment.entity";
+import { MaintenanceComment } from "../../../../domain/entities/maintenance-comment.entity";
 import {
   MaintenanceFilters,
   MaintenanceStats,
   MaintenancePart,
+  MaintenanceCommentData,
+  TechnicalMeasurement,
+  AttachmentData,
 } from "../input/maintenance.port";
 
 export interface IMaintenanceRepositoryPort {
@@ -79,4 +84,23 @@ export interface IMaintenanceRepositoryPort {
     isValid: boolean;
     errors: string[];
   }>;
+
+  // Métodos para comentarios
+  addComment(id: string, commentData: MaintenanceCommentData): Promise<MaintenanceComment>;
+  getComments(id: string): Promise<MaintenanceComment[]>;
+  deleteComment(maintenanceId: string, commentId: string): Promise<void>;
+
+  // Métodos para mediciones y seguimiento
+  updateMeasurements(id: string, measurements: TechnicalMeasurement[]): Promise<MaintenanceRecord>;
+  setFollowUpStatus(
+    id: string,
+    requiresFollowUp: boolean,
+    notes?: string
+  ): Promise<MaintenanceRecord>;
+  findRequiringFollowUp(): Promise<MaintenanceRecord[]>;
+
+  // Métodos para adjuntos
+  addAttachment(id: string, attachmentData: AttachmentData): Promise<MaintenanceRecord>;
+  getAttachments(id: string): Promise<Attachment[]>;
+  deleteAttachment(maintenanceId: string, attachmentId: string): Promise<void>;
 }

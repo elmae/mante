@@ -1,15 +1,21 @@
-import { Repository, DataSource, Between, In, IsNull, Not } from "typeorm";
+import { Repository, DataSource, Between, In, IsNull, Not, SelectQueryBuilder } from "typeorm";
 import {
   MaintenanceRecord,
   MaintenanceType,
 } from "../../../../domain/entities/maintenance-record.entity";
+import { Attachment } from "../../../../domain/entities/attachment.entity";
+import { MaintenanceComment } from "../../../../domain/entities/maintenance-comment.entity";
 import { IMaintenanceRepositoryPort } from "../../ports/output/maintenance-repository.port";
 import {
   MaintenanceFilters,
   MaintenanceStats,
   MaintenancePart,
+  MaintenanceCommentData,
+  TechnicalMeasurement,
+  AttachmentData,
 } from "../../ports/input/maintenance.port";
 
+// Interfaces auxiliares para tipos de datos raw
 interface TechnicianStatsRaw {
   technician_id: string;
   completed_count: string;
@@ -34,21 +40,32 @@ interface BasicStatsRaw {
 
 export class MaintenanceRepository implements IMaintenanceRepositoryPort {
   private repository: Repository<MaintenanceRecord>;
+  private commentRepository: Repository<MaintenanceComment>;
+  private attachmentRepository: Repository<Attachment>;
 
   constructor(dataSource: DataSource) {
     this.repository = dataSource.getRepository(MaintenanceRecord);
+    this.commentRepository = dataSource.getRepository(MaintenanceComment);
+    this.attachmentRepository = dataSource.getRepository(Attachment);
   }
 
+  // Métodos CRUD básicos
   async findById(id: string): Promise<MaintenanceRecord | null> {
     return this.repository.findOne({
       where: { id },
-      relations: ["ticket", "atm", "technician", "created_by", "updated_by"],
+      relations: [
+        "ticket",
+        "atm",
+        "technician",
+        "created_by",
+        "updated_by",
+        "comments",
+        "attachments"
+      ],
     });
   }
 
-  async create(
-    maintenanceData: Partial<MaintenanceRecord>
-  ): Promise<MaintenanceRecord> {
+  async create(maintenanceData: Partial<MaintenanceRecord>): Promise<MaintenanceRecord> {
     const maintenance = this.repository.create(maintenanceData);
     return this.repository.save(maintenance);
   }
@@ -76,7 +93,9 @@ export class MaintenanceRepository implements IMaintenanceRepositoryPort {
       .createQueryBuilder("maintenance")
       .leftJoinAndSelect("maintenance.ticket", "ticket")
       .leftJoinAndSelect("maintenance.atm", "atm")
-      .leftJoinAndSelect("maintenance.technician", "technician");
+      .leftJoinAndSelect("maintenance.technician", "technician")
+      .leftJoinAndSelect("maintenance.comments", "comments")
+      .leftJoinAndSelect("maintenance.attachments", "attachments");
 
     if (filters.type?.length) {
       queryBuilder.andWhere("maintenance.type IN (:...type)", {
@@ -106,12 +125,25 @@ export class MaintenanceRepository implements IMaintenanceRepositoryPort {
       );
     }
 
-    if (typeof filters.isComplete !== "undefined") {
+    if (filters.requiresFollowUp !== undefined) {
+      queryBuilder.andWhere("maintenance.requires_follow_up = :requiresFollowUp", {
+        requiresFollowUp: filters.requiresFollowUp,
+      });
+    }
+
+    if (typeof filters.isComplete !== undefined) {
       if (filters.isComplete) {
         queryBuilder.andWhere("maintenance.end_time IS NOT NULL");
       } else {
         queryBuilder.andWhere("maintenance.end_time IS NULL");
       }
+    }
+
+    if (filters.searchTerm) {
+      queryBuilder.andWhere(
+        "(maintenance.work_performed ILIKE :search OR maintenance.diagnosis ILIKE :search)",
+        { search: `%${filters.searchTerm}%` }
+      );
     }
 
     const page = filters.page || 1;
@@ -126,17 +158,18 @@ export class MaintenanceRepository implements IMaintenanceRepositoryPort {
     return { records, total };
   }
 
+  // Consultas específicas básicas
   async findByTicket(ticketId: string): Promise<MaintenanceRecord | null> {
     return this.repository.findOne({
       where: { ticket_id: ticketId },
-      relations: ["technician", "atm"],
+      relations: ["technician", "atm", "comments", "attachments"],
     });
   }
 
   async findByATM(atmId: string): Promise<MaintenanceRecord[]> {
     return this.repository.find({
       where: { atm_id: atmId },
-      relations: ["technician", "ticket"],
+      relations: ["technician", "ticket", "comments", "attachments"],
       order: { created_at: "DESC" },
     });
   }
@@ -144,7 +177,7 @@ export class MaintenanceRepository implements IMaintenanceRepositoryPort {
   async findByTechnician(technicianId: string): Promise<MaintenanceRecord[]> {
     return this.repository.find({
       where: { technician_id: technicianId },
-      relations: ["atm", "ticket"],
+      relations: ["atm", "ticket", "comments", "attachments"],
       order: { created_at: "DESC" },
     });
   }
@@ -152,10 +185,11 @@ export class MaintenanceRepository implements IMaintenanceRepositoryPort {
   async findInProgress(): Promise<MaintenanceRecord[]> {
     return this.repository.find({
       where: { end_time: IsNull() },
-      relations: ["atm", "technician", "ticket"],
+      relations: ["atm", "technician", "ticket", "comments", "attachments"],
     });
   }
 
+  // Validaciones y verificaciones
   async isTicketInMaintenance(ticketId: string): Promise<boolean> {
     const count = await this.repository.count({
       where: {
@@ -176,6 +210,7 @@ export class MaintenanceRepository implements IMaintenanceRepositoryPort {
     return activeMaintenanceCount === 0;
   }
 
+  // Operaciones principales de mantenimiento
   async startMaintenance(data: {
     ticket_id: string;
     atm_id: string;
@@ -205,22 +240,51 @@ export class MaintenanceRepository implements IMaintenanceRepositoryPort {
     return this.repository.save(maintenance);
   }
 
-  async addParts(
-    id: string,
-    parts: MaintenancePart[]
-  ): Promise<MaintenanceRecord> {
+  async addParts(id: string, parts: MaintenancePart[]): Promise<MaintenanceRecord> {
     const maintenance = await this.findById(id);
     if (!maintenance) {
       throw new Error("Maintenance record not found");
     }
 
-    maintenance.parts_used = [...maintenance.parts_used, ...parts];
+    maintenance.parts_used = [...(maintenance.parts_used || []), ...parts];
     return this.repository.save(maintenance);
   }
 
-  async getMaintenanceStats(
-    filters: MaintenanceFilters
-  ): Promise<MaintenanceStats> {
+  async validateMaintenanceCompletion(id: string): Promise<{
+    isValid: boolean;
+    errors: string[];
+  }> {
+    const maintenance = await this.findById(id);
+    if (!maintenance) {
+      return { isValid: false, errors: ["Maintenance record not found"] };
+    }
+
+    const errors: string[] = [];
+
+    if (!maintenance.diagnosis) {
+      errors.push("Diagnosis is required");
+    }
+
+    if (!maintenance.work_performed) {
+      errors.push("Work performed description is required");
+    }
+
+    if (!maintenance.parts_used || maintenance.parts_used.length === 0) {
+      errors.push("At least one part must be registered");
+    }
+
+    if (!maintenance.end_time) {
+      errors.push("End time must be set");
+    }
+
+    return {
+      isValid: errors.length === 0,
+      errors,
+    };
+  }
+
+  // Métodos de estadísticas y análisis
+  async getMaintenanceStats(filters: MaintenanceFilters): Promise<MaintenanceStats> {
     const queryBuilder = this.repository.createQueryBuilder("maintenance");
 
     if (filters.fromDate && filters.toDate) {
@@ -233,9 +297,9 @@ export class MaintenanceRepository implements IMaintenanceRepositoryPort {
       );
     }
 
-    const basicStats = await this.getBasicStats(queryBuilder.clone());
-    const partsStats = await this.getPartsStats(queryBuilder.clone());
-    const technicianStats = await this.getTechnicianStats(queryBuilder.clone());
+    const basicStats = await this.getBasicStats(queryBuilder);
+    const partsStats = await this.getPartsStats(queryBuilder);
+    const technicianStats = await this.getTechnicianPerformanceStats(queryBuilder);
 
     return {
       totalCount: basicStats.totalCount,
@@ -263,18 +327,13 @@ export class MaintenanceRepository implements IMaintenanceRepositoryPort {
     }
 
     const result = await queryBuilder
-      .select(
-        "AVG(EXTRACT(EPOCH FROM (end_time - start_time)))",
-        "average_duration"
-      )
+      .select("AVG(EXTRACT(EPOCH FROM (end_time - start_time)))", "average_duration")
       .getRawOne();
 
     return result?.average_duration || 0;
   }
 
-  async getMostUsedParts(
-    limit: number = 10
-  ): Promise<Array<{ name: string; count: number }>> {
+  async getMostUsedParts(limit: number = 10): Promise<Array<{ name: string; count: number }>> {
     const result = await this.repository
       .createQueryBuilder("maintenance")
       .select([
@@ -342,9 +401,7 @@ export class MaintenanceRepository implements IMaintenanceRepositoryPort {
 
     // Get total parts used
     const partsStats = await queryBuilder
-      .select(
-        'SUM((jsonb_array_elements(maintenance.parts_used)->>"quantity")::int) as total'
-      )
+      .select('SUM((jsonb_array_elements(maintenance.parts_used)->>"quantity")::int) as total')
       .where("maintenance.atm_id = :atmId", { atmId })
       .getRawOne();
 
@@ -378,21 +435,137 @@ export class MaintenanceRepository implements IMaintenanceRepositoryPort {
     };
   }
 
-  private async getBasicStats(
-    queryBuilder: Repository<MaintenanceRecord>["createQueryBuilder"]
-  ): Promise<{
+  // Métodos para comentarios
+  async addComment(
+    id: string,
+    commentData: MaintenanceCommentData
+  ): Promise<MaintenanceComment> {
+    const maintenance = await this.findById(id);
+    if (!maintenance) {
+      throw new Error("Maintenance record not found");
+    }
+
+    const comment = this.commentRepository.create({
+      ...commentData,
+      maintenance_record_id: id,
+    });
+
+    return this.commentRepository.save(comment);
+  }
+
+  async getComments(id: string): Promise<MaintenanceComment[]> {
+    return this.commentRepository.find({
+      where: { maintenance_record_id: id },
+      relations: ["created_by"],
+      order: { created_at: "DESC" },
+    });
+  }
+
+  async deleteComment(maintenanceId: string, commentId: string): Promise<void> {
+    const comment = await this.commentRepository.findOne({
+      where: { id: commentId, maintenance_record_id: maintenanceId },
+    });
+
+    if (!comment) {
+      throw new Error("Comment not found");
+    }
+
+    await this.commentRepository.remove(comment);
+  }
+
+  // Métodos para mediciones y seguimiento
+  async updateMeasurements(
+    id: string,
+    measurements: TechnicalMeasurement[]
+  ): Promise<MaintenanceRecord> {
+    const maintenance = await this.findById(id);
+    if (!maintenance) {
+      throw new Error("Maintenance record not found");
+    }
+
+    maintenance.technical_measurements = measurements;
+    return this.repository.save(maintenance);
+  }
+
+  async setFollowUpStatus(
+    id: string,
+    requiresFollowUp: boolean,
+    notes?: string
+  ): Promise<MaintenanceRecord> {
+    const maintenance = await this.findById(id);
+    if (!maintenance) {
+      throw new Error("Maintenance record not found");
+    }
+
+    maintenance.requires_follow_up = requiresFollowUp;
+    if (notes) {
+      maintenance.follow_up_notes = notes;
+    }
+
+    return this.repository.save(maintenance);
+  }
+
+  async findRequiringFollowUp(): Promise<MaintenanceRecord[]> {
+    return this.repository.find({
+      where: { requires_follow_up: true },
+      relations: ["atm", "technician", "ticket", "comments", "attachments"],
+      order: { created_at: "DESC" },
+    });
+  }
+
+  // Métodos para adjuntos
+  async addAttachment(
+    id: string,
+    attachmentData: AttachmentData
+  ): Promise<MaintenanceRecord> {
+    const maintenance = await this.findById(id);
+    if (!maintenance) {
+      throw new Error("Maintenance record not found");
+    }
+
+    const attachment = this.attachmentRepository.create({
+      ...attachmentData,
+      maintenance_record_id: id,
+    });
+
+    await this.attachmentRepository.save(attachment);
+    return this.findById(id);
+  }
+
+  async getAttachments(id: string): Promise<Attachment[]> {
+    return this.attachmentRepository.find({
+      where: { maintenance_record_id: id },
+      relations: ["created_by"],
+      order: { created_at: "DESC" },
+    });
+  }
+
+  async deleteAttachment(maintenanceId: string, attachmentId: string): Promise<void> {
+    const attachment = await this.attachmentRepository.findOne({
+      where: { id: attachmentId, maintenance_record_id: maintenanceId },
+    });
+
+    if (!attachment) {
+      throw new Error("Attachment not found");
+    }
+
+    await this.attachmentRepository.remove(attachment);
+  }
+
+  // Métodos auxiliares para estadísticas
+  private async getBasicStats(queryBuilder: SelectQueryBuilder<MaintenanceRecord>): Promise<{
     totalCount: number;
     completedCount: number;
     averageDuration: number;
     byType: Record<MaintenanceType, number>;
   }> {
-    const stats = (await queryBuilder
+    const stats = await queryBuilder
       .select([
         "COUNT(*) as total_count",
         "COUNT(CASE WHEN end_time IS NOT NULL THEN 1 END) as completed_count",
         "AVG(EXTRACT(EPOCH FROM (end_time - start_time))) as avg_duration",
       ])
-      .getRawOne()) as BasicStatsRaw;
+      .getRawOne();
 
     return {
       totalCount: parseInt(stats.total_count) || 0,
@@ -403,21 +576,19 @@ export class MaintenanceRepository implements IMaintenanceRepositoryPort {
   }
 
   private async getPartsStats(
-    queryBuilder: Repository<MaintenanceRecord>["createQueryBuilder"]
+    queryBuilder: SelectQueryBuilder<MaintenanceRecord>
   ): Promise<Array<{ name: string; count: number }>> {
     return this.getMostUsedParts(10);
   }
 
-  private async getTechnicianStats(
-    queryBuilder: Repository<MaintenanceRecord>["createQueryBuilder"]
-  ): Promise<
-    Array<{
-      technician_id: string;
-      completed_count: number;
-      average_duration: number;
-    }>
-  > {
-    const stats = (await queryBuilder
+  private async getTechnicianPerformanceStats(
+    queryBuilder: SelectQueryBuilder<MaintenanceRecord>
+  ): Promise<Array<{
+    technician_id: string;
+    completed_count: number;
+    average_duration: number;
+  }>> {
+    const stats = await queryBuilder
       .select([
         "technician_id",
         "COUNT(*) as completed_count",
@@ -425,7 +596,7 @@ export class MaintenanceRepository implements IMaintenanceRepositoryPort {
       ])
       .where("end_time IS NOT NULL")
       .groupBy("technician_id")
-      .getRawMany()) as TechnicianStatsRaw[];
+      .getRawMany();
 
     return stats.map((stat) => ({
       technician_id: stat.technician_id,
@@ -435,12 +606,12 @@ export class MaintenanceRepository implements IMaintenanceRepositoryPort {
   }
 
   private async getStatsByType(
-    queryBuilder: Repository<MaintenanceRecord>["createQueryBuilder"]
+    queryBuilder: SelectQueryBuilder<MaintenanceRecord>
   ): Promise<Record<MaintenanceType, number>> {
-    const stats = (await queryBuilder
+    const stats = await queryBuilder
       .select(["type", "COUNT(*) as count"])
       .groupBy("type")
-      .getRawMany()) as TypeStatsRaw[];
+      .getRawMany();
 
     return stats.reduce<Record<MaintenanceType, number>>(
       (acc, stat) => ({
@@ -449,37 +620,5 @@ export class MaintenanceRepository implements IMaintenanceRepositoryPort {
       }),
       {} as Record<MaintenanceType, number>
     );
-  }
-
-  async validateMaintenanceCompletion(
-    id: string
-  ): Promise<{ isValid: boolean; errors: string[] }> {
-    const maintenance = await this.findById(id);
-    if (!maintenance) {
-      return { isValid: false, errors: ["Maintenance record not found"] };
-    }
-
-    const errors: string[] = [];
-
-    if (!maintenance.diagnosis) {
-      errors.push("Diagnosis is required");
-    }
-
-    if (!maintenance.work_performed) {
-      errors.push("Work performed description is required");
-    }
-
-    if (!maintenance.parts_used || maintenance.parts_used.length === 0) {
-      errors.push("At least one part must be registered");
-    }
-
-    if (!maintenance.end_time) {
-      errors.push("End time must be set");
-    }
-
-    return {
-      isValid: errors.length === 0,
-      errors,
-    };
   }
 }

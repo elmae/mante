@@ -6,11 +6,14 @@ import {
   UpdateDateColumn,
   ManyToOne,
   OneToOne,
+  OneToMany,
   JoinColumn,
 } from "typeorm";
 import { User } from "./user.entity";
 import { ATM } from "./atm.entity";
 import { Ticket } from "./ticket.entity";
+import { MaintenanceComment } from "./maintenance-comment.entity";
+import { Attachment } from "./attachment.entity";
 
 export enum MaintenanceType {
   FIRST_LINE = "first_line",
@@ -61,8 +64,37 @@ export class MaintenanceRecord {
   @CreateDateColumn({ type: "timestamp" })
   created_at: Date;
 
+  @Column({ type: "boolean", default: false })
+  requires_follow_up: boolean;
+
+  @Column({ type: "text", nullable: true })
+  follow_up_notes: string;
+
+  @Column({ type: "jsonb", nullable: true })
+  technical_measurements: {
+    name: string;
+    value: number;
+    unit: string;
+    threshold?: number;
+  }[];
+
+  @Column({ type: "decimal", precision: 10, scale: 2, default: 0 })
+  total_cost: number;
+
   @UpdateDateColumn({ type: "timestamp" })
   updated_at: Date;
+
+  @OneToMany(
+    () => MaintenanceComment,
+    (comment: MaintenanceComment) => comment.maintenance_record
+  )
+  comments: MaintenanceComment[];
+
+  @OneToMany(
+    () => Attachment,
+    (attachment: Attachment) => attachment.maintenance_record
+  )
+  attachments: Attachment[];
 
   @ManyToOne(() => User, { nullable: true })
   @JoinColumn({ name: "created_by" })
@@ -106,5 +138,24 @@ export class MaintenanceRecord {
           part.serialNumber ? ` - S/N: ${part.serialNumber}` : ""
         }`
     );
+  }
+
+  getTotalCost(): number {
+    return this.total_cost;
+  }
+
+  getAttachmentCount(): number {
+    return this.attachments?.length || 0;
+  }
+
+  needsFollowUp(): boolean {
+    return this.requires_follow_up;
+  }
+
+  getMeasurementsOutOfThreshold(): Array<{name: string; value: number; unit: string; threshold: number}> {
+    return (this.technical_measurements || [])
+      .filter((m): m is typeof m & { threshold: number } =>
+        typeof m.threshold === 'number' && m.value > m.threshold
+      );
   }
 }

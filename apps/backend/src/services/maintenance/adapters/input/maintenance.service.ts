@@ -4,11 +4,16 @@ import {
 } from "../../../../domain/entities/maintenance-record.entity";
 import { IMaintenanceInputPort } from "../../ports/input/maintenance.port";
 import { IMaintenanceRepositoryPort } from "../../ports/output/maintenance-repository.port";
+import { Attachment } from "../../../../domain/entities/attachment.entity";
+import { MaintenanceComment } from "../../../../domain/entities/maintenance-comment.entity";
 import {
   MaintenanceCompletionData,
   MaintenanceFilters,
   MaintenancePart,
   MaintenanceStats,
+  MaintenanceCommentData,
+  TechnicalMeasurement,
+  AttachmentData,
 } from "../../ports/input/maintenance.port";
 
 export class MaintenanceService implements IMaintenanceInputPort {
@@ -188,6 +193,102 @@ export class MaintenanceService implements IMaintenanceInputPort {
 
   async getTicketsRequiringAttention(): Promise<MaintenanceRecord[]> {
     return this.maintenanceRepository.findInProgress();
+  }
+
+  // Implementación de métodos para comentarios
+  async addComment(
+    id: string,
+    commentData: MaintenanceCommentData
+  ): Promise<MaintenanceComment> {
+    const maintenance = await this.findById(id);
+    if (!maintenance) {
+      throw new Error("Maintenance record not found");
+    }
+
+    return this.maintenanceRepository.addComment(id, commentData);
+  }
+
+  async getComments(id: string): Promise<MaintenanceComment[]> {
+    const maintenance = await this.findById(id);
+    if (!maintenance) {
+      throw new Error("Maintenance record not found");
+    }
+
+    return this.maintenanceRepository.getComments(id);
+  }
+
+  async deleteComment(maintenanceId: string, commentId: string): Promise<void> {
+    const maintenance = await this.findById(maintenanceId);
+    if (!maintenance) {
+      throw new Error("Maintenance record not found");
+    }
+
+    await this.maintenanceRepository.deleteComment(maintenanceId, commentId);
+  }
+
+  // Implementación de métodos para mediciones y seguimiento
+  async updateMeasurements(
+    id: string,
+    measurements: TechnicalMeasurement[]
+  ): Promise<MaintenanceRecord> {
+    const maintenance = await this.findById(id);
+    if (!maintenance) {
+      throw new Error("Maintenance record not found");
+    }
+
+    if (maintenance.end_time) {
+      throw new Error("Cannot update measurements of completed maintenance");
+    }
+
+    return this.maintenanceRepository.updateMeasurements(id, measurements);
+  }
+
+  async setFollowUpStatus(
+    id: string,
+    requiresFollowUp: boolean,
+    notes?: string
+  ): Promise<MaintenanceRecord> {
+    const maintenance = await this.findById(id);
+    if (!maintenance) {
+      throw new Error("Maintenance record not found");
+    }
+
+    return this.maintenanceRepository.setFollowUpStatus(id, requiresFollowUp, notes);
+  }
+
+  async findRequiringFollowUp(): Promise<MaintenanceRecord[]> {
+    return this.maintenanceRepository.findRequiringFollowUp();
+  }
+
+  // Implementación de métodos para adjuntos
+  async addAttachment(
+    id: string,
+    attachmentData: AttachmentData
+  ): Promise<MaintenanceRecord> {
+    const maintenance = await this.findById(id);
+    if (!maintenance) {
+      throw new Error("Maintenance record not found");
+    }
+
+    return this.maintenanceRepository.addAttachment(id, attachmentData);
+  }
+
+  async getAttachments(id: string): Promise<Attachment[]> {
+    const maintenance = await this.findById(id);
+    if (!maintenance) {
+      throw new Error("Maintenance record not found");
+    }
+
+    return this.maintenanceRepository.getAttachments(id);
+  }
+
+  async deleteAttachment(maintenanceId: string, attachmentId: string): Promise<void> {
+    const maintenance = await this.findById(maintenanceId);
+    if (!maintenance) {
+      throw new Error("Maintenance record not found");
+    }
+
+    await this.maintenanceRepository.deleteAttachment(maintenanceId, attachmentId);
   }
 
   private async validateMaintenanceData(
