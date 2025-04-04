@@ -30,6 +30,42 @@ graph TD
 
 ## 1. Pruebas Unitarias
 
+### Configuración del Ambiente de Pruebas
+
+#### Base de Datos de Pruebas
+
+La base de datos de pruebas se configura mediante los siguientes componentes:
+
+1. Variables de Entorno (.env.test):
+
+```env
+TEST_DB_HOST=localhost
+TEST_DB_PORT=5432
+TEST_DB_USER=cmms_user
+TEST_DB_PASS=cmms_password2
+TEST_DB_NAME=mante_test
+```
+
+2. Scripts de Gestión:
+
+```bash
+# Inicializar base de datos de pruebas
+npm run test:db:init
+
+# Limpiar datos de prueba
+npm run test:db:clean
+
+# Ejecutar pruebas de integración (incluye inicialización de BD)
+npm run test:integration
+```
+
+3. Utilidades (database-test.utils.ts):
+
+- createTestDatabase(): Crea y configura la base de datos de pruebas
+- clearDatabase(): Limpia todas las tablas
+- closeDatabase(): Cierra la conexión
+- withTestDatabase(): Wrapper para pruebas que requieren BD
+
 ### Frontend Web y Móvil
 
 ```typescript

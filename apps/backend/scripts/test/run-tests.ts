@@ -2,6 +2,8 @@
 import { spawnSync } from "child_process";
 import { resolve } from "path";
 import { existsSync, mkdirSync } from "fs";
+import { createTestDatabase, closeDatabase } from "../../tests/utils/database-test.utils";
+import { DataSource } from "typeorm";
 
 const args = process.argv.slice(2);
 const mode = args[0] || "all";
@@ -74,11 +76,29 @@ console.log(`Update Snapshots: ${updateSnapshots}`);
 console.log(`Debug: ${debug}`);
 console.log("------------------\n");
 
-// Run Jest
-const command = buildJestCommand();
-console.log(`Running command: ${command.join(" ")}\n`);
+// Initialize test database for integration tests
+async function initializeTestDatabase() {
+  if (mode === "integration" || mode === "all") {
+    console.log("\nInitializing test database...");
+    const connection = await createTestDatabase();
+    return connection;
+  }
+  return null;
+}
 
-const result = spawnSync("npx", command, {
+// Run tests
+async function runTests() {
+  let connection: DataSource | null = null;
+  
+  try {
+    // Initialize database if needed
+    connection = await initializeTestDatabase();
+
+    // Run Jest
+    const command = buildJestCommand();
+    console.log(`\nRunning command: ${command.join(" ")}\n`);
+
+    const result = spawnSync("npx", command, {
   stdio: "inherit",
   env: {
     ...process.env,
@@ -110,5 +130,18 @@ if (coverage) {
   });
 }
 
-console.log("\nTests completed successfully!");
-process.exit(0);
+      console.log("\nTests completed successfully!");
+    } finally {
+      // Cleanup database connection
+      if (connection) {
+        console.log("\nCleaning up test database...");
+        await closeDatabase(connection);
+      }
+    }
+}
+
+// Execute tests with proper setup and cleanup
+runTests().catch((error) => {
+  console.error("Error running tests:", error);
+  process.exit(1);
+});
