@@ -48,11 +48,17 @@ Vista de ATMs - Fase Final:
     - Componente ATMDetails
     - Integración con modal
     - Visualización de información completa
+  - Registro de mantenimiento ✅
+    - Servicio de API para mantenimientos
+    - Formulario con validaciones completas
+    - Integración con hook useATMs
+    - Modal dedicado para registro
 
 - Funcionalidades pendientes:
-  - Interfaz de registro de mantenimiento
   - Implementar diálogos de confirmación
   - Integración con backend real
+  - Visualización del historial de mantenimientos
+  - Historial de mantenimientos
 
 #### Próximas Rutas a Implementar:
 

@@ -1,6 +1,10 @@
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { atmService, type ATMFilters, type ATM } from "@/services/api/atm";
+import {
+  maintenanceService,
+  type CreateMaintenanceRecord,
+} from "@/services/api/maintenance";
 
 export function useATMs(initialFilters: ATMFilters = {}) {
   const [filters, setFilters] = useState<ATMFilters>(initialFilters);
@@ -36,6 +40,20 @@ export function useATMs(initialFilters: ATMFilters = {}) {
     },
   });
 
+  // Mutation para registrar mantenimiento
+  const maintenanceMutation = useMutation({
+    mutationFn: ({
+      atmId,
+      data,
+    }: {
+      atmId: string;
+      data: CreateMaintenanceRecord;
+    }) => maintenanceService.createMaintenance(atmId, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["atms"] });
+    },
+  });
+
   const updateFilters = (newFilters: Partial<ATMFilters>) => {
     setFilters((prev) => ({
       ...prev,
@@ -57,6 +75,7 @@ export function useATMs(initialFilters: ATMFilters = {}) {
     error,
     updateFilters,
     refetch,
+    // CRUD operations
     createATM: createMutation.mutate,
     updateATM: updateMutation.mutate,
     deleteATM: deleteMutation.mutate,
@@ -66,5 +85,9 @@ export function useATMs(initialFilters: ATMFilters = {}) {
     createError: createMutation.error,
     updateError: updateMutation.error,
     deleteError: deleteMutation.error,
+    // Maintenance operations
+    registerMaintenance: maintenanceMutation.mutate,
+    isRegistering: maintenanceMutation.isPending,
+    maintenanceError: maintenanceMutation.error,
   };
 }

@@ -6,9 +6,11 @@ import { ATMFilters } from "@/components/atms/ATMFilters";
 import { ATMTable } from "@/components/atms/ATMTable";
 import { ATMForm } from "@/components/atms/ATMForm";
 import { ATMDetails } from "@/components/atms/ATMDetails";
+import { MaintenanceForm } from "@/components/atms/MaintenanceForm";
 import { Modal } from "@/components/common/Modal";
 import { Pagination } from "@/components/common/Pagination";
 import type { ATM } from "@/services/api/atm";
+import type { CreateMaintenanceRecord } from "@/services/api/maintenance";
 import { DashboardSkeleton } from "@/components/dashboard/DashboardSkeleton";
 import { DashboardError } from "@/components/dashboard/DashboardError";
 
@@ -16,6 +18,7 @@ export default function ATMsPage() {
   // Estado de modales y ATM seleccionado
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [isDetailsOpen, setIsDetailsOpen] = useState(false);
+  const [isMaintenanceOpen, setIsMaintenanceOpen] = useState(false);
   const [selectedATM, setSelectedATM] = useState<ATM | undefined>();
 
   // Estado y operaciones de ATMs
@@ -33,6 +36,9 @@ export default function ATMsPage() {
     updateATM,
     isCreating,
     isUpdating,
+    registerMaintenance,
+    isRegistering,
+    maintenanceError,
   } = useATMs({ limit: 10 });
 
   if (isLoading) {
@@ -67,8 +73,27 @@ export default function ATMsPage() {
   };
 
   const handleMaintenance = (atm: ATM) => {
-    // TODO: Implementar registro de mantenimiento
-    console.log("Mantenimiento ATM:", atm);
+    setSelectedATM(atm);
+    setIsMaintenanceOpen(true);
+  };
+  const handleMaintenanceSubmit = async (data: CreateMaintenanceRecord) => {
+    if (!selectedATM) return;
+
+    try {
+      await registerMaintenance({
+        atmId: selectedATM.id,
+        data,
+      });
+      setIsMaintenanceOpen(false);
+      setSelectedATM(undefined);
+    } catch (error) {
+      console.error("Error al registrar mantenimiento:", error);
+      if (maintenanceError) {
+        alert(
+          "No se pudo registrar el mantenimiento. Por favor, inténtelo de nuevo."
+        );
+      }
+    }
   };
 
   return (
@@ -132,6 +157,28 @@ export default function ATMsPage() {
         title={`Detalles del ATM ${selectedATM?.code || ""}`}
       >
         {selectedATM && <ATMDetails atm={selectedATM} />}
+      </Modal>
+
+      {/* Modal de Mantenimiento */}
+      <Modal
+        isOpen={isMaintenanceOpen}
+        onClose={() => {
+          setIsMaintenanceOpen(false);
+          setSelectedATM(undefined);
+        }}
+        title={`Registrar Mantenimiento - ATM ${selectedATM?.code || ""}`}
+      >
+        {selectedATM && (
+          <MaintenanceForm
+            atm={selectedATM}
+            onSubmit={handleMaintenanceSubmit}
+            onCancel={() => {
+              setIsMaintenanceOpen(false);
+              setSelectedATM(undefined);
+            }}
+            isSubmitting={isRegistering}
+          />
+        )}
       </Modal>
 
       {/* Modal de Crear/Editar ATM */}
