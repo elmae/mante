@@ -4,7 +4,14 @@
 
 El sistema CMMS se basa en una arquitectura multicapa, separando la presentación, la lógica de negocio y la persistencia de datos. Se recomienda una arquitectura hexagonal o de cebolla para asegurar la mantenibilidad y escalabilidad.
 
-- **Frontend Web:** Desarrollado con Next.js (React), se encarga de la interfaz de usuario para administradores, operadores y clientes. Se comunica con el backend a través de APIs RESTful.
+- **Frontend Web:** Desarrollado con Next.js (React), implementando una arquitectura basada en Server y Client Components:
+
+  - **Server Components:** Para metadata, SEO y contenido estático
+  - **Client Components:** Para interactividad y estado del cliente
+  - **Providers Pattern:** Para manejar el estado global y contextos del cliente
+  - Se comunica con el backend a través de APIs RESTful.
+
+- **Frontend Móvil:** Desarrollado con React Native, ofrece una interfaz optimizada para técnicos en campo (usuarios con rol de Técnico). Se comunica con el backend a través de APIs RESTful y gestiona la sincronización de datos offline.
 - **Frontend Móvil:** Desarrollado con React Native, ofrece una interfaz optimizada para técnicos en campo (usuarios con rol de Técnico). Se comunica con el backend a través de APIs RESTful y gestiona la sincronización de datos offline.
 - **Backend:** Desarrollado con Node.js y Express, implementa la lógica de negocio, la gestión de usuarios y roles, la gestión de tickets, la generación de reportes y las APIs RESTful.
 - **Base de Datos:** PostgreSQL se utiliza para el almacenamiento persistente de datos, incluyendo información de ATMs, usuarios, tickets, mantenimientos, SLAs, zonas geográficas, piezas, roles y clientes.
