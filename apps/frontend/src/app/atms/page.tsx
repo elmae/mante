@@ -8,6 +8,7 @@ import { ATMForm } from "@/components/atms/ATMForm";
 import { ATMDetails } from "@/components/atms/ATMDetails";
 import { MaintenanceForm } from "@/components/atms/MaintenanceForm";
 import { Modal } from "@/components/common/Modal";
+import { ConfirmDialog } from "@/components/common/ConfirmDialog";
 import { Pagination } from "@/components/common/Pagination";
 import type { ATM } from "@/services/api/atm";
 import type { CreateMaintenanceRecord } from "@/services/api/maintenance";
@@ -19,7 +20,17 @@ export default function ATMsPage() {
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [isDetailsOpen, setIsDetailsOpen] = useState(false);
   const [isMaintenanceOpen, setIsMaintenanceOpen] = useState(false);
+  const [isConfirmDeleteOpen, setIsConfirmDeleteOpen] = useState(false);
+  const [isConfirmSaveOpen, setIsConfirmSaveOpen] = useState(false);
+  const [isConfirmMaintenanceOpen, setIsConfirmMaintenanceOpen] =
+    useState(false);
   const [selectedATM, setSelectedATM] = useState<ATM | undefined>();
+  const [pendingFormData, setPendingFormData] = useState<
+    Omit<ATM, "id"> | undefined
+  >();
+  const [pendingMaintenance, setPendingMaintenance] = useState<
+    CreateMaintenanceRecord | undefined
+  >();
 
   // Estado y operaciones de ATMs
   const {
@@ -36,6 +47,7 @@ export default function ATMsPage() {
     updateATM,
     isCreating,
     isUpdating,
+    isDeleting,
     registerMaintenance,
     isRegistering,
     maintenanceError,
@@ -59,16 +71,45 @@ export default function ATMsPage() {
     setIsFormOpen(true);
   };
 
-  const handleDelete = async (atm: ATM) => {
-    if (
-      window.confirm(`¿Estás seguro que deseas eliminar el ATM ${atm.code}?`)
-    ) {
-      try {
-        await deleteATM(atm.id);
-      } catch (error) {
-        console.error("Error al eliminar ATM:", error);
-        alert("No se pudo eliminar el ATM. Por favor, inténtelo de nuevo.");
+  const handleDelete = (atm: ATM) => {
+    setSelectedATM(atm);
+    setIsConfirmDeleteOpen(true);
+  };
+
+  const handleFormSubmit = (data: Omit<ATM, "id">) => {
+    setPendingFormData(data);
+    setIsConfirmSaveOpen(true);
+  };
+
+  const handleConfirmDelete = async () => {
+    if (!selectedATM) return;
+
+    try {
+      await deleteATM(selectedATM.id);
+      setIsConfirmDeleteOpen(false);
+      setSelectedATM(undefined);
+    } catch (error) {
+      console.error("Error al eliminar ATM:", error);
+      alert("No se pudo eliminar el ATM. Por favor, inténtelo de nuevo.");
+    }
+  };
+
+  const handleConfirmSave = async () => {
+    if (!pendingFormData) return;
+
+    try {
+      if (selectedATM) {
+        await updateATM({ id: selectedATM.id, data: pendingFormData });
+      } else {
+        await createATM(pendingFormData);
       }
+      setIsFormOpen(false);
+      setIsConfirmSaveOpen(false);
+      setSelectedATM(undefined);
+      setPendingFormData(undefined);
+    } catch (error) {
+      console.error("Error al guardar ATM:", error);
+      alert("No se pudo guardar el ATM. Por favor, inténtelo de nuevo.");
     }
   };
 
@@ -76,16 +117,24 @@ export default function ATMsPage() {
     setSelectedATM(atm);
     setIsMaintenanceOpen(true);
   };
-  const handleMaintenanceSubmit = async (data: CreateMaintenanceRecord) => {
-    if (!selectedATM) return;
+
+  const handleMaintenanceSubmit = (data: CreateMaintenanceRecord) => {
+    setPendingMaintenance(data);
+    setIsConfirmMaintenanceOpen(true);
+  };
+
+  const handleConfirmMaintenance = async () => {
+    if (!selectedATM || !pendingMaintenance) return;
 
     try {
       await registerMaintenance({
         atmId: selectedATM.id,
-        data,
+        data: pendingMaintenance,
       });
       setIsMaintenanceOpen(false);
+      setIsConfirmMaintenanceOpen(false);
       setSelectedATM(undefined);
+      setPendingMaintenance(undefined);
     } catch (error) {
       console.error("Error al registrar mantenimiento:", error);
       if (maintenanceError) {
@@ -159,6 +208,26 @@ export default function ATMsPage() {
         {selectedATM && <ATMDetails atm={selectedATM} />}
       </Modal>
 
+      {/* Modal de Crear/Editar ATM */}
+      <Modal
+        isOpen={isFormOpen}
+        onClose={() => {
+          setIsFormOpen(false);
+          setSelectedATM(undefined);
+        }}
+        title={selectedATM ? "Editar ATM" : "Crear ATM"}
+      >
+        <ATMForm
+          atm={selectedATM}
+          onSubmit={handleFormSubmit}
+          onCancel={() => {
+            setIsFormOpen(false);
+            setSelectedATM(undefined);
+          }}
+          isSubmitting={isCreating || isUpdating}
+        />
+      </Modal>
+
       {/* Modal de Mantenimiento */}
       <Modal
         isOpen={isMaintenanceOpen}
@@ -181,40 +250,48 @@ export default function ATMsPage() {
         )}
       </Modal>
 
-      {/* Modal de Crear/Editar ATM */}
-      <Modal
-        isOpen={isFormOpen}
+      {/* Diálogos de confirmación */}
+      <ConfirmDialog
+        isOpen={isConfirmDeleteOpen}
         onClose={() => {
-          setIsFormOpen(false);
+          setIsConfirmDeleteOpen(false);
           setSelectedATM(undefined);
         }}
-        title={selectedATM ? "Editar ATM" : "Crear ATM"}
-      >
-        <ATMForm
-          atm={selectedATM}
-          onSubmit={async (data) => {
-            try {
-              if (selectedATM) {
-                await updateATM({ id: selectedATM.id, data });
-              } else {
-                await createATM(data);
-              }
-              setIsFormOpen(false);
-              setSelectedATM(undefined);
-            } catch (error) {
-              console.error("Error al guardar ATM:", error);
-              alert(
-                "No se pudo guardar el ATM. Por favor, inténtelo de nuevo."
-              );
-            }
-          }}
-          onCancel={() => {
-            setIsFormOpen(false);
-            setSelectedATM(undefined);
-          }}
-          isSubmitting={isCreating || isUpdating}
-        />
-      </Modal>
+        onConfirm={handleConfirmDelete}
+        title="Eliminar ATM"
+        message={`¿Estás seguro que deseas eliminar el ATM ${selectedATM?.code}? Esta acción no se puede deshacer.`}
+        confirmText="Eliminar"
+        type="danger"
+        isLoading={isDeleting}
+      />
+
+      <ConfirmDialog
+        isOpen={isConfirmSaveOpen}
+        onClose={() => {
+          setIsConfirmSaveOpen(false);
+          setPendingFormData(undefined);
+        }}
+        onConfirm={handleConfirmSave}
+        title={selectedATM ? "Guardar Cambios" : "Crear ATM"}
+        message="¿Estás seguro que deseas guardar los cambios?"
+        confirmText="Guardar"
+        type="info"
+        isLoading={isCreating || isUpdating}
+      />
+
+      <ConfirmDialog
+        isOpen={isConfirmMaintenanceOpen}
+        onClose={() => {
+          setIsConfirmMaintenanceOpen(false);
+          setPendingMaintenance(undefined);
+        }}
+        onConfirm={handleConfirmMaintenance}
+        title="Registrar Mantenimiento"
+        message="¿Estás seguro que deseas registrar este mantenimiento?"
+        confirmText="Registrar"
+        type="warning"
+        isLoading={isRegistering}
+      />
     </div>
   );
 }

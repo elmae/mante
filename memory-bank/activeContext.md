@@ -55,9 +55,16 @@ Vista de ATMs - Fase Final:
     - Modal dedicado para registro
 
 - Funcionalidades pendientes:
-  - Implementar diálogos de confirmación
+
   - Integración con backend real
   - Visualización del historial de mantenimientos
+
+- Completado:
+  - Diálogos de confirmación ✅
+    - Componente ConfirmDialog reutilizable
+    - Confirmación para eliminar ATM
+    - Confirmación para guardar cambios
+    - Confirmación para mantenimiento
   - Historial de mantenimientos
 
 #### Próximas Rutas a Implementar:
