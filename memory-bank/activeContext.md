@@ -2,74 +2,66 @@
 
 ## Enfoque Actual
 
-### Frontend: Integración con Backend
+### Frontend: Vista de Mantenimiento
 
 #### Completado:
 
-- Cliente API centralizado:
+- Implementación de la ruta /maintenance:
 
-  - Configuración base con axios ✅
-  - Interceptor para autenticación ✅
-  - Manejo de errores estandarizado ✅
-  - Tipos de error personalizados ✅
+  - Página principal de mantenimientos ✅
+  - Página de mantenimientos por ATM ✅
+  - Layout compartido ✅
 
-- Servicios mejorados:
+- Componentes de Mantenimiento:
 
-  - ATM y Maintenance con manejo de errores específicos ✅
-  - Tipos TypeScript completos ✅
-  - Errores tipados y descriptivos ✅
+  - MaintenanceFilters para filtrado ✅
+  - MaintenanceTable para listado ✅
+  - MaintenanceDetails para vista detallada ✅
+  - Reutilización de MaintenanceForm ✅
 
-- Hook useATMs mejorado:
+- Custom Hooks:
 
-  - Caché y reintentos configurados ✅
-  - Mensajes de error descriptivos ✅
-  - Notificaciones toast para feedback ✅
-  - Invalidación de caché optimizada ✅
+  - useMaintenanceRecords para datos ✅
+  - useATM para información del ATM ✅
 
-- Formularios actualizados:
-
-  - ATMForm con validación Zod ✅
-  - MaintenanceForm con validación Zod ✅
-  - Manejo de errores del backend ✅
-  - Valores por defecto apropiados ✅
-
-- Componentes con mejor manejo de estados:
+- Integración con Backend:
+  - Cliente API centralizado ✅
+  - Servicios tipados ✅
+  - Manejo de errores ✅
   - Estados de carga ✅
-  - Estados de error ✅
-  - Confirmaciones para acciones importantes ✅
-  - Feedback visual mejorado ✅
+  - Notificaciones toast ✅
 
 #### En Progreso:
 
-1. Vista de ATMs - Backend Integration:
+1. Mantenimiento - Mejoras:
 
-   - Pruebas de integración completas
-   - Optimización de rendimiento
-   - Monitoreo y logging
+   - Implementar tests unitarios
+   - Optimizar rendimiento
+   - Mejorar UX móvil
 
 2. Vista de Tickets:
 
-   - Frontend en progreso
+   - Frontend en desarrollo
    - Backend APIs listas
    - Pendiente integración
 
 3. Rutas implementadas:
    - /atms ✅
    - /tickets ✅
-   - /maintenance (siguiente)
+   - /maintenance ✅
    - /clients (pendiente)
    - /settings (pendiente)
 
 #### Plan de Desarrollo:
 
-1. Completar pruebas de integración
-2. Implementar monitoreo y logging
-3. Desarrollar vista de mantenimiento
-4. Continuar con vistas restantes
+1. Implementar tests para vista de mantenimiento
+2. Comenzar desarrollo de vista de clientes
+3. Mejorar UX/UI general
+4. Completar documentación
 
 ## Próximos Pasos
 
-1. Pruebas de integración end-to-end
-2. Optimización de rendimiento
-3. Configuración de monitoreo
-4. Documentación de APIs
+1. Escribir tests para componentes de mantenimiento
+2. Implementar vista de clientes
+3. Mejorar feedback visual y UX
+4. Documentar nuevas funcionalidades
