@@ -56,8 +56,9 @@ Vista de ATMs - Fase Final:
 
 - Funcionalidades pendientes:
 
-  - Integración con backend real
-  - Visualización del historial de mantenimientos
+  - Integración con backend real (en progreso)
+  - Visualización del historial de mantenimientos ✅
+  - Gestión de adjuntos en mantenimientos ✅
 
 - Completado:
   - Diálogos de confirmación ✅
@@ -171,11 +172,11 @@ Vista de ATMs - Fase Final:
 
 2. Optimización y Monitoreo:
 
-   - Implementar caché con Redis
-   - Optimizar consultas de base de datos
-   - Implementar índices adicionales
-   - Configurar sistema de colas
-   - Implementar monitoreo
+   - Implementar caché con Redis ✅
+   - Optimizar consultas de base de datos ✅
+   - Implementar índices adicionales optimizados ✅
+   - Configurar sistema de colas (RabbitMQ) ✅
+   - Implementar monitoreo (Prometheus/Grafana) ✅
 
 3. Infraestructura:
    - Configurar CI/CD

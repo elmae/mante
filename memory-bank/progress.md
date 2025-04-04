@@ -148,7 +148,8 @@
 
 ## Known Issues
 
-1. None reported at this time
+1. Retraso en la sincronización de adjuntos entre servicios
+2. Inconsistencias en tipos de datos para fechas de mantenimiento
 
 ## Technical Debt
 
