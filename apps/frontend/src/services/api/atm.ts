@@ -1,6 +1,4 @@
-import axios from "axios";
-
-const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001";
+import { apiClient, handleApiError } from "./client";
 
 export interface ATM {
   id: string;
@@ -37,30 +35,66 @@ export interface PaginatedATMs {
   totalPages: number;
 }
 
+export class ATMError extends Error {
+  constructor(
+    message: string,
+    public code: string,
+    public details?: Record<string, unknown>
+  ) {
+    super(message);
+    this.name = "ATMError";
+  }
+}
+
 export const atmService = {
   async getATMs(filters: ATMFilters = {}): Promise<PaginatedATMs> {
-    const response = await axios.get(`${API_URL}/api/atms`, {
-      params: filters,
-    });
-    return response.data;
+    try {
+      const response = await apiClient.get("/atms", {
+        params: filters,
+      });
+      return response.data;
+    } catch (error) {
+      const apiError = handleApiError(error);
+      throw new ATMError(apiError.message, apiError.code, apiError.details);
+    }
   },
 
   async getATM(id: string): Promise<ATM> {
-    const response = await axios.get(`${API_URL}/api/atms/${id}`);
-    return response.data;
+    try {
+      const response = await apiClient.get(`/atms/${id}`);
+      return response.data;
+    } catch (error) {
+      const apiError = handleApiError(error);
+      throw new ATMError(apiError.message, apiError.code, apiError.details);
+    }
   },
 
   async updateATM(id: string, data: Partial<ATM>): Promise<ATM> {
-    const response = await axios.patch(`${API_URL}/api/atms/${id}`, data);
-    return response.data;
+    try {
+      const response = await apiClient.patch(`/atms/${id}`, data);
+      return response.data;
+    } catch (error) {
+      const apiError = handleApiError(error);
+      throw new ATMError(apiError.message, apiError.code, apiError.details);
+    }
   },
 
   async deleteATM(id: string): Promise<void> {
-    await axios.delete(`${API_URL}/api/atms/${id}`);
+    try {
+      await apiClient.delete(`/atms/${id}`);
+    } catch (error) {
+      const apiError = handleApiError(error);
+      throw new ATMError(apiError.message, apiError.code, apiError.details);
+    }
   },
 
   async createATM(data: Omit<ATM, "id">): Promise<ATM> {
-    const response = await axios.post(`${API_URL}/api/atms`, data);
-    return response.data;
+    try {
+      const response = await apiClient.post("/atms", data);
+      return response.data;
+    } catch (error) {
+      const apiError = handleApiError(error);
+      throw new ATMError(apiError.message, apiError.code, apiError.details);
+    }
   },
 };

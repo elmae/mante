@@ -1,5 +1,3 @@
-"use client";
-
 import { Fragment } from "react";
 import { Dialog, Transition } from "@headlessui/react";
 import { ExclamationTriangleIcon } from "@heroicons/react/24/outline";
@@ -10,10 +8,14 @@ interface ConfirmDialogProps {
   onConfirm: () => void;
   title: string;
   message: string;
-  confirmText?: string;
-  cancelText?: string;
+  confirmText: string;
   type?: "danger" | "warning" | "info";
   isLoading?: boolean;
+  error?: {
+    message: string;
+    code: string;
+    details?: Record<string, unknown>;
+  } | null;
 }
 
 export function ConfirmDialog({
@@ -22,38 +24,29 @@ export function ConfirmDialog({
   onConfirm,
   title,
   message,
-  confirmText = "Confirmar",
-  cancelText = "Cancelar",
-  type = "danger",
+  confirmText,
+  type = "info",
   isLoading = false,
+  error = null,
 }: ConfirmDialogProps) {
-  const getColorsByType = () => {
-    switch (type) {
-      case "danger":
-        return {
-          icon: "text-red-600",
-          button: "bg-red-600 hover:bg-red-500 focus-visible:outline-red-600",
-        };
-      case "warning":
-        return {
-          icon: "text-yellow-600",
-          button:
-            "bg-yellow-600 hover:bg-yellow-500 focus-visible:outline-yellow-600",
-        };
-      case "info":
-        return {
-          icon: "text-blue-600",
-          button:
-            "bg-blue-600 hover:bg-blue-500 focus-visible:outline-blue-600",
-        };
-    }
+  const colorClasses = {
+    danger: {
+      button: "bg-red-600 hover:bg-red-500",
+      icon: "text-red-600",
+    },
+    warning: {
+      button: "bg-yellow-600 hover:bg-yellow-500",
+      icon: "text-yellow-600",
+    },
+    info: {
+      button: "bg-blue-600 hover:bg-blue-500",
+      icon: "text-blue-600",
+    },
   };
-
-  const colors = getColorsByType();
 
   return (
     <Transition.Root show={isOpen} as={Fragment}>
-      <Dialog as="div" className="relative z-50" onClose={onClose}>
+      <Dialog as="div" className="relative z-10" onClose={onClose}>
         <Transition.Child
           as={Fragment}
           enter="ease-out duration-300"
@@ -66,7 +59,7 @@ export function ConfirmDialog({
           <div className="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity" />
         </Transition.Child>
 
-        <div className="fixed inset-0 z-10 w-screen overflow-y-auto">
+        <div className="fixed inset-0 z-10 overflow-y-auto">
           <div className="flex min-h-full items-end justify-center p-4 text-center sm:items-center sm:p-0">
             <Transition.Child
               as={Fragment}
@@ -89,7 +82,7 @@ export function ConfirmDialog({
                     }-100 sm:mx-0 sm:h-10 sm:w-10`}
                   >
                     <ExclamationTriangleIcon
-                      className={`h-6 w-6 ${colors.icon}`}
+                      className={`h-6 w-6 ${colorClasses[type].icon}`}
                       aria-hidden="true"
                     />
                   </div>
@@ -102,17 +95,26 @@ export function ConfirmDialog({
                     </Dialog.Title>
                     <div className="mt-2">
                       <p className="text-sm text-gray-500">{message}</p>
+                      {error && (
+                        <div className="mt-2 rounded-md bg-red-50 p-2">
+                          <p className="text-sm text-red-700">
+                            Error ({error.code}): {error.message}
+                          </p>
+                        </div>
+                      )}
                     </div>
                   </div>
                 </div>
                 <div className="mt-5 sm:mt-4 sm:flex sm:flex-row-reverse">
                   <button
                     type="button"
-                    className={`inline-flex w-full justify-center rounded-md px-3 py-2 text-sm font-semibold text-white shadow-sm ${colors.button} sm:ml-3 sm:w-auto disabled:opacity-50 disabled:cursor-not-allowed`}
+                    className={`inline-flex w-full justify-center rounded-md px-3 py-2 text-sm font-semibold text-white shadow-sm sm:ml-3 sm:w-auto ${
+                      colorClasses[type].button
+                    } ${isLoading ? "opacity-75 cursor-not-allowed" : ""}`}
                     onClick={onConfirm}
                     disabled={isLoading}
                   >
-                    {isLoading ? "Procesando..." : confirmText}
+                    {isLoading ? "Cargando..." : confirmText}
                   </button>
                   <button
                     type="button"
@@ -120,7 +122,7 @@ export function ConfirmDialog({
                     onClick={onClose}
                     disabled={isLoading}
                   >
-                    {cancelText}
+                    Cancelar
                   </button>
                 </div>
               </Dialog.Panel>
@@ -131,5 +133,3 @@ export function ConfirmDialog({
     </Transition.Root>
   );
 }
-
-export default ConfirmDialog;

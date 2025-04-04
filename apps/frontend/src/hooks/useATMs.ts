@@ -1,10 +1,23 @@
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { atmService, type ATMFilters, type ATM } from "@/services/api/atm";
+import {
+  atmService,
+  type ATMFilters,
+  type ATM,
+  ATMError,
+} from "@/services/api/atm";
 import {
   maintenanceService,
   type CreateMaintenanceRecord,
+  MaintenanceError,
 } from "@/services/api/maintenance";
+import { toast } from "sonner";
+
+interface UseATMsError {
+  message: string;
+  code: string;
+  details?: Record<string, unknown>;
+}
 
 export function useATMs(initialFilters: ATMFilters = {}) {
   const [filters, setFilters] = useState<ATMFilters>(initialFilters);
@@ -13,6 +26,12 @@ export function useATMs(initialFilters: ATMFilters = {}) {
   const { data, isLoading, error, refetch } = useQuery({
     queryKey: ["atms", filters],
     queryFn: () => atmService.getATMs(filters),
+    retry: (failureCount, error) => {
+      if (error instanceof ATMError && error.code === "UNAUTHORIZED") {
+        return false; // No reintentar errores de autenticación
+      }
+      return failureCount < 3; // Reintentar otras fallas hasta 3 veces
+    },
   });
 
   // Mutation para crear un ATM
@@ -20,6 +39,10 @@ export function useATMs(initialFilters: ATMFilters = {}) {
     mutationFn: atmService.createATM,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["atms"] });
+      toast.success("ATM creado exitosamente");
+    },
+    onError: (error: ATMError) => {
+      toast.error(error.message);
     },
   });
 
@@ -29,6 +52,10 @@ export function useATMs(initialFilters: ATMFilters = {}) {
       atmService.updateATM(id, data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["atms"] });
+      toast.success("ATM actualizado exitosamente");
+    },
+    onError: (error: ATMError) => {
+      toast.error(error.message);
     },
   });
 
@@ -37,6 +64,10 @@ export function useATMs(initialFilters: ATMFilters = {}) {
     mutationFn: atmService.deleteATM,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["atms"] });
+      toast.success("ATM eliminado exitosamente");
+    },
+    onError: (error: ATMError) => {
+      toast.error(error.message);
     },
   });
 
@@ -51,6 +82,10 @@ export function useATMs(initialFilters: ATMFilters = {}) {
     }) => maintenanceService.createMaintenance(atmId, data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["atms"] });
+      toast.success("Mantenimiento registrado exitosamente");
+    },
+    onError: (error: MaintenanceError) => {
+      toast.error(error.message);
     },
   });
 
@@ -64,6 +99,17 @@ export function useATMs(initialFilters: ATMFilters = {}) {
     }));
   };
 
+  const formatError = (error: unknown): UseATMsError | null => {
+    if (error instanceof ATMError || error instanceof MaintenanceError) {
+      return {
+        message: error.message,
+        code: error.code,
+        details: error.details,
+      };
+    }
+    return null;
+  };
+
   return {
     atms: data?.data || [],
     total: data?.total || 0,
@@ -72,7 +118,7 @@ export function useATMs(initialFilters: ATMFilters = {}) {
     totalPages: data?.totalPages || 1,
     filters,
     isLoading,
-    error,
+    error: formatError(error),
     updateFilters,
     refetch,
     // CRUD operations
@@ -82,12 +128,12 @@ export function useATMs(initialFilters: ATMFilters = {}) {
     isCreating: createMutation.isPending,
     isUpdating: updateMutation.isPending,
     isDeleting: deleteMutation.isPending,
-    createError: createMutation.error,
-    updateError: updateMutation.error,
-    deleteError: deleteMutation.error,
+    createError: formatError(createMutation.error),
+    updateError: formatError(updateMutation.error),
+    deleteError: formatError(deleteMutation.error),
     // Maintenance operations
     registerMaintenance: maintenanceMutation.mutate,
     isRegistering: maintenanceMutation.isPending,
-    maintenanceError: maintenanceMutation.error,
+    maintenanceError: formatError(maintenanceMutation.error),
   };
 }

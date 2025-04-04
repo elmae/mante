@@ -10,10 +10,10 @@ import { MaintenanceForm } from "@/components/atms/MaintenanceForm";
 import { Modal } from "@/components/common/Modal";
 import { ConfirmDialog } from "@/components/common/ConfirmDialog";
 import { Pagination } from "@/components/common/Pagination";
-import type { ATM } from "@/services/api/atm";
-import type { CreateMaintenanceRecord } from "@/services/api/maintenance";
 import { DashboardSkeleton } from "@/components/dashboard/DashboardSkeleton";
 import { DashboardError } from "@/components/dashboard/DashboardError";
+import type { ATM } from "@/services/api/atm";
+import type { CreateMaintenanceRecord } from "@/services/api/maintenance";
 
 export default function ATMsPage() {
   // Estado de modales y ATM seleccionado
@@ -48,6 +48,9 @@ export default function ATMsPage() {
     isCreating,
     isUpdating,
     isDeleting,
+    createError,
+    updateError,
+    deleteError,
     registerMaintenance,
     isRegistering,
     maintenanceError,
@@ -58,7 +61,13 @@ export default function ATMsPage() {
   }
 
   if (error) {
-    return <DashboardError message="Error al cargar los ATMs" />;
+    return (
+      <DashboardError
+        message={error.message || "Error al cargar los ATMs"}
+        code={error.code}
+        retry={() => updateFilters(filters)}
+      />
+    );
   }
 
   const handleView = (atm: ATM) => {
@@ -83,34 +92,23 @@ export default function ATMsPage() {
 
   const handleConfirmDelete = async () => {
     if (!selectedATM) return;
-
-    try {
-      await deleteATM(selectedATM.id);
-      setIsConfirmDeleteOpen(false);
-      setSelectedATM(undefined);
-    } catch (error) {
-      console.error("Error al eliminar ATM:", error);
-      alert("No se pudo eliminar el ATM. Por favor, inténtelo de nuevo.");
-    }
+    await deleteATM(selectedATM.id);
+    setIsConfirmDeleteOpen(false);
+    setSelectedATM(undefined);
   };
 
   const handleConfirmSave = async () => {
     if (!pendingFormData) return;
 
-    try {
-      if (selectedATM) {
-        await updateATM({ id: selectedATM.id, data: pendingFormData });
-      } else {
-        await createATM(pendingFormData);
-      }
-      setIsFormOpen(false);
-      setIsConfirmSaveOpen(false);
-      setSelectedATM(undefined);
-      setPendingFormData(undefined);
-    } catch (error) {
-      console.error("Error al guardar ATM:", error);
-      alert("No se pudo guardar el ATM. Por favor, inténtelo de nuevo.");
+    if (selectedATM) {
+      await updateATM({ id: selectedATM.id, data: pendingFormData });
+    } else {
+      await createATM(pendingFormData);
     }
+    setIsFormOpen(false);
+    setIsConfirmSaveOpen(false);
+    setSelectedATM(undefined);
+    setPendingFormData(undefined);
   };
 
   const handleMaintenance = (atm: ATM) => {
@@ -125,24 +123,14 @@ export default function ATMsPage() {
 
   const handleConfirmMaintenance = async () => {
     if (!selectedATM || !pendingMaintenance) return;
-
-    try {
-      await registerMaintenance({
-        atmId: selectedATM.id,
-        data: pendingMaintenance,
-      });
-      setIsMaintenanceOpen(false);
-      setIsConfirmMaintenanceOpen(false);
-      setSelectedATM(undefined);
-      setPendingMaintenance(undefined);
-    } catch (error) {
-      console.error("Error al registrar mantenimiento:", error);
-      if (maintenanceError) {
-        alert(
-          "No se pudo registrar el mantenimiento. Por favor, inténtelo de nuevo."
-        );
-      }
-    }
+    await registerMaintenance({
+      atmId: selectedATM.id,
+      data: pendingMaintenance,
+    });
+    setIsMaintenanceOpen(false);
+    setIsConfirmMaintenanceOpen(false);
+    setSelectedATM(undefined);
+    setPendingMaintenance(undefined);
   };
 
   return (
@@ -225,6 +213,7 @@ export default function ATMsPage() {
             setSelectedATM(undefined);
           }}
           isSubmitting={isCreating || isUpdating}
+          error={selectedATM ? updateError : createError}
         />
       </Modal>
 
@@ -246,6 +235,7 @@ export default function ATMsPage() {
               setSelectedATM(undefined);
             }}
             isSubmitting={isRegistering}
+            error={maintenanceError}
           />
         )}
       </Modal>
@@ -263,6 +253,7 @@ export default function ATMsPage() {
         confirmText="Eliminar"
         type="danger"
         isLoading={isDeleting}
+        error={deleteError}
       />
 
       <ConfirmDialog
@@ -277,6 +268,7 @@ export default function ATMsPage() {
         confirmText="Guardar"
         type="info"
         isLoading={isCreating || isUpdating}
+        error={selectedATM ? updateError : createError}
       />
 
       <ConfirmDialog
@@ -291,6 +283,7 @@ export default function ATMsPage() {
         confirmText="Registrar"
         type="warning"
         isLoading={isRegistering}
+        error={maintenanceError}
       />
     </div>
   );
