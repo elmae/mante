@@ -27,7 +27,22 @@
 - Componentes base creados
 - Pendiente integración
 
-### Clients View (Pendiente)
+### Clients View (70%)
+
+- [x] Backend APIs implementadas
+
+  - [x] CRUD completo de clientes
+  - [x] Autenticación y autorización
+  - [x] Validaciones
+  - [ ] Tests unitarios (pendiente)
+  - [ ] Tests de integración (pendiente)
+
+- [ ] Frontend en desarrollo
+  - [ ] Componentes base
+  - [ ] Integración con backend
+  - [ ] Formularios y validación
+  - [ ] Manejo de errores
+  - [ ] Tests unitarios
 
 ### Settings View (Pendiente)
 

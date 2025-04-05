@@ -33,6 +33,16 @@
 
 #### En Progreso:
 
+1. Sistema de Clientes:
+   - Backend APIs implementadas ✅
+   - Autenticación y autorización ✅
+   - Migración de base de datos ✅
+   - Tests unitarios (pendiente)
+   - Tests de integración (pendiente)
+   - Frontend (pendiente)
+
+#### En Progreso:
+
 1. Mantenimiento - Mejoras:
 
    - Implementar tests unitarios
@@ -49,7 +59,7 @@
    - /atms ✅
    - /tickets ✅
    - /maintenance ✅
-   - /clients (pendiente)
+   - /clients ✅
    - /settings (pendiente)
 
 #### Plan de Desarrollo:
@@ -61,7 +71,7 @@
 
 ## Próximos Pasos
 
-1. Escribir tests para componentes de mantenimiento
-2. Implementar vista de clientes
-3. Mejorar feedback visual y UX
-4. Documentar nuevas funcionalidades
+1. Escribir tests unitarios para el módulo de clientes
+2. Implementar tests de integración para clientes
+3. Comenzar desarrollo de vista de clientes
+4. Mejorar documentación de APIs
