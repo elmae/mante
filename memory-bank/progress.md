@@ -18,10 +18,16 @@
   ✅ Rutas de gestión de tickets implementadas
 - /tickets/new para creación
 - /tickets/[id]/edit para edición
+  ✅ Filtros avanzados implementados
+- Búsqueda por texto en título/descripción
+- Filtrado por estado y prioridad
+- Filtrado por ATM y técnico asignado
+- Rango de fechas
+- Estado de SLA
+- Paginación integrada
 
 ## Próximos Pasos
 
-- Agregar filtros avanzados a la lista de tickets
 - Implementar vista detallada de ticket
 - Añadir gráficos de métricas de tickets
 - Implementar sistema de comentarios en tickets
