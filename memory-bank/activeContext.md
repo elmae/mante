@@ -58,12 +58,14 @@
      - TicketList (tabla principal) ✅
      - Filtros básicos ✅
      - TicketForm (creación/edición) ✅
+     - TicketDetails (vista detallada) ✅
    - Servicios API tipados ✅
    - Hook useTicket para estado ✅
    - Rutas:
      - /tickets (lista) ✅
      - /tickets/new (creación) ✅
      - /tickets/[id]/edit (edición) ✅
+     - /tickets/[id] (vista detallada) ✅
 
 3. Rutas implementadas:
    - /atms ✅
@@ -81,8 +83,8 @@
 
 ## Próximos Pasos
 
-1. Escribir tests unitarios para vista de Tickets
-2. Implementar formulario de creación/edición de tickets
+1. Implementar sistema de comentarios en tickets
+2. Agregar soporte para adjuntos en tickets
 3. Mejorar documentación de APIs
 4. Implementar frontend para clientes
 5. Agregar gráficos de métricas a vista de Tickets
