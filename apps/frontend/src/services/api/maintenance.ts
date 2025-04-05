@@ -3,6 +3,15 @@ import { apiClient, handleApiError } from "./client";
 export type MaintenanceType = "preventive" | "corrective";
 export type MaintenanceStatus = "completed" | "pending" | "in_progress";
 
+export interface MaintenanceFilters {
+  type?: MaintenanceType;
+  status?: MaintenanceStatus;
+  startDate?: string;
+  endDate?: string;
+  page?: number;
+  limit?: number;
+}
+
 export interface MaintenanceRecord {
   id: string;
   atmId: string;
@@ -26,6 +35,14 @@ export interface CreateMaintenanceRecord {
   recommendations: string;
   status: MaintenanceStatus;
   nextMaintenanceDate: string;
+}
+
+export interface PaginatedMaintenanceRecords {
+  data: MaintenanceRecord[];
+  total: number;
+  page: number;
+  limit: number;
+  totalPages: number;
 }
 
 export class MaintenanceError extends Error {
@@ -57,9 +74,14 @@ export const maintenanceService = {
     }
   },
 
-  async getMaintenanceHistory(atmId: string): Promise<MaintenanceRecord[]> {
+  async getMaintenanceHistory(
+    atmId: string,
+    filters?: MaintenanceFilters
+  ): Promise<PaginatedMaintenanceRecords> {
     try {
-      const response = await apiClient.get(`/atms/${atmId}/maintenance`);
+      const response = await apiClient.get(`/atms/${atmId}/maintenance`, {
+        params: filters,
+      });
       return response.data;
     } catch (error) {
       const apiError = handleApiError(error);
