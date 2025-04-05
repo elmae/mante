@@ -2,89 +2,66 @@
 
 ## Enfoque Actual
 
-### Frontend: Vista de Mantenimiento
+### Frontend: Vista de Tickets
 
 #### Completado:
 
-- Implementación de la ruta /maintenance:
+- Frontend implementado ✅
+- Backend APIs listas ✅
+- Integración completa ✅
+- Componentes:
+  - TicketList (tabla principal) ✅
+  - Filtros básicos ✅
+  - TicketForm (creación/edición) ✅
+  - TicketDetails (vista detallada) ✅
+  - TicketMetrics (análisis y gráficos) ✅
+  - DashboardMetrics (resumen en panel) ✅
+- Servicios API tipados ✅
+- Hook useTicket para estado ✅
+- Hook useTicketMetrics para análisis ✅
+- Rutas:
+  - /tickets (lista) ✅
+  - /tickets/new (creación) ✅
+  - /tickets/[id]/edit (edición) ✅
+  - /tickets/[id] (vista detallada) ✅
+  - /tickets/metrics (análisis) ✅
 
-  - Página principal de mantenimientos ✅
-  - Página de mantenimientos por ATM ✅
-  - Layout compartido ✅
+#### Implementaciones Recientes:
 
-- Componentes de Mantenimiento:
+1. Sistema de Métricas:
 
-  - MaintenanceFilters para filtrado ✅
-  - MaintenanceTable para listado ✅
-  - MaintenanceDetails para vista detallada ✅
-  - Reutilización de MaintenanceForm ✅
+   - Gráficos de estado y prioridad ✅
+   - Indicadores de rendimiento ✅
+   - Filtros temporales y por ATM ✅
+   - Integración en dashboard ✅
+   - Vista detallada independiente ✅
 
-- Custom Hooks:
-
-  - useMaintenanceRecords para datos ✅
-  - useATM para información del ATM ✅
-
-- Integración con Backend:
-  - Cliente API centralizado ✅
-  - Servicios tipados ✅
-  - Manejo de errores ✅
-  - Estados de carga ✅
-  - Notificaciones toast ✅
-
-#### En Progreso:
-
-1. Sistema de Clientes:
-   - Backend APIs implementadas ✅
-   - Autenticación y autorización ✅
-   - Migración de base de datos ✅
-   - Tests unitarios (pendiente)
-   - Tests de integración (pendiente)
-   - Frontend (pendiente)
-
-#### En Progreso:
-
-1. Mantenimiento - Mejoras:
-
-   - Implementar tests unitarios
-   - Optimizar rendimiento
-   - Mejorar UX móvil
-
-2. Vista de Tickets:
-
-   - Frontend implementado ✅
-   - Backend APIs listas ✅
-   - Integración completa ✅
-   - Componentes:
-     - TicketList (tabla principal) ✅
-     - Filtros básicos ✅
-     - TicketForm (creación/edición) ✅
-     - TicketDetails (vista detallada) ✅
-   - Servicios API tipados ✅
-   - Hook useTicket para estado ✅
-   - Rutas:
-     - /tickets (lista) ✅
-     - /tickets/new (creación) ✅
-     - /tickets/[id]/edit (edición) ✅
-     - /tickets/[id] (vista detallada) ✅
-
-3. Rutas implementadas:
-   - /atms ✅
-   - /tickets ✅
-   - /maintenance ✅
-   - /clients ✅
-   - /settings ✅
+2. Mejoras de Dashboard:
+   - Reemplazo de gráficos antiguos ✅
+   - Métricas más detalladas ✅
+   - Vista compacta para panel ✅
+   - Actualización en tiempo real ✅
 
 #### Plan de Desarrollo:
 
-1. Implementar tests para vista de mantenimiento
-2. Comenzar desarrollo de vista de clientes
+1. Implementar sistema de comentarios
+2. Añadir soporte para adjuntos
 3. Mejorar UX/UI general
-4. Completar documentación
+4. Expandir métricas y análisis
+5. Implementar notificaciones
 
 ## Próximos Pasos
 
-1. Implementar sistema de comentarios en tickets
-2. Agregar soporte para adjuntos en tickets
-3. Mejorar documentación de APIs
-4. Implementar frontend para clientes
-5. Agregar gráficos de métricas a vista de Tickets
+1. Diseñar sistema de comentarios
+2. Planificar gestión de adjuntos
+3. Identificar métricas adicionales
+4. Mejorar experiencia móvil
+5. Optimizar rendimiento de gráficos
+
+## Rutas implementadas:
+
+- /atms ✅
+- /tickets ✅
+- /maintenance ✅
+- /clients ✅
+- /settings ✅

@@ -6,29 +6,33 @@ import {
   ExclamationTriangleIcon,
   CheckCircleIcon,
 } from "@heroicons/react/24/outline";
-import StatCard from "@/components/dashboard/StatCard";
-import DashboardSkeleton from "@/components/dashboard/DashboardSkeleton";
-import DashboardError from "@/components/dashboard/DashboardError";
-import ActivityTable from "@/components/dashboard/ActivityTable";
-import TicketDistribution from "@/components/dashboard/TicketDistribution";
+import { StatCard } from "@/components/dashboard/StatCard";
+import { DashboardSkeleton } from "@/components/dashboard/DashboardSkeleton";
+import { DashboardError } from "@/components/dashboard/DashboardError";
+import { ActivityTable } from "@/components/dashboard/ActivityTable";
+import { DashboardMetrics } from "@/components/tickets/TicketMetrics";
 import { useDashboard } from "@/hooks/useDashboard";
 
 export default function DashboardPage() {
-  const {
-    stats,
-    trends,
-    recentActivity,
-    ticketDistribution,
-    isLoading,
-    errors,
-  } = useDashboard();
+  const { stats, trends, recentActivity, isLoading, errors } = useDashboard();
 
   if (isLoading) {
     return <DashboardSkeleton />;
   }
 
   if (errors.stats || errors.activity || errors.distribution) {
-    return <DashboardError />;
+    const errorType = errors.stats
+      ? "STATS"
+      : errors.activity
+      ? "ACTIVITY"
+      : "DISTRIBUTION";
+
+    return (
+      <DashboardError
+        message="Error al cargar los datos del dashboard"
+        code={errorType}
+      />
+    );
   }
 
   const dashboardStats = [
@@ -76,8 +80,17 @@ export default function DashboardPage() {
         ))}
       </div>
 
-      {/* Sección de gráficos y tablas */}
+      {/* Sección de gráficos y actividad */}
       <div className="mt-8 grid grid-cols-1 gap-6 lg:grid-cols-2">
+        {/* Métricas de Tickets */}
+        <div className="rounded-lg bg-white p-6 shadow-sm">
+          <h4 className="text-lg font-medium text-gray-900 mb-4">
+            Análisis de Tickets
+          </h4>
+          <DashboardMetrics />
+        </div>
+
+        {/* Actividad Reciente */}
         <div className="rounded-lg bg-white p-6 shadow-sm">
           <h4 className="text-lg font-medium text-gray-900">
             Actividad Reciente
@@ -88,24 +101,6 @@ export default function DashboardPage() {
             ) : (
               <div className="text-center text-gray-500 py-8">
                 No hay actividad reciente
-              </div>
-            )}
-          </div>
-        </div>
-
-        <div className="rounded-lg bg-white p-6 shadow-sm">
-          <h4 className="text-lg font-medium text-gray-900">
-            Distribución de Tickets
-          </h4>
-          <div className="mt-4">
-            {ticketDistribution ? (
-              <TicketDistribution
-                data={ticketDistribution.data}
-                total={ticketDistribution.total}
-              />
-            ) : (
-              <div className="text-center text-gray-500 py-8">
-                No hay datos de distribución
               </div>
             )}
           </div>
