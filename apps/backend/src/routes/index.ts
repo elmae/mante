@@ -7,6 +7,7 @@ import { createTicketRouter } from './ticket.routes';
 import { createMaintenanceRouter } from './maintenance.routes';
 import { createSlaRouter } from './sla.routes';
 import { createClientRouter } from './client.routes';
+import { createSettingsRouter } from './settings.routes';
 
 export function createRoutes(dataSource: DataSource): Router {
   const router = Router();
@@ -21,6 +22,7 @@ export function createRoutes(dataSource: DataSource): Router {
   router.use('/maintenance', createMaintenanceRouter(dataSource));
   router.use('/sla', createSlaRouter(dataSource));
   router.use('/clients', createClientRouter(dataSource));
+  router.use('/settings', createSettingsRouter(dataSource));
 
   return router;
 }

@@ -60,7 +60,7 @@
    - /tickets ✅
    - /maintenance ✅
    - /clients ✅
-   - /settings (pendiente)
+   - /settings ✅
 
 #### Plan de Desarrollo:
 
@@ -71,7 +71,8 @@
 
 ## Próximos Pasos
 
-1. Escribir tests unitarios para el módulo de clientes
-2. Implementar tests de integración para clientes
-3. Comenzar desarrollo de vista de clientes
+1. Escribir tests unitarios para los módulos de clientes y settings
+2. Implementar tests de integración para clientes y settings
+3. Comenzar desarrollo de la vista de settings
 4. Mejorar documentación de APIs
+5. Implementar frontend para clientes

@@ -29,6 +29,21 @@
 
 ### Clients View (70%)
 
+### Settings View (70%)
+
+- [x] Backend APIs implementadas
+
+  - [x] CRUD completo
+  - [x] Validaciones y tipos de datos
+  - [x] Alcance por módulos (scopes)
+  - [ ] Tests unitarios (pendiente)
+  - [ ] Tests de integración (pendiente)
+
+- [ ] Frontend en desarrollo
+  - [ ] Componentes base
+  - [ ] Integración con backend
+  - [ ] Validación de formularios
+  - [ ] Manejo de errores
 - [x] Backend APIs implementadas
 
   - [x] CRUD completo de clientes
