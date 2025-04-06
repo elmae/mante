@@ -74,7 +74,13 @@
    - Implementación del backend
    - Integración con frontend
 
-2. Mejoras de UX/UI
+2. Componente Badge
+
+   - Implementación del componente
+   - Integración en vista de tickets
+   - Pruebas
+
+3. Mejoras de UX/UI
    - Optimización móvil
    - Accesibilidad
    - Rendimiento
@@ -99,13 +105,19 @@
    - Optimizar carga de gráficos
    - Mejorar tiempos de respuesta en listas grandes
 
-2. UX/UI
+2. Frontend
+
+   - Componente Badge no encontrado
+   - Error en vista de tickets
+   - Afecta a rutas /tickets y /maintenance
+
+3. UX/UI
    - Mejorar responsive en tablets
    - Optimizar navegación móvil
 
 ## 📈 Métricas del Proyecto
 
 - Cobertura de tests: 85%
-- Issues abiertos: 12
+- Issues abiertos: 13
 - Pull requests pendientes: 3
 - Tiempo medio de resolución: 2.5 días

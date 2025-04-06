@@ -2,7 +2,7 @@
 
 ## Enfoque Actual
 
-### Frontend: Vista de Tickets
+### Frontend: Vista de Tickets y Componentes
 
 #### Completado:
 
@@ -27,6 +27,13 @@
   - /tickets/[id]/edit (edición) ✅
   - /tickets/[id] (vista detallada) ✅
   - /tickets/metrics (análisis) ✅
+
+#### Issues Actuales:
+
+1. Componente Badge:
+   - Error: Module not found '@/components/common/Badge'
+   - Impacta vista de tickets
+   - Requiere implementación o corrección de importación
 
 #### Implementaciones Recientes:
 
@@ -57,18 +64,20 @@
 #### Plan de Desarrollo:
 
 1. ~~Implementar sistema de comentarios~~ ✅
-2. Añadir soporte para adjuntos
-3. Mejorar UX/UI general
-4. Expandir métricas y análisis
-5. Implementar notificaciones
+2. Resolver error del componente Badge
+3. Añadir soporte para adjuntos
+4. Mejorar UX/UI general
+5. Expandir métricas y análisis
+6. Implementar notificaciones
 
 ## Próximos Pasos
 
 1. ~~Diseñar sistema de comentarios~~ ✅
-2. Planificar gestión de adjuntos
-3. Identificar métricas adicionales
-4. Mejorar experiencia móvil
-5. Optimizar rendimiento de gráficos
+2. Implementar componente Badge
+3. Planificar gestión de adjuntos
+4. Identificar métricas adicionales
+5. Mejorar experiencia móvil
+6. Optimizar rendimiento de gráficos
 
 ## Rutas implementadas:
 
@@ -77,3 +86,15 @@
 - /maintenance ✅
 - /clients ✅
 - /settings ✅
+
+## Estado de Servidores de Desarrollo:
+
+1. Frontend (Next.js):
+
+   - Estado: Corriendo con errores
+   - Issue: Componente Badge faltante
+   - Rutas afectadas: /tickets, /maintenance
+
+2. Backend (Node.js):
+   - Estado: Corriendo
+   - Base de datos: mante_db
