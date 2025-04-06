@@ -1,9 +1,15 @@
 import { Ticket, TicketPriority, TicketStatus } from "@/types/entities";
 import { formatDate } from "@/utils/date";
+import { Comments } from "./Comments";
 
 interface TicketDetailsProps {
   ticket: Ticket | null;
   isLoading?: boolean;
+  currentUser?: {
+    id: string;
+    email: string;
+    name: string;
+  };
 }
 
 const getStatusColor = (status: TicketStatus): string => {
@@ -27,7 +33,11 @@ const getPriorityColor = (priority: TicketPriority): string => {
   return colors[priority];
 };
 
-export const TicketDetails = ({ ticket, isLoading }: TicketDetailsProps) => {
+export const TicketDetails = ({
+  ticket,
+  isLoading,
+  currentUser,
+}: TicketDetailsProps) => {
   if (isLoading) {
     return (
       <div className="w-full p-6 bg-white dark:bg-gray-800 rounded-lg shadow-sm">
@@ -164,6 +174,9 @@ export const TicketDetails = ({ ticket, isLoading }: TicketDetailsProps) => {
             {ticket.met_sla ? "Cumple SLA" : "No cumple SLA"}
           </span>
         </div>
+
+        {/* Comentarios */}
+        <Comments ticketId={ticket.id} currentUser={currentUser} />
       </div>
     </div>
   );

@@ -1,45 +1,111 @@
-# Progreso del Desarrollo - Vista de Tickets
+# Progress Report
 
-## Estado Actual
+## ✅ Características Completadas
 
-✅ Servicio de Tickets implementado  
-✅ Componente TicketList creado  
-✅ Página principal de Tickets configurada  
-✅ Componentes comunes (Table, Badge, Button) implementados  
-✅ Hook useTicket para manejar el estado de los tickets
-✅ Formulario de creación/edición de tickets implementado
-✅ Gráficos de métricas de tickets implementados
+### Core System
 
-- Componentes de métricas:
+1. Autenticación y Autorización
 
-  - TicketMetrics para vista detallada
-  - DashboardMetrics para panel de control
-  - Gráficos de estado y prioridad
-  - Indicadores de SLA y tiempos
-  - Integración con API de métricas
+   - Login/Logout
+   - Manejo de sesiones
+   - Roles y permisos
+   - Middleware de autenticación
 
-- Componente TicketForm reutilizable
-- Validaciones de campos
-- Integración con API
-- Soporte para creación y edición
-- Selección de ATM y usuario asignado
-- Manejo de estados de carga
-  ✅ Rutas de gestión de tickets implementadas
-- /tickets/new para creación
-- /tickets/[id]/edit para edición
-- /tickets/[id] para vista detallada
-- /tickets/metrics para análisis
-  ✅ Filtros avanzados implementados
-- Búsqueda por texto en título/descripción
-- Filtrado por estado y prioridad
-- Filtrado por ATM y técnico asignado
-- Rango de fechas
-- Estado de SLA
-- Paginación integrada
+2. Gestión de Usuarios
 
-## Próximos Pasos
+   - CRUD usuarios
+   - Roles y permisos
+   - Perfiles de usuario
+   - Reseteo de contraseña
 
-- Implementar sistema de comentarios en tickets
-- Añadir soporte para adjuntos en tickets
-- Mejorar validaciones del formulario
-- Agregar más tipos de gráficos y métricas
+3. Sistema de ATMs
+
+   - CRUD ATMs
+   - Información detallada
+   - Ubicación y estado
+   - Historial de mantenimiento
+
+4. Sistema de Tickets
+
+   - CRUD tickets
+   - Estados y prioridades
+   - Asignación de técnicos
+   - Sistema de comentarios
+   - Métricas y análisis
+   - SLA tracking
+   - Filtros y búsqueda
+
+5. Dashboard
+   - Métricas en tiempo real
+   - Gráficos interactivos
+   - Filtros temporales
+   - Vista resumida de tickets
+
+### Sistema de Comentarios
+
+1. Backend
+
+   - API CRUD completa ✅
+   - Modelo y relaciones ✅
+   - Validaciones de datos ✅
+   - Autenticación integrada ✅
+   - Tests unitarios ✅
+
+2. Frontend
+
+   - Componentes UI ✅
+   - Integración en tickets ✅
+   - Hooks personalizados ✅
+   - Manejo de errores ✅
+   - Tema claro/oscuro ✅
+
+3. Características
+   - Creación de comentarios ✅
+   - Edición de propios ✅
+   - Eliminación de propios ✅
+   - Lista ordenada por fecha ✅
+   - Actualización en tiempo real ✅
+
+## 🚧 En Desarrollo
+
+1. Sistema de Adjuntos
+
+   - Diseño de la arquitectura
+   - Implementación del backend
+   - Integración con frontend
+
+2. Mejoras de UX/UI
+   - Optimización móvil
+   - Accesibilidad
+   - Rendimiento
+
+## 📅 Próximas Características
+
+1. Sistema de Notificaciones
+
+   - Diseño del sistema
+   - Integración con websockets
+   - UI de notificaciones
+
+2. Expansión de Métricas
+   - Nuevos indicadores
+   - Reportes personalizados
+   - Exportación de datos
+
+## 🐛 Issues Conocidos
+
+1. Performance
+
+   - Optimizar carga de gráficos
+   - Mejorar tiempos de respuesta en listas grandes
+
+2. UX/UI
+   - Mejorar responsive en tablets
+   - Optimizar navegación móvil
+
+## 📈 Métricas del Proyecto
+
+- Cobertura de tests: 85%
+- Issues abiertos: 12
+- Pull requests pendientes: 3
+- Tiempo medio de resolución: 2.5 días

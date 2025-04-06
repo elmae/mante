@@ -4,11 +4,13 @@ import { useTicket } from "@/hooks/useTicket";
 import { TicketDetails } from "@/components/tickets/TicketDetails";
 import { useParams } from "next/navigation";
 import Link from "next/link";
+import { useUser } from "@/hooks/useUser";
 
 export default function TicketPage() {
   const params = useParams();
   const id = params.id as string;
   const { data: ticket, isLoading } = useTicket(id);
+  const { user } = useUser();
 
   return (
     <div className="container mx-auto px-4 py-8">
@@ -34,7 +36,19 @@ export default function TicketPage() {
         </Link>
       </div>
 
-      <TicketDetails ticket={ticket} isLoading={isLoading} />
+      <TicketDetails
+        ticket={ticket}
+        isLoading={isLoading}
+        currentUser={
+          user
+            ? {
+                id: user.id,
+                email: user.email,
+                name: user.name,
+              }
+            : undefined
+        }
+      />
     </div>
   );
 }

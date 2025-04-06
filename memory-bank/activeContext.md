@@ -16,9 +16,11 @@
   - TicketDetails (vista detallada) ✅
   - TicketMetrics (análisis y gráficos) ✅
   - DashboardMetrics (resumen en panel) ✅
+  - Sistema de comentarios ✅
 - Servicios API tipados ✅
 - Hook useTicket para estado ✅
 - Hook useTicketMetrics para análisis ✅
+- Hook useComments para gestión de comentarios ✅
 - Rutas:
   - /tickets (lista) ✅
   - /tickets/new (creación) ✅
@@ -28,7 +30,17 @@
 
 #### Implementaciones Recientes:
 
-1. Sistema de Métricas:
+1. Sistema de Comentarios:
+
+   - Backend CRUD completo ✅
+   - Frontend integrado ✅
+   - Validaciones implementadas ✅
+   - Autenticación integrada ✅
+   - Manejo de errores ✅
+   - UI responsive ✅
+   - Tema oscuro soportado ✅
+
+2. Sistema de Métricas:
 
    - Gráficos de estado y prioridad ✅
    - Indicadores de rendimiento ✅
@@ -36,7 +48,7 @@
    - Integración en dashboard ✅
    - Vista detallada independiente ✅
 
-2. Mejoras de Dashboard:
+3. Mejoras de Dashboard:
    - Reemplazo de gráficos antiguos ✅
    - Métricas más detalladas ✅
    - Vista compacta para panel ✅
@@ -44,7 +56,7 @@
 
 #### Plan de Desarrollo:
 
-1. Implementar sistema de comentarios
+1. ~~Implementar sistema de comentarios~~ ✅
 2. Añadir soporte para adjuntos
 3. Mejorar UX/UI general
 4. Expandir métricas y análisis
@@ -52,7 +64,7 @@
 
 ## Próximos Pasos
 
-1. Diseñar sistema de comentarios
+1. ~~Diseñar sistema de comentarios~~ ✅
 2. Planificar gestión de adjuntos
 3. Identificar métricas adicionales
 4. Mejorar experiencia móvil

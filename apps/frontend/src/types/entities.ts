@@ -33,6 +33,15 @@ export enum TicketStatus {
   CLOSED = "closed",
 }
 
+export interface Comment {
+  id: string;
+  content: string;
+  ticket_id: string;
+  created_by: User;
+  created_at: Date;
+  updated_at: Date;
+}
+
 export interface Ticket {
   id: string;
   title: string;
@@ -50,4 +59,5 @@ export interface Ticket {
   created_by?: User;
   updated_by?: User;
   met_sla: boolean;
+  comments?: Comment[];
 }

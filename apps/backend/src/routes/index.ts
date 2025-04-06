@@ -8,6 +8,7 @@ import { createMaintenanceRouter } from './maintenance.routes';
 import { createSlaRouter } from './sla.routes';
 import { createClientRouter } from './client.routes';
 import { createSettingsRouter } from './settings.routes';
+import { createCommentRouter } from './comment.routes';
 
 export function createRoutes(dataSource: DataSource): Router {
   const router = Router();
@@ -23,6 +24,7 @@ export function createRoutes(dataSource: DataSource): Router {
   router.use('/sla', createSlaRouter(dataSource));
   router.use('/clients', createClientRouter(dataSource));
   router.use('/settings', createSettingsRouter(dataSource));
+  router.use('/comments', createCommentRouter(dataSource));
 
   return router;
 }

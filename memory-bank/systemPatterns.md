@@ -1,119 +1,180 @@
-# Patrones de Sistema Implementados
+# System Patterns
 
 ## Arquitectura
 
-- Clean Architecture con separación clara de capas
-- Patrón Repository para acceso a datos
-- CQRS para operaciones complejas
-- Event Sourcing para cambios críticos
-- Factory Method para creación de servicios
-- Adapter para integración de APIs
-- Strategy para manejo de errores
+### Patrón de Capas
 
-## Frontend
+- Presentación (Frontend)
+- Lógica de Negocio (Backend Services)
+- Acceso a Datos (Repositories)
+- Infraestructura (Database)
 
-### Patrones de Estado
+### Clean Architecture
 
-- React Query para gestión de estado del servidor
-- Providers para estado global
-- Custom Hooks para lógica reutilizable
-- Error Boundaries para manejo de errores UI
+- Entities: Modelos de dominio
+- Use Cases: Servicios de aplicación
+- Interfaces: Puertos y adaptadores
+- Frameworks: Express, TypeORM, React
 
-### Patrones de Componentes
+## Patrones de Diseño
 
-- Compound Components para UIs complejas
-- Render Props para lógica compartida
-- HOCs para funcionalidad cross-cutting
-- Container/Presentational para separación de responsabilidades
+### Frontend
 
-### Patrones de Formularios
+1. Custom Hooks
 
-- Esquemas de validación con Zod
-- Form State Management con React Hook Form
-- Error Handling con tipos específicos
-- Builder para construcción de formularios complejos
+- useTicket: Gestión de estado de tickets
+- useComments: Gestión de comentarios
+- useUser: Información del usuario actual
+- useDashboard: Métricas y análisis
 
-## Integración Frontend-Backend
+2. Component Patterns
 
-### Cliente API
+- Container/Presentational
+- Higher-Order Components
+- Render Props
+- Compound Components
 
-- Singleton para instancia de cliente HTTP
-- Interceptor Pattern para autenticación
-- Chain of Responsibility para manejo de errores
-- Decorator para enriquecimiento de requests
+3. Estado y Eventos
 
-### Manejo de Errores
+- Custom Hooks para estado local
+- Context para estado global
+- Event Handlers consistentes
+- Patrón de Observador para actualizaciones
 
-- Error Types específicos por dominio
-- Error Factory para creación de errores
-- Error Handler centralizado
-- Error Mapping para traducción de errores
+### Backend
 
-### Caché y Sincronización
+1. Repository Pattern
 
-- Cache-Aside Pattern con React Query
-- Write-Through para mutaciones
-- Optimistic Updates para mejor UX
-- Background Sync para operaciones offline
+- Abstracción de acceso a datos
+- Interfaces genéricas
+- Implementaciones específicas
+- Unit of Work
 
-## Diseño de API
+2. Service Layer
 
-- RESTful con HATEOAS
-- Versionado semántico (v1, v2)
-- Documentación OpenAPI 3.0
-- Paginación estilo cursor
-- Filtrado avanzado con parámetros de consulta
-- Rate Limiting con Token Bucket
+- Lógica de negocio encapsulada
+- Validación de datos
+- Manejo de transacciones
+- Eventos del dominio
 
-## Manejo de Archivos
+3. Controller Pattern
 
-- Servicio independiente para adjuntos
-- Almacenamiento en S3 compatible
-- Metadatos en base de datos relacional
-- Sistema de cuotas por usuario
-- Tipos MIME restringidos
-- Compresión on-demand
+- Manejo de requests HTTP
+- Validación de inputs
+- Transformación de datos
+- Manejo de respuestas
 
-## Seguridad
+### Sistema de Comentarios
 
-- JWT con rotación de claves
-- RBAC con herencia de roles
-- Validación centralizada de permisos
-- Cifrado AES-256 para datos sensibles
-- Auditoría de operaciones críticas
-- Rate limiting por IP/usuario
+1. Arquitectura
 
-## Testing
+- Entidad Comment independiente
+- Relación Many-to-One con Ticket
+- Relación Many-to-One con User
+- Validación en múltiples capas
 
-### Patrones de Testing
+2. Patrones Frontend
 
-- Factory para datos de prueba
-- Builder para objetos complejos
-- Fixture para estado inicial
-- Mock para dependencias externas
-- Stub para respuestas predefinidas
+- Hook useComments para gestión de estado
+- Componente Comments para UI
+- Patrón de composición para integración
+- Manejo de errores consistente
 
-### Estrategias de Testing
+3. Patrones Backend
 
-- Testing Pyramid (Unit, Integration, E2E)
-- BDD para pruebas de comportamiento
-- TDD para desarrollo dirigido por pruebas
-- Snapshot Testing para UI
-- Contract Testing para APIs
+- Repository para acceso a datos
+- Service para lógica de negocio
+- Controller para endpoints API
+- DTOs para validación
 
-## Monitoreo y Logging
+## Principios SOLID
 
-- Observer para eventos del sistema
-- Publisher/Subscriber para logs
-- Circuit Breaker para resiliencia
-- Health Check para disponibilidad
-- Metrics Collection para rendimiento
+1. Single Responsibility
 
-## Infraestructura
+- Cada clase tiene una única responsabilidad
+- Servicios especializados
+- Componentes cohesivos
 
-- Infrastructure as Code
-- Container Orchestration
-- Service Discovery
-- Load Balancing
-- Auto Scaling
-- Blue/Green Deployment
+2. Open/Closed
+
+- Extensión mediante interfaces
+- Plugins y middleware
+- Configuración flexible
+
+3. Liskov Substitution
+
+- Interfaces consistentes
+- Herencia apropiada
+- Contratos claros
+
+4. Interface Segregation
+
+- Interfaces específicas
+- DTOs especializados
+- Contratos minimales
+
+5. Dependency Inversion
+
+- Inyección de dependencias
+- Inversión de control
+- Abstracciones estables
+
+## Patrones de Testing
+
+1. Unit Testing
+
+- Tests aislados
+- Mocks y stubs
+- Cobertura alta
+
+2. Integration Testing
+
+- APIs end-to-end
+- Database interactions
+- Service integration
+
+3. E2E Testing
+
+- User workflows
+- UI interactions
+- Cross-browser testing
+
+## Patrones de Seguridad
+
+1. Autenticación
+
+- JWT tokens
+- Session management
+- Role-based access
+
+2. Autorización
+
+- Permisos granulares
+- Middleware de autorización
+- Validación de roles
+
+3. Validación
+
+- Input sanitization
+- Data validation
+- Error handling
+
+## Patrones de Datos
+
+1. Relaciones
+
+- One-to-Many
+- Many-to-One
+- Many-to-Many
+
+2. Migraciones
+
+- Versionado de esquema
+- Rollback support
+- Seed data
+
+3. Queries
+
+- Eager loading
+- Lazy loading
+- Query optimization
