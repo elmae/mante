@@ -74,13 +74,7 @@
    - Implementación del backend
    - Integración con frontend
 
-2. Componente Badge
-
-   - Implementación del componente
-   - Integración en vista de tickets
-   - Pruebas
-
-3. Mejoras de UX/UI
+2. Mejoras de UX/UI
    - Optimización móvil
    - Accesibilidad
    - Rendimiento
@@ -107,9 +101,7 @@
 
 2. Frontend
 
-   - Componente Badge no encontrado
-   - Error en vista de tickets
-   - Afecta a rutas /tickets y /maintenance
+   - ~~Componente Badge~~ ✅
 
 3. UX/UI
    - Mejorar responsive en tablets
