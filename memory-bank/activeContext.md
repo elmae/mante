@@ -91,14 +91,21 @@
 - /maintenance ✅
 - /clients ✅
 - /settings ✅
+  - /settings/profile (pendiente)
+  - /settings/security (pendiente)
+  - /settings/notifications (pendiente)
+  - /settings/recycle-bin ✅
+  - /settings/retention (pendiente)
+  - /settings/api-keys (pendiente)
 
 ## Estado de Servidores de Desarrollo:
 
 1. Frontend (Next.js):
 
-   - Estado: Corriendo con errores
-   - Issue: Componente Badge faltante
-   - Rutas afectadas: /tickets, /maintenance
+   - Estado: Corriendo
+   - Nuevas rutas añadidas: /settings/\*
+   - Sistema de archivos integrado
+   - Papelera de reciclaje implementada
 
 2. Backend (Node.js):
    - Estado: Corriendo

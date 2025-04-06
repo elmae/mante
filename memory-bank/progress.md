@@ -87,6 +87,11 @@
      - Política de retención de archivos ✅
      - Papelera de reciclaje ✅
      - Auditoría de operaciones ✅
+   - Frontend implementado:
+     - Componentes reutilizables ✅
+     - Vista de papelera de reciclaje ✅
+     - Navegación en configuración ✅
+     - Layout de configuración ✅
      - Scripts de mantenimiento ✅
      - Trabajos programados (cron) ✅
      - Gestión de archivos temporales ✅
