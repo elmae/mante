@@ -64,8 +64,13 @@
 #### Plan de Desarrollo:
 
 1. ~~Implementar sistema de comentarios~~ ✅
-2. Resolver error del componente Badge
-3. Añadir soporte para adjuntos
+2. ~~Resolver error del componente Badge~~ ✅
+3. ~~Añadir soporte para adjuntos~~ ✅
+   - Sistema de archivos implementado
+   - Soporte para subida/descarga
+   - Política de retención configurable
+   - Papelera de reciclaje
+   - Auditoría de operaciones
 4. Mejorar UX/UI general
 5. Expandir métricas y análisis
 6. Implementar notificaciones
@@ -73,8 +78,8 @@
 ## Próximos Pasos
 
 1. ~~Diseñar sistema de comentarios~~ ✅
-2. Implementar componente Badge
-3. Planificar gestión de adjuntos
+2. ~~Implementar componente Badge~~ ✅
+3. ~~Planificar gestión de adjuntos~~ ✅
 4. Identificar métricas adicionales
 5. Mejorar experiencia móvil
 6. Optimizar rendimiento de gráficos
