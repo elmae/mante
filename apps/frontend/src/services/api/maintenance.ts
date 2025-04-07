@@ -1,41 +1,10 @@
 import { apiClient, handleApiError } from "./client";
-
-export type MaintenanceType = "preventive" | "corrective";
-export type MaintenanceStatus = "completed" | "pending" | "in_progress";
-
-export interface MaintenanceFilters {
-  type?: MaintenanceType;
-  status?: MaintenanceStatus;
-  startDate?: string;
-  endDate?: string;
-  page?: number;
-  limit?: number;
-}
-
-export interface MaintenanceRecord {
-  id: string;
-  atmId: string;
-  type: MaintenanceType;
-  description: string;
-  findings: string;
-  actions: string;
-  recommendations: string;
-  status: MaintenanceStatus;
-  date: string;
-  nextMaintenanceDate: string;
-  createdAt: string;
-  updatedAt: string;
-}
-
-export interface CreateMaintenanceRecord {
-  type: MaintenanceType;
-  description: string;
-  findings: string;
-  actions: string;
-  recommendations: string;
-  status: MaintenanceStatus;
-  nextMaintenanceDate: string;
-}
+import type {
+  MaintenanceRecord,
+  MaintenanceSchedule,
+  MaintenanceFilters,
+  MaintenanceStats,
+} from "@/types/maintenance";
 
 export interface PaginatedMaintenanceRecords {
   data: MaintenanceRecord[];
@@ -57,29 +26,12 @@ export class MaintenanceError extends Error {
 }
 
 export const maintenanceService = {
-  async createMaintenance(
-    atmId: string,
-    data: CreateMaintenanceRecord
-  ): Promise<MaintenanceRecord> {
-    try {
-      const response = await apiClient.post(`/atms/${atmId}/maintenance`, data);
-      return response.data;
-    } catch (error) {
-      const apiError = handleApiError(error);
-      throw new MaintenanceError(
-        apiError.message,
-        apiError.code,
-        apiError.details
-      );
-    }
-  },
-
-  async getMaintenanceHistory(
-    atmId: string,
-    filters?: MaintenanceFilters
+  // Registros de mantenimiento
+  async getMaintenanceRecords(
+    filters: MaintenanceFilters = {}
   ): Promise<PaginatedMaintenanceRecords> {
     try {
-      const response = await apiClient.get(`/atms/${atmId}/maintenance`, {
+      const response = await apiClient.get("/maintenance/records", {
         params: filters,
       });
       return response.data;
@@ -93,14 +45,43 @@ export const maintenanceService = {
     }
   },
 
-  async updateMaintenance(
-    atmId: string,
-    maintenanceId: string,
-    data: Partial<CreateMaintenanceRecord>
+  async getMaintenanceRecord(id: string): Promise<MaintenanceRecord> {
+    try {
+      const response = await apiClient.get(`/maintenance/records/${id}`);
+      return response.data;
+    } catch (error) {
+      const apiError = handleApiError(error);
+      throw new MaintenanceError(
+        apiError.message,
+        apiError.code,
+        apiError.details
+      );
+    }
+  },
+
+  async createMaintenanceRecord(
+    data: Omit<MaintenanceRecord, "id" | "created_at" | "updated_at">
+  ): Promise<MaintenanceRecord> {
+    try {
+      const response = await apiClient.post("/maintenance/records", data);
+      return response.data;
+    } catch (error) {
+      const apiError = handleApiError(error);
+      throw new MaintenanceError(
+        apiError.message,
+        apiError.code,
+        apiError.details
+      );
+    }
+  },
+
+  async updateMaintenanceRecord(
+    id: string,
+    data: Partial<MaintenanceRecord>
   ): Promise<MaintenanceRecord> {
     try {
       const response = await apiClient.patch(
-        `/atms/${atmId}/maintenance/${maintenanceId}`,
+        `/maintenance/records/${id}`,
         data
       );
       return response.data;
@@ -114,9 +95,88 @@ export const maintenanceService = {
     }
   },
 
-  async deleteMaintenance(atmId: string, maintenanceId: string): Promise<void> {
+  async deleteMaintenanceRecord(id: string): Promise<void> {
     try {
-      await apiClient.delete(`/atms/${atmId}/maintenance/${maintenanceId}`);
+      await apiClient.delete(`/maintenance/records/${id}`);
+    } catch (error) {
+      const apiError = handleApiError(error);
+      throw new MaintenanceError(
+        apiError.message,
+        apiError.code,
+        apiError.details
+      );
+    }
+  },
+
+  // Programación de mantenimiento
+  async getMaintenanceSchedules(): Promise<MaintenanceSchedule[]> {
+    try {
+      const response = await apiClient.get("/maintenance/schedules");
+      return response.data;
+    } catch (error) {
+      const apiError = handleApiError(error);
+      throw new MaintenanceError(
+        apiError.message,
+        apiError.code,
+        apiError.details
+      );
+    }
+  },
+
+  async createMaintenanceSchedule(
+    data: Omit<MaintenanceSchedule, "id" | "created_at" | "updated_at">
+  ): Promise<MaintenanceSchedule> {
+    try {
+      const response = await apiClient.post("/maintenance/schedules", data);
+      return response.data;
+    } catch (error) {
+      const apiError = handleApiError(error);
+      throw new MaintenanceError(
+        apiError.message,
+        apiError.code,
+        apiError.details
+      );
+    }
+  },
+
+  async updateMaintenanceSchedule(
+    id: string,
+    data: Partial<MaintenanceSchedule>
+  ): Promise<MaintenanceSchedule> {
+    try {
+      const response = await apiClient.patch(
+        `/maintenance/schedules/${id}`,
+        data
+      );
+      return response.data;
+    } catch (error) {
+      const apiError = handleApiError(error);
+      throw new MaintenanceError(
+        apiError.message,
+        apiError.code,
+        apiError.details
+      );
+    }
+  },
+
+  async deleteMaintenanceSchedule(id: string): Promise<void> {
+    try {
+      await apiClient.delete(`/maintenance/schedules/${id}`);
+    } catch (error) {
+      const apiError = handleApiError(error);
+      throw new MaintenanceError(
+        apiError.message,
+        apiError.code,
+        apiError.details
+      );
+    }
+  },
+
+  // Estadísticas
+  async getMaintenanceStats(): Promise<MaintenanceStats> {
+    try {
+      const response = await apiClient.get("/maintenance/stats");
+      return response.data;
     } catch (error) {
       const apiError = handleApiError(error);
       throw new MaintenanceError(
