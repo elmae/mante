@@ -5,40 +5,61 @@ import {
   CreateDateColumn,
   UpdateDateColumn,
   ManyToOne,
-  JoinColumn,
-} from "typeorm";
-import { Role } from "./role.entity";
+  JoinColumn
+} from 'typeorm';
+import { Role } from './role.entity';
 
-@Entity("users")
+export interface NotificationPreferences {
+  email_notifications: boolean;
+  in_app_notifications: boolean;
+  push_notifications: boolean;
+}
+
+@Entity('users')
 export class User {
-  @PrimaryGeneratedColumn("uuid")
+  @PrimaryGeneratedColumn('uuid')
   id!: string;
 
-  @Column({ type: "varchar", unique: true })
+  @Column({ type: 'varchar', unique: true })
   username!: string;
 
-  @Column({ type: "varchar", unique: true })
+  @Column({ type: 'varchar', unique: true })
   email!: string;
 
-  @Column({ type: "varchar" })
+  @Column({ type: 'varchar', name: 'password_hash' })
   password!: string;
 
-  @Column({ type: "varchar", nullable: true })
-  full_name?: string;
+  @Column({ type: 'varchar' })
+  first_name!: string;
 
-  @Column({ type: "boolean", default: true })
+  @Column({ type: 'varchar' })
+  last_name!: string;
+
+  @Column({ type: 'boolean', default: true })
   is_active!: boolean;
 
-  @Column({ type: "uuid" })
-  role_id!: string;
+  @Column({ type: 'varchar' })
+  role!: string;
 
-  @CreateDateColumn({ type: "timestamp" })
+  @Column({
+    type: 'jsonb',
+    default: {
+      email_notifications: true,
+      in_app_notifications: true,
+      push_notifications: false
+    }
+  })
+  notification_preferences!: NotificationPreferences;
+
+  @CreateDateColumn({ type: 'timestamp' })
   created_at!: Date;
 
-  @UpdateDateColumn({ type: "timestamp" })
+  @UpdateDateColumn({ type: 'timestamp' })
   updated_at!: Date;
 
-  @ManyToOne(() => Role)
-  @JoinColumn({ name: "role_id" })
-  role!: Role;
+  @Column({ type: 'uuid', nullable: true })
+  created_by?: string;
+
+  @Column({ type: 'uuid', nullable: true })
+  updated_by?: string;
 }

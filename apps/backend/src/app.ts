@@ -17,6 +17,7 @@ const app = express();
 app.use(helmet());
 app.use(cors(config.cors));
 app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
 
 // Initialize database and routes
 const initializeApp = async () => {
@@ -28,7 +29,14 @@ const initializeApp = async () => {
     logger.info('Conexión a base de datos establecida');
 
     // Configurar rutas
-    app.use(config.apiPrefix || '/api', createRoutes(dataSource));
+    app.use((req, res, next) => {
+      logger.info(`Petición recibida: ${req.method} ${req.path}`);
+      next();
+    });
+
+    const apiPrefix = config.apiPrefix || '/api';
+    logger.info(`Usando prefijo API: ${apiPrefix}`);
+    app.use(apiPrefix, createRoutes(dataSource));
     logger.info('Rutas configuradas');
 
     // Configurar trabajos programados
@@ -41,10 +49,6 @@ const initializeApp = async () => {
     process.exit(1);
   }
 };
-
-// Error handling
-app.use(notFoundHandler);
-app.use(errorHandler);
 
 // Log no controlado
 process.on('uncaughtException', error => {

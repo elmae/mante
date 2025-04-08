@@ -1,45 +1,56 @@
-export interface User {
-  id: string;
-  email: string;
-  name: string;
-  role: string;
+export enum TicketStatus {
+  OPEN = "open",
+  ASSIGNED = "assigned",
+  IN_PROGRESS = "inProgress",
+  RESOLVED = "resolved",
+  CLOSED = "closed",
 }
-
-export interface ATM {
-  id: string;
-  serial: string;
-  model: string;
-  location: string;
-}
-
-export enum TicketType {
-  PREVENTIVE = "preventive",
-  CORRECTIVE = "corrective",
-  VISIT = "visit",
-}
-
 export enum TicketPriority {
   LOW = "low",
   MEDIUM = "medium",
   HIGH = "high",
   CRITICAL = "critical",
 }
+export type TicketType = "preventive" | "corrective" | "installation";
 
-export enum TicketStatus {
-  OPEN = "open",
-  ASSIGNED = "assigned",
-  IN_PROGRESS = "in_progress",
-  RESOLVED = "resolved",
-  CLOSED = "closed",
+export interface User {
+  id: string;
+  email: string;
+  name: string;
+  role: "admin" | "technician" | "user";
+  active: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface ATM {
+  id: string;
+  code: string;
+  model: string;
+  location: {
+    address: string;
+    coordinates: {
+      latitude: number;
+      longitude: number;
+    };
+  };
+  status: "operational" | "maintenance" | "offline" | "error";
+  lastMaintenance: string;
+  nextMaintenance: string;
+  manufacturer: string;
+  installationDate: string;
+  zone: string;
 }
 
 export interface Comment {
   id: string;
   content: string;
-  ticket_id: string;
-  created_by: User;
-  created_at: Date;
-  updated_at: Date;
+  ticket: Ticket;
+  ticketId: string;
+  createdBy: User;
+  createdById: string;
+  created_at: string;
+  updated_at: string;
 }
 
 export interface Ticket {
@@ -49,15 +60,13 @@ export interface Ticket {
   type: TicketType;
   priority: TicketPriority;
   status: TicketStatus;
-  atm_id: string;
   atm?: ATM;
-  assigned_to?: string;
+  atmId: string;
   assignedTo?: User;
-  due_date?: Date;
-  created_at: Date;
-  updated_at: Date;
-  created_by?: User;
-  updated_by?: User;
-  met_sla: boolean;
-  comments?: Comment[];
+  assignedToId?: string;
+  createdBy: User;
+  createdById: string;
+  created_at: string;
+  updated_at: string;
+  comments: Comment[];
 }

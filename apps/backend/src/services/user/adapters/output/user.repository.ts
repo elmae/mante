@@ -1,32 +1,29 @@
-import { Repository } from "typeorm";
-import bcrypt from "bcrypt";
-import { User } from "../../../../domain/entities/user.entity";
-import { IUserRepositoryPort } from "../../ports/output/user-repository.port";
-import { CreateUserDto } from "../../dtos/create-user.dto";
-import { UpdateUserDto } from "../../dtos/update-user.dto";
-import { UserFilters } from "../../ports/input/user.port";
+import { Repository } from 'typeorm';
+import bcrypt from 'bcrypt';
+import { User } from '../../../../domain/entities/user.entity';
+import { IUserRepositoryPort } from '../../ports/output/user-repository.port';
+import { CreateUserDto } from '../../dtos/create-user.dto';
+import { UpdateUserDto } from '../../dtos/update-user.dto';
+import { UserFilters } from '../../ports/input/user.port';
 
 export class UserRepository implements IUserRepositoryPort {
   constructor(private readonly repository: Repository<User>) {}
 
   async findById(id: string): Promise<User | null> {
     return this.repository.findOne({
-      where: { id },
-      relations: ["role", "role.permissions"],
+      where: { id }
     });
   }
 
   async findByEmail(email: string): Promise<User | null> {
     return this.repository.findOne({
-      where: { email },
-      relations: ["role", "role.permissions"],
+      where: { email }
     });
   }
 
   async findByUsername(username: string): Promise<User | null> {
     return this.repository.findOne({
-      where: { username },
-      relations: ["role", "role.permissions"],
+      where: { username }
     });
   }
 
@@ -34,7 +31,7 @@ export class UserRepository implements IUserRepositoryPort {
     const hashedPassword = await bcrypt.hash(userData.password, 10);
     const user = this.repository.create({
       ...userData,
-      password: hashedPassword,
+      password: hashedPassword
     });
 
     return this.repository.save(user);
@@ -51,7 +48,7 @@ export class UserRepository implements IUserRepositoryPort {
     const updatedUser = await this.findById(id);
 
     if (!updatedUser) {
-      throw new Error("User not found after update");
+      throw new Error('User not found after update');
     }
 
     return updatedUser;
@@ -61,10 +58,7 @@ export class UserRepository implements IUserRepositoryPort {
     await this.repository.delete(id);
   }
 
-  async validateCredentials(
-    username: string,
-    password: string
-  ): Promise<boolean> {
+  async validateCredentials(username: string, password: string): Promise<boolean> {
     const user = await this.findByUsername(username);
     if (!user) {
       return false;
@@ -74,25 +68,22 @@ export class UserRepository implements IUserRepositoryPort {
   }
 
   async list(filters: UserFilters): Promise<{ users: User[]; total: number }> {
-    const query = this.repository
-      .createQueryBuilder("user")
-      .leftJoinAndSelect("user.role", "role")
-      .leftJoinAndSelect("role.permissions", "permissions");
+    const query = this.repository.createQueryBuilder('user');
 
     // Apply filters
     if (filters.role) {
-      query.andWhere("role.name = :role", { role: filters.role });
+      query.andWhere('user.role = :role', { role: filters.role });
     }
 
     if (filters.isActive !== undefined) {
-      query.andWhere("user.is_active = :isActive", {
-        isActive: filters.isActive,
+      query.andWhere('user.is_active = :isActive', {
+        isActive: filters.isActive
       });
     }
 
     if (filters.search) {
       query.andWhere(
-        "(user.username ILIKE :search OR user.email ILIKE :search OR user.full_name ILIKE :search)",
+        '(user.username ILIKE :search OR user.email ILIKE :search OR user.full_name ILIKE :search)',
         { search: `%${filters.search}%` }
       );
     }
@@ -108,7 +99,7 @@ export class UserRepository implements IUserRepositoryPort {
 
     return {
       users,
-      total,
+      total
     };
   }
 }

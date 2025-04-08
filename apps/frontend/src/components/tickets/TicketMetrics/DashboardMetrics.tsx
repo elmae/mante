@@ -1,3 +1,5 @@
+"use client";
+
 import { useMemo } from "react";
 import {
   BarChart,
@@ -11,7 +13,7 @@ import {
   ResponsiveContainer,
 } from "recharts";
 import { useTicketMetrics } from "@/hooks/useTicketMetrics";
-import { TicketStatus, TicketPriority } from "@/types/entities";
+import { TicketStatus, TicketPriority } from "@/types";
 
 const STATUS_COLORS = {
   [TicketStatus.OPEN]: "#FCD34D",

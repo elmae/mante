@@ -1,3 +1,5 @@
+"use client";
+
 import { useState, useEffect } from "react";
 import { api } from "@/services/api";
 import { TicketStatus, TicketPriority } from "@/types/entities";
@@ -41,7 +43,9 @@ export const useTicketMetrics = (filters?: MetricsFilters) => {
       if (filters?.technician_id)
         params.append("technician_id", filters.technician_id);
 
-      const response = await api.get(`/tickets/metrics?${params.toString()}`);
+      const response = await api.get(
+        `/api/v1/tickets/metrics?${params.toString()}`
+      );
       setData(response.data);
     } catch (err) {
       setError(err as Error);

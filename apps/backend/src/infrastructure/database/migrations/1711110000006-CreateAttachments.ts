@@ -1,6 +1,6 @@
 import { MigrationInterface, QueryRunner, Table, TableForeignKey, TableIndex } from 'typeorm';
 
-export class CreateAttachmentsTables1712437509872 implements MigrationInterface {
+export class CreateAttachments1711110000006 implements MigrationInterface {
   public async up(queryRunner: QueryRunner): Promise<void> {
     // Tabla de adjuntos
     await queryRunner.createTable(
@@ -11,8 +11,7 @@ export class CreateAttachmentsTables1712437509872 implements MigrationInterface 
             name: 'id',
             type: 'uuid',
             isPrimary: true,
-            isGenerated: true,
-            generationStrategy: 'uuid'
+            default: 'uuid_generate_v4()'
           },
           {
             name: 'ticket_id',
@@ -73,8 +72,7 @@ export class CreateAttachmentsTables1712437509872 implements MigrationInterface 
             name: 'id',
             type: 'uuid',
             isPrimary: true,
-            isGenerated: true,
-            generationStrategy: 'uuid'
+            default: 'uuid_generate_v4()'
           },
           {
             name: 'file_id',
@@ -169,8 +167,7 @@ export class CreateAttachmentsTables1712437509872 implements MigrationInterface 
       'attachments',
       new TableIndex({
         name: 'idx_attachments_ticket',
-        columnNames: ['ticket_id'],
-        isUnique: false
+        columnNames: ['ticket_id']
       })
     );
 
@@ -178,8 +175,7 @@ export class CreateAttachmentsTables1712437509872 implements MigrationInterface 
       'attachments',
       new TableIndex({
         name: 'idx_attachments_maintenance',
-        columnNames: ['maintenance_record_id'],
-        isUnique: false
+        columnNames: ['maintenance_record_id']
       })
     );
 
@@ -187,8 +183,7 @@ export class CreateAttachmentsTables1712437509872 implements MigrationInterface 
       'file_audit_logs',
       new TableIndex({
         name: 'idx_audit_logs_file',
-        columnNames: ['file_id'],
-        isUnique: false
+        columnNames: ['file_id']
       })
     );
   }

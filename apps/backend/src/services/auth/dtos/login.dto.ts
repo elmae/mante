@@ -1,4 +1,4 @@
-import { IsString, MinLength } from "class-validator";
+import { IsString, MinLength } from 'class-validator';
 
 export class LoginDto {
   @IsString()
@@ -20,7 +20,8 @@ export interface UserResponseDto {
   id: string;
   username: string;
   email: string;
-  full_name?: string;
+  first_name: string;
+  last_name: string;
   role: string;
   is_active: boolean;
   permissions: string[];

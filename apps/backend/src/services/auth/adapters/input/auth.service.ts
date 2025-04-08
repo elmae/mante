@@ -1,7 +1,7 @@
-import { UserService } from "../../../user/adapters/input/user.service";
-import { JwtService } from "./jwt.service";
-import { LoginDto, LoginResponseDto } from "../../dtos/login.dto";
-import { UnauthorizedException } from "../../../../common/exceptions/unauthorized.exception";
+import { UserService } from '../../../user/adapters/input/user.service';
+import { JwtService } from './jwt.service';
+import { LoginDto, LoginResponseDto } from '../../dtos/login.dto';
+import { UnauthorizedException } from '../../../../common/exceptions/unauthorized.exception';
 
 export interface AuthConfig {
   jwtExpiresIn?: string;
@@ -17,11 +17,11 @@ export class AuthService {
   async login(loginDto: LoginDto): Promise<LoginResponseDto> {
     const user = await this.userService.findByUsername(loginDto.username);
     if (!user) {
-      throw new UnauthorizedException("Invalid credentials");
+      throw new UnauthorizedException('Invalid credentials');
     }
 
     if (!user.is_active) {
-      throw new UnauthorizedException("User is inactive");
+      throw new UnauthorizedException('User is inactive');
     }
 
     const isValid = await this.userService.validateCredentials(
@@ -30,7 +30,7 @@ export class AuthService {
     );
 
     if (!isValid) {
-      throw new UnauthorizedException("Invalid credentials");
+      throw new UnauthorizedException('Invalid credentials');
     }
 
     const accessToken = this.jwtService.sign({ sub: user.id });
@@ -43,15 +43,16 @@ export class AuthService {
         id: user.id,
         username: user.username,
         email: user.email,
-        full_name: user.full_name,
-        role: user.role.name,
+        first_name: user.first_name,
+        last_name: user.last_name,
+        role: user.role,
         is_active: user.is_active,
-        permissions: user.role.permissions.map((p) => p.name),
-      },
+        permissions: [] // Ya no tenemos permisos en la BD actual
+      }
     };
   }
 
-  async validateToken(token: string): Promise<LoginResponseDto["user"]> {
+  async validateToken(token: string): Promise<LoginResponseDto['user']> {
     try {
       const payload = this.jwtService.verify(token);
       const user = await this.userService.findById(payload.sub);
@@ -64,10 +65,11 @@ export class AuthService {
         id: user.id,
         username: user.username,
         email: user.email,
-        full_name: user.full_name,
-        role: user.role.name,
+        first_name: user.first_name,
+        last_name: user.last_name,
+        role: user.role,
         is_active: user.is_active,
-        permissions: user.role.permissions.map((p) => p.name),
+        permissions: [] // Ya no tenemos permisos en la BD actual
       };
     } catch (error) {
       throw new UnauthorizedException();

@@ -1,6 +1,4 @@
-import axios from "axios";
-
-const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001";
+import { api } from "./index";
 
 export interface DashboardStats {
   pendingJobs: number;
@@ -33,12 +31,12 @@ export const dashboardService = {
     stats: DashboardStats;
     trends: Record<keyof DashboardStats, DashboardTrends>;
   }> {
-    const response = await axios.get(`${API_URL}/api/dashboard/stats`);
+    const response = await api.get(`/api/v1/dashboard/stats`);
     return response.data;
   },
 
   async getRecentActivity(): Promise<Activity[]> {
-    const response = await axios.get(`${API_URL}/api/dashboard/activity`);
+    const response = await api.get(`/api/v1/dashboard/activity`);
     return response.data;
   },
 
@@ -46,9 +44,7 @@ export const dashboardService = {
     data: TicketStatus[];
     total: number;
   }> {
-    const response = await axios.get(
-      `${API_URL}/api/dashboard/tickets/distribution`
-    );
+    const response = await api.get(`/api/v1/dashboard/tickets/distribution`);
     return response.data;
   },
 };

@@ -1,6 +1,6 @@
 import { Comment } from "../../types/entities";
 
-const BASE_URL = "/api/comments";
+const BASE_URL = "/comments";
 
 export interface CreateCommentDto {
   content: string;

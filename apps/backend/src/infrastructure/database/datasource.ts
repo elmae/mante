@@ -10,6 +10,7 @@ import { MaintenanceRecord } from '../../domain/entities/maintenance-record.enti
 import { SLAConfig } from '../../domain/entities/sla-config.entity';
 import { GeographicZone } from '../../domain/entities/geographic-zone.entity';
 import { Attachment } from '../../domain/entities/attachment.entity';
+import { Comment } from '../../domain/entities/comment.entity';
 
 // Load environment variables
 config({ path: resolve(__dirname, '../../../.env') });
@@ -31,15 +32,19 @@ export const dataSourceOptions: DataSourceOptions = {
     MaintenanceRecord,
     SLAConfig,
     GeographicZone,
-    Attachment
+    Attachment,
+    Comment
   ],
   migrations: ['src/infrastructure/database/migrations/*.ts'],
   migrationsRun: true,
   synchronize: process.env.NODE_ENV === 'development',
   logging: process.env.DB_LOGGING === 'true',
-  ssl: process.env.DB_SSL === 'true' ? {
-    rejectUnauthorized: false
-  } : false
+  ssl:
+    process.env.DB_SSL === 'true'
+      ? {
+          rejectUnauthorized: false
+        }
+      : false
 };
 
 // Create and export DataSource instance

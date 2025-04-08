@@ -4,46 +4,67 @@ import { ClientService } from '../services/client/adapters/input/client.service'
 import { ClientRepository } from '../services/client/adapters/output/client.repository';
 import { DataSource } from 'typeorm';
 import { Client } from '../domain/entities/client.entity';
-import { AuthMiddleware } from '../middleware/auth.middleware';
+import { createAuthMiddleware } from '../middleware/auth.middleware';
+import { JwtService } from '../services/auth/adapters/input/jwt.service';
+import { UserService } from '../services/user/adapters/input/user.service';
 
-export function createClientRouter(dataSource: DataSource): Router {
+export function createClientRouter(
+  dataSource: DataSource,
+  jwtService: JwtService,
+  userService: UserService
+): Router {
   const router = Router();
   const clientRepository = new ClientRepository(dataSource.getRepository(Client));
   const clientService = new ClientService(clientRepository);
   const clientController = new ClientController(clientService);
+  const authMiddleware = createAuthMiddleware(jwtService, userService);
 
-  router.get('/', AuthMiddleware.requireAnyRole(['admin', 'operator']), (req, res, next) =>
-    clientController.findAll(req, res, next)
+  router.get(
+    '/',
+    authMiddleware.hasRole(['admin', 'operator']),
+    clientController.findAll.bind(clientController)
   );
 
-  router.get('/:id', AuthMiddleware.requireAnyRole(['admin', 'operator']), (req, res, next) =>
-    clientController.findById(req, res, next)
+  router.get(
+    '/:id',
+    authMiddleware.hasRole(['admin', 'operator']),
+    clientController.findById.bind(clientController)
   );
 
   router.get(
     '/email/:email',
-    AuthMiddleware.requireAnyRole(['admin', 'operator']),
-    (req, res, next) => clientController.findByEmail(req, res, next)
+    authMiddleware.hasRole(['admin', 'operator']),
+    clientController.findByEmail.bind(clientController)
   );
 
-  router.post('/', AuthMiddleware.requireRole('admin'), (req, res, next) =>
-    clientController.create(req, res, next)
+  router.post(
+    '/',
+    authMiddleware.hasRole(['admin']),
+    clientController.create.bind(clientController)
   );
 
-  router.patch('/:id', AuthMiddleware.requireRole('admin'), (req, res, next) =>
-    clientController.update(req, res, next)
+  router.patch(
+    '/:id',
+    authMiddleware.hasRole(['admin']),
+    clientController.update.bind(clientController)
   );
 
-  router.delete('/:id', AuthMiddleware.requireRole('admin'), (req, res, next) =>
-    clientController.delete(req, res, next)
+  router.delete(
+    '/:id',
+    authMiddleware.hasRole(['admin']),
+    clientController.delete.bind(clientController)
   );
 
-  router.patch('/:id/activate', AuthMiddleware.requireRole('admin'), (req, res, next) =>
-    clientController.activate(req, res, next)
+  router.patch(
+    '/:id/activate',
+    authMiddleware.hasRole(['admin']),
+    clientController.activate.bind(clientController)
   );
 
-  router.patch('/:id/deactivate', AuthMiddleware.requireRole('admin'), (req, res, next) =>
-    clientController.deactivate(req, res, next)
+  router.patch(
+    '/:id/deactivate',
+    authMiddleware.hasRole(['admin']),
+    clientController.deactivate.bind(clientController)
   );
 
   return router;

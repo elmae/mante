@@ -5,7 +5,9 @@ import {
   IsOptional,
   MinLength,
   IsBoolean,
-} from "class-validator";
+  IsObject
+} from 'class-validator';
+import { NotificationPreferences } from '../../../domain/entities/user.entity';
 
 export class UpdateUserDto {
   @IsString()
@@ -33,4 +35,8 @@ export class UpdateUserDto {
   @IsBoolean()
   @IsOptional()
   is_active?: boolean;
+
+  @IsObject()
+  @IsOptional()
+  notification_preferences?: NotificationPreferences;
 }
