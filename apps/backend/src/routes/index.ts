@@ -20,7 +20,7 @@ import { UserService } from '../services/user/adapters/input/user.service';
  * @param dataSource Conexión a la base de datos
  * @returns Router configurado con todas las rutas
  */
-export const createRouter = (dataSource: DataSource): Router => {
+export const createRouter = async (dataSource: DataSource): Promise<Router> => {
   const router = Router();
 
   // Crear router para API v1
@@ -31,40 +31,40 @@ export const createRouter = (dataSource: DataSource): Router => {
   const userService = new UserService(dataSource.getRepository('User'));
 
   // Montar las diferentes rutas
-  const authRouter = createAuthRouter(dataSource, jwtService, userService);
+  const authRouter = await createAuthRouter(dataSource, jwtService, userService);
   apiRouter.use('/auth', authRouter);
 
-  const usersRouter = createUserRouter(dataSource, jwtService, userService);
+  const usersRouter = await createUserRouter(dataSource, jwtService, userService);
   apiRouter.use('/users', usersRouter);
 
-  const atmsRouter = createAtmRouter(dataSource, jwtService, userService);
+  const atmsRouter = await createAtmRouter(dataSource, jwtService, userService);
   apiRouter.use('/atms', atmsRouter);
 
-  const ticketsRouter = createTicketRouter(dataSource, jwtService, userService);
+  const ticketsRouter = await createTicketRouter(dataSource, jwtService, userService);
   apiRouter.use('/tickets', ticketsRouter);
 
-  const maintenanceRouter = createMaintenanceRouter(dataSource, jwtService, userService);
+  const maintenanceRouter = await createMaintenanceRouter(dataSource, jwtService, userService);
   apiRouter.use('/maintenance', maintenanceRouter);
 
-  const clientsRouter = createClientRouter(dataSource, jwtService, userService);
+  const clientsRouter = await createClientRouter(dataSource, jwtService, userService);
   apiRouter.use('/clients', clientsRouter);
 
-  const settingsRouter = createSettingsRouter(dataSource, jwtService, userService);
+  const settingsRouter = await createSettingsRouter(dataSource, jwtService, userService);
   apiRouter.use('/settings', settingsRouter);
 
-  const slaRouter = createSlaRouter(dataSource, jwtService, userService);
+  const slaRouter = await createSlaRouter(dataSource, jwtService, userService);
   apiRouter.use('/sla', slaRouter);
 
-  const attachmentsRouter = createAttachmentRouter(dataSource, jwtService, userService);
+  const attachmentsRouter = await createAttachmentRouter(dataSource, jwtService, userService);
   apiRouter.use('/attachments', attachmentsRouter);
 
-  const dashboardRouter = createDashboardRouter(dataSource, jwtService, userService);
+  const dashboardRouter = await createDashboardRouter(dataSource, jwtService, userService);
   apiRouter.use('/dashboard', dashboardRouter);
 
-  const notificationsRouter = createNotificationRouter(dataSource, jwtService, userService);
+  const notificationsRouter = await createNotificationRouter(dataSource, jwtService, userService);
   apiRouter.use('/notifications', notificationsRouter);
 
-  const commentsRouter = createCommentRouter(dataSource, jwtService, userService);
+  const commentsRouter = await createCommentRouter(dataSource, jwtService, userService);
   apiRouter.use('/comments', commentsRouter);
 
   // Montar todas las rutas bajo /api/v1

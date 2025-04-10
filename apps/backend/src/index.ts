@@ -1,29 +1,14 @@
 import { createApp } from './app';
 import { config } from './config/config';
-import { DataSource } from 'typeorm';
-import { join } from 'path';
+import { getDataSource, closeDatabase } from './config/database.config';
 
-const startServer = async () => {
+async function main() {
   try {
-    // Configurar la conexión a la base de datos
-    const dataSource = new DataSource({
-      type: 'postgres',
-      host: config.database.host,
-      port: config.database.port,
-      username: config.database.username,
-      password: config.database.password,
-      database: config.database.database,
-      entities: [join(__dirname, './domain/entities/*.entity{.ts,.js}')],
-      synchronize: config.database.synchronize,
-      logging: config.database.logging
-    });
-
     // Inicializar la conexión a la base de datos
-    await dataSource.initialize();
-    console.log('🗄️  Conexión a base de datos establecida');
+    const dataSource = await getDataSource();
 
-    // Crear la aplicación Express
-    const app = await createApp();
+    // Crear la aplicación Express con la conexión a la base de datos
+    const app = await createApp(dataSource);
 
     // Iniciar el servidor
     app.listen(config.port, () => {
@@ -37,12 +22,7 @@ const startServer = async () => {
     signals.forEach(signal => {
       process.on(signal, async () => {
         console.log(`\n${signal} recibido. Cerrando servidor...`);
-
-        // Cerrar conexión a la base de datos
-        await dataSource.destroy();
-        console.log('🗄️  Conexión a base de datos cerrada');
-
-        // Salir del proceso
+        await closeDatabase();
         process.exit(0);
       });
     });
@@ -50,6 +30,6 @@ const startServer = async () => {
     console.error('❌ Error al iniciar el servidor:', error);
     process.exit(1);
   }
-};
+}
 
-startServer();
+main();

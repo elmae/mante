@@ -10,39 +10,52 @@ import { LoginDto } from '../services/auth/dtos/login.dto';
 import { RedisService } from '../infrastructure/redis/redis.service';
 import { DataSource } from 'typeorm';
 
-export const createAuthRouter = (
+export const createAuthRouter = async (
   dataSource: DataSource,
   jwtService: JwtService,
   userService: UserService
 ) => {
   const router = Router();
 
-  // Inicializar servicios específicos de auth
-  const redisService = new RedisService();
-  const tokenBlacklistService = new TokenBlacklistService(redisService);
-  const authService = new AuthService(userService, jwtService, tokenBlacklistService);
-  const authController = new AuthController(authService);
+  try {
+    // Inicializar servicios específicos de auth
+    console.log('🔄 Inicializando servicios de autenticación...');
 
-  // Inicializar middleware de autenticación
-  const authMiddleware = new AuthMiddleware(jwtService, userService, authService);
+    const redisService = new RedisService();
+    await redisService.ensureConnection();
 
-  // Rutas públicas
-  router.post(
-    '/login',
-    ValidationMiddleware.validate(LoginDto),
-    authController.login.bind(authController)
-  );
+    const tokenBlacklistService = new TokenBlacklistService(redisService);
+    const authService = new AuthService(userService, jwtService, tokenBlacklistService);
+    const authController = new AuthController(authService);
 
-  router.post('/refresh', authController.refreshToken.bind(authController));
+    // Inicializar middleware de autenticación
+    const authMiddleware = new AuthMiddleware(jwtService, userService, authService);
 
-  // Rutas protegidas
-  router.get(
-    '/validate',
-    authMiddleware.authenticate,
-    authController.validateToken.bind(authController)
-  );
+    // Log de inicialización exitosa
+    console.log('✅ Servicios de autenticación inicializados correctamente');
 
-  router.post('/logout', authMiddleware.authenticate, authController.logout.bind(authController));
+    // Configurar rutas
+    // Rutas públicas
+    router.post(
+      '/login',
+      ValidationMiddleware.validate(LoginDto),
+      authController.login.bind(authController)
+    );
 
-  return router;
+    router.post('/refresh', authController.refreshToken.bind(authController));
+
+    // Rutas protegidas
+    router.get(
+      '/validate',
+      authMiddleware.authenticate,
+      authController.validateToken.bind(authController)
+    );
+
+    router.post('/logout', authMiddleware.authenticate, authController.logout.bind(authController));
+
+    return router;
+  } catch (error) {
+    console.error('❌ Error inicializando servicios de autenticación:', error);
+    throw error;
+  }
 };

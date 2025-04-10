@@ -3,7 +3,7 @@ import { DataSource } from 'typeorm';
 import { UserController } from '../controllers/user.controller';
 import { UserService } from '../services/user/adapters/input/user.service';
 import { JwtService } from '../services/auth/adapters/input/jwt.service';
-import { validate } from '../middleware/validation.middleware';
+import { ValidationMiddleware } from '../middleware/validation.middleware';
 import { CreateUserDto } from '../services/user/dtos/create-user.dto';
 import { UpdateUserDto } from '../services/user/dtos/update-user.dto';
 import { createAuthMiddleware } from '../middleware/auth.middleware';
@@ -39,14 +39,14 @@ export function createUserRouter(
   router.post(
     '/',
     authMiddleware.hasRole(['admin']),
-    validate(CreateUserDto),
+    ValidationMiddleware.validate(CreateUserDto),
     userController.create.bind(userController)
   );
 
   router.patch(
     '/:id',
     authMiddleware.hasPermission(['update:users']),
-    validate(UpdateUserDto),
+    ValidationMiddleware.validate(UpdateUserDto),
     userController.update.bind(userController)
   );
 
