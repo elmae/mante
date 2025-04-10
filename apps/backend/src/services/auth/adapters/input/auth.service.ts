@@ -15,6 +15,8 @@ export class AuthService {
 
   async login(loginDto: LoginDto): Promise<LoginResponseDto> {
     const user = await this.userService.findByEmail(loginDto.email);
+    console.log('🔍 Usuario encontrado (completo):', JSON.stringify(user, null, 2));
+    console.log('🔍 Relación role cargada?:', user?.role !== undefined);
     if (!user) {
       throw new UnauthorizedException('Credenciales inválidas');
     }
@@ -27,6 +29,10 @@ export class AuthService {
 
     if (!isValid) {
       throw new UnauthorizedException('Credenciales inválidas');
+    }
+
+    if (!user.role) {
+      throw new BadRequestException('El usuario no tiene un rol asignado');
     }
 
     const payload: TokenPayload = {

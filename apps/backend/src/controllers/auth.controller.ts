@@ -2,7 +2,6 @@ import { Request, Response, NextFunction } from 'express';
 import { AuthService } from '../services/auth/adapters/input/auth.service';
 import { LoginDto } from '../services/auth/dtos/login.dto';
 import { UnauthorizedException } from '../common/exceptions/unauthorized.exception';
-import { ValidationMiddleware } from '../middleware/validation.middleware';
 import { BadRequestException } from '../common/exceptions/bad-request.exception';
 
 export class AuthController {
@@ -10,8 +9,16 @@ export class AuthController {
 
   async login(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
-      await ValidationMiddleware.validateDto(LoginDto, req.body);
-      const result = await this.authService.login(req.body);
+      console.log('📥 Petición de login recibida:', {
+        body: req.body,
+        headers: req.headers
+      });
+
+      const result = await this.authService.login(req.body as LoginDto);
+      console.log('🔐 Resultado de autenticación:', {
+        userId: result.user.id,
+        role: result.user.role
+      });
 
       res.json({
         success: true,
@@ -29,6 +36,17 @@ export class AuthController {
         }
       });
     } catch (error) {
+      console.error(
+        '❌ Error en login:',
+        error instanceof Error
+          ? {
+              name: error.name,
+              message: error.message,
+              stack: error.stack
+            }
+          : 'Error desconocido'
+      );
+
       if (error instanceof UnauthorizedException) {
         next(error);
       } else if (error instanceof BadRequestException) {
@@ -67,12 +85,12 @@ export class AuthController {
 
   async refreshToken(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
-      const refreshToken = req.body.refresh_token;
-      if (!refreshToken) {
+      const { refresh_token } = req.body as { refresh_token: string };
+      if (!refresh_token) {
         throw new UnauthorizedException('No refresh token provided');
       }
 
-      const result = await this.authService.refreshToken(refreshToken);
+      const result = await this.authService.refreshToken(refresh_token);
       res.json({
         success: true,
         data: {

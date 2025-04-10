@@ -76,29 +76,39 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     try {
       dispatch({ type: "SET_LOADING", payload: true });
 
+      console.log("🔍 Intentando login con:", { email });
+
       const response = await fetch("/api/v1/auth/login", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email, password }),
       });
 
+      console.log("📨 Respuesta del servidor:", {
+        status: response.status,
+        statusText: response.statusText,
+        headers: Object.fromEntries(response.headers.entries()),
+      });
+
       const data = await response.json();
+      console.log("📦 Datos recibidos:", data);
 
       if (!response.ok) {
         throw new Error(data.error?.message || "Error al iniciar sesión");
       }
 
-      localStorage.setItem("token", data.data.token);
+      localStorage.setItem("token", data.data.access_token);
       localStorage.setItem("user", JSON.stringify(data.data.user));
 
       dispatch({
         type: "LOGIN_SUCCESS",
         payload: {
           user: data.data.user,
-          token: data.data.token,
+          token: data.data.access_token,
         },
       });
     } catch (error) {
+      console.error("❌ Error en login:", error);
       dispatch({ type: "SET_LOADING", payload: false });
       throw error;
     }
