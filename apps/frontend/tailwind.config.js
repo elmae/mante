@@ -38,10 +38,34 @@ module.exports = {
           foreground: "hsl(var(--card-foreground))",
         },
       },
+      fontFamily: {
+        playfair: ["Playfair Display", "serif"],
+        sans: ["Inter", "system-ui", "sans-serif"],
+      },
       borderRadius: {
         lg: "var(--radius)",
         md: "calc(var(--radius) - 2px)",
         sm: "calc(var(--radius) - 4px)",
+      },
+      transitionDuration: {
+        DEFAULT: "300ms",
+      },
+      transitionTimingFunction: {
+        DEFAULT: "cubic-bezier(0.4, 0, 0.2, 1)",
+      },
+      animation: {
+        "fade-in": "fadeIn 0.5s ease-in-out",
+        "slide-up": "slideUp 0.5s ease-out",
+      },
+      keyframes: {
+        fadeIn: {
+          from: { opacity: 0 },
+          to: { opacity: 1 },
+        },
+        slideUp: {
+          from: { transform: "translateY(10px)", opacity: 0 },
+          to: { transform: "translateY(0)", opacity: 1 },
+        },
       },
     },
   },

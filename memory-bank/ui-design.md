@@ -5,48 +5,72 @@
 ### Paleta de Colores
 
 ```css
-/* Colores Principales */
---primary: #2563eb; /* Azul principal */
---primary-dark: #1d4ed8;
---primary-light: #3b82f6;
+/* Sistema de Colores (HSL) */
+--primary: 220 13% 25%;
+--primary-foreground: 210 40% 98%;
 
 /* Colores Secundarios */
---secondary: #475569; /* Gris azulado */
---secondary-dark: #334155;
---secondary-light: #64748b;
+--secondary: 30 25% 97%;
+--secondary-foreground: 222.2 47.4% 11.2%;
 
 /* Colores de Estado */
---success: #22c55e; /* Verde */
---warning: #f59e0b; /* Amarillo */
---error: #ef4444; /* Rojo */
---info: #3b82f6; /* Azul */
+--success: 142 76% 36%;
+--warning: 35 92% 51%;
+--destructive: 0 84.2% 60.2%;
+--info: 220 14% 96%;
 
-/* Colores de Fondo */
---bg-primary: #ffffff;
---bg-secondary: #f8fafc;
---bg-tertiary: #f1f5f9;
+/* Colores del Sistema */
+--background: 0 0% 100%;
+--foreground: 222.2 84% 4.9%;
 
-/* Colores de Texto */
---text-primary: #1e293b;
---text-secondary: #475569;
---text-tertiary: #64748b;
---text-light: #ffffff;
+/* Colores de Superficie */
+--card: 0 0% 100%;
+--card-foreground: 222.2 84% 4.9%;
+--popover: 0 0% 100%;
+--popover-foreground: 222.2 84% 4.9%;
+
+/* Utilidades */
+--border: 220 13% 91%;
+--input: 214.3 31.8% 91.4%;
+--ring: 220 13% 25%;
+--radius: 0.5rem;
 ```
 
 ### Tipografía
 
 ```css
-/* Fuente Principal */
+/* Fuentes del Sistema */
 --font-primary: "Inter", sans-serif;
+--font-display: "Playfair Display", serif;
 
-/* Tamaños de Fuente */
---text-xs: 0.75rem; /* 12px */
---text-sm: 0.875rem; /* 14px */
---text-base: 1rem; /* 16px */
---text-lg: 1.125rem; /* 18px */
---text-xl: 1.25rem; /* 20px */
---text-2xl: 1.5rem; /* 24px */
---text-3xl: 1.875rem; /* 30px */
+/* Jerarquía Tipográfica */
+h1,
+.h1 {
+  font-family: var(--font-display);
+  font-size: 3rem;
+  line-height: 1.2;
+}
+h2,
+.h2 {
+  font-family: var(--font-display);
+  font-size: 2.25rem;
+  line-height: 1.3;
+}
+h3,
+.h3 {
+  font-family: var(--font-display);
+  font-size: 1.5rem;
+  line-height: 1.4;
+}
+
+/* Tamaños de Texto Base */
+--text-xs: 0.75rem;
+--text-sm: 0.875rem;
+--text-base: 1rem;
+--text-lg: 1.125rem;
+--text-xl: 1.25rem;
+--text-2xl: 1.5rem;
+--text-3xl: 1.875rem;
 ```
 
 ### Espaciado
@@ -279,9 +303,18 @@ graph TB
 ## Animaciones
 
 ```css
-/* Transiciones */
---transition-base: all 0.2s ease-in-out;
---transition-smooth: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+/* Transiciones y Efectos */
+.transition-soft {
+  transition: all 300ms cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.hover-lift {
+  transition: transform 300ms ease-in-out, box-shadow 300ms ease-in-out;
+}
+.hover-lift:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-md);
+}
 
 /* Animaciones */
 @keyframes fadeIn {
@@ -293,15 +326,23 @@ graph TB
   }
 }
 
-@keyframes slideIn {
+@keyframes slideUp {
   from {
-    transform: translateY(20px);
+    transform: translateY(10px);
     opacity: 0;
   }
   to {
     transform: translateY(0);
     opacity: 1;
   }
+}
+
+.animate-fade-in {
+  animation: fadeIn 300ms ease-in-out;
+}
+
+.animate-slide-up {
+  animation: slideUp 300ms ease-out;
 }
 ```
 

@@ -113,6 +113,10 @@
      - Manejo de errores y validaciones ✅
 
 2. Mejoras de UX/UI
+   - Sistema de diseño actualizado:
+     - Paleta de colores HSL ✅
+     - Tipografía Playfair Display ✅
+     - Nuevas utilidades CSS ✅
    - Optimización móvil
    - Accesibilidad
    - Rendimiento

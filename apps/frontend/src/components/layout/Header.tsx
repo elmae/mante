@@ -2,10 +2,12 @@
 
 import React, { Fragment } from "react";
 import { Bars3Icon } from "@heroicons/react/24/outline";
-import { Popover, Transition } from "@headlessui/react";
+import { Menu, Popover, Transition } from "@headlessui/react";
 import { NotificationBell, NotificationList } from "@/components/notifications";
-
+import { useAuth } from "@/contexts/auth/AuthContext";
 export function Header() {
+  const { user, logout } = useAuth();
+
   return (
     <header className="fixed top-0 z-50 w-full bg-white shadow-sm h-16">
       <div className="flex h-full items-center justify-between px-4">
@@ -53,16 +55,37 @@ export function Header() {
           </Popover>
 
           {/* Avatar del usuario */}
-          <div className="relative">
-            <button
-              type="button"
-              className="flex rounded-full bg-gray-100 text-sm focus:outline-none"
-            >
+          <Menu as="div" className="relative">
+            <Menu.Button className="flex rounded-full bg-gray-100 text-sm focus:outline-none">
               <span className="h-8 w-8 rounded-full bg-primary-200 flex items-center justify-center text-primary-700">
-                US
+                {user?.name?.substring(0, 2).toUpperCase() || "US"}
               </span>
-            </button>
-          </div>
+            </Menu.Button>
+            <Transition
+              as={Fragment}
+              enter="transition ease-out duration-100"
+              enterFrom="transform opacity-0 scale-95"
+              enterTo="transform opacity-100 scale-100"
+              leave="transition ease-in duration-75"
+              leaveFrom="transform opacity-100 scale-100"
+              leaveTo="transform opacity-0 scale-95"
+            >
+              <Menu.Items className="absolute right-0 z-10 mt-2 w-48 origin-top-right rounded-md bg-white py-1 shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none">
+                <Menu.Item>
+                  {({ active }) => (
+                    <button
+                      onClick={logout}
+                      className={`${
+                        active ? "bg-gray-100" : ""
+                      } block w-full px-4 py-2 text-left text-sm text-gray-700`}
+                    >
+                      Cerrar Sesión
+                    </button>
+                  )}
+                </Menu.Item>
+              </Menu.Items>
+            </Transition>
+          </Menu>
         </div>
       </div>
     </header>
