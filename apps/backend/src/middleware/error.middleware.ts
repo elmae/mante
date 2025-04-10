@@ -1,89 +1,44 @@
-import { Request, Response, NextFunction } from "express";
-import { ValidationException } from "../common/exceptions/validation.exception";
-import { UnauthorizedException } from "../common/exceptions/unauthorized.exception";
+import { Request, Response, NextFunction } from 'express';
+import { HttpException } from '../common/exceptions/http.exception';
+import { ValidationException } from '../common/exceptions/validation.exception';
+import { UnauthorizedException } from '../common/exceptions/unauthorized.exception';
+import { BadRequestException } from '../common/exceptions/bad-request.exception';
+import { NotFoundException } from '../common/exceptions/not-found.exception';
 
-interface ErrorResponse {
-  statusCode: number;
-  error: string;
-  message: string;
-  errors?: any[];
-  stack?: string;
-}
+export const errorMiddleware = (error: Error, req: Request, res: Response, next: NextFunction) => {
+  let status = 500;
+  let message = 'Error interno del servidor';
+  let details = undefined;
+  let success = false;
 
-export function errorHandler(
-  err: Error,
-  req: Request,
-  res: Response,
-  next: NextFunction
-) {
-  let response: ErrorResponse;
-
-  // Handle specific error types
-  if (err instanceof ValidationException) {
-    response = err.getResponse();
-  } else if (err instanceof UnauthorizedException) {
-    response = {
-      statusCode: 401,
-      error: "Unauthorized",
-      message: err.message,
-    };
-  } else {
-    // Default error handling
-    response = {
-      statusCode: 500,
-      error: "Internal Server Error",
-      message: "An unexpected error occurred",
-    };
+  if (error instanceof HttpException) {
+    status = error.statusCode;
+    message = error.message;
   }
 
-  // Add stack trace in development
-  if (process.env.NODE_ENV === "development") {
-    response.stack = err.stack;
-
-    // Log the error
-    console.error("Error:", {
-      ...response,
-      timestamp: new Date().toISOString(),
-      path: req.path,
-      method: req.method,
-    });
+  if (error instanceof ValidationException) {
+    status = 400;
+    details = error.errors;
   }
 
-  res.status(response.statusCode).json(response);
-}
-
-// Handle 404 errors
-export function notFoundHandler(req: Request, res: Response) {
-  const response: ErrorResponse = {
-    statusCode: 404,
-    error: "Not Found",
-    message: `Cannot ${req.method} ${req.path}`,
-  };
-
-  res.status(404).json(response);
-}
-
-// Handle validation errors from express-validator
-export function validationErrorHandler(
-  err: any,
-  req: Request,
-  res: Response,
-  next: NextFunction
-) {
-  if (err?.validation) {
-    const response: ErrorResponse = {
-      statusCode: 400,
-      error: "Bad Request",
-      message: "Validation failed",
-      errors: err.validation,
-    };
-    return res.status(400).json(response);
+  if (error instanceof UnauthorizedException) {
+    status = 401;
   }
-  next(err);
-}
 
-// Handle async errors
-export const asyncHandler =
-  (fn: Function) => (req: Request, res: Response, next: NextFunction) => {
-    Promise.resolve(fn(req, res, next)).catch(next);
-  };
+  if (error instanceof BadRequestException) {
+    status = 400;
+  }
+
+  if (error instanceof NotFoundException) {
+    status = 404;
+  }
+
+  res.status(status).json({
+    success,
+    error: {
+      code: status,
+      message,
+      details
+    }
+  });
+};

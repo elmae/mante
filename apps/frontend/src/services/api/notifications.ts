@@ -19,7 +19,9 @@ export const NotificationsAPI = {
    * @param id - ID de la notificación
    */
   markAsRead: async (id: string): Promise<INotification> => {
-    const { data } = await api.post<INotification>(`/notifications/${id}/read`);
+    const { data } = await api.patch<INotification>(
+      `/notifications/${id}/read`
+    );
     return data;
   },
 

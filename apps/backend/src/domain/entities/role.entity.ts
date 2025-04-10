@@ -5,49 +5,42 @@ import {
   CreateDateColumn,
   UpdateDateColumn,
   ManyToMany,
-  JoinTable,
-} from "typeorm";
-import { Permission } from "./permission.entity";
+  JoinTable
+} from 'typeorm';
+import { Permission } from './permission.entity';
 
-export enum RoleType {
-  ADMIN = "admin",
-  OPERATOR = "operator",
-  TECHNICIAN = "technician",
-  CLIENT = "client",
-}
-
-@Entity("roles")
+@Entity('roles')
 export class Role {
-  @PrimaryGeneratedColumn("uuid")
+  @PrimaryGeneratedColumn('uuid')
   id!: string;
 
-  @Column({
-    type: "enum",
-    enum: RoleType,
-    default: RoleType.TECHNICIAN,
-  })
-  name!: RoleType;
+  @Column({ unique: true })
+  name!: string;
 
-  @Column({ type: "varchar" })
+  @Column()
   description!: string;
-
-  @CreateDateColumn({ type: "timestamp" })
-  created_at!: Date;
-
-  @UpdateDateColumn({ type: "timestamp" })
-  updated_at!: Date;
 
   @ManyToMany(() => Permission)
   @JoinTable({
-    name: "role_permissions",
+    name: 'role_permissions',
     joinColumn: {
-      name: "role_id",
-      referencedColumnName: "id",
+      name: 'role_id',
+      referencedColumnName: 'id'
     },
     inverseJoinColumn: {
-      name: "permission_id",
-      referencedColumnName: "id",
-    },
+      name: 'permission_id',
+      referencedColumnName: 'id'
+    }
   })
   permissions!: Permission[];
+
+  @CreateDateColumn({ name: 'created_at' })
+  created_at!: Date;
+
+  @UpdateDateColumn({ name: 'updated_at' })
+  updated_at!: Date;
+
+  constructor(partial: Partial<Role>) {
+    Object.assign(this, partial);
+  }
 }

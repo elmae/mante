@@ -1,31 +1,48 @@
 import { Router } from 'express';
-import { DataSource } from 'typeorm';
 import { AuthController } from '../controllers/auth.controller';
 import { AuthService } from '../services/auth/adapters/input/auth.service';
-import { UserService } from '../services/user/adapters/input/user.service';
 import { JwtService } from '../services/auth/adapters/input/jwt.service';
-import { validate } from '../middleware/validation.middleware';
+import { TokenBlacklistService } from '../services/auth/adapters/input/token-blacklist.service';
+import { UserService } from '../services/user/adapters/input/user.service';
+import { AuthMiddleware } from '../middleware/auth.middleware';
+import { ValidationMiddleware } from '../middleware/validation.middleware';
 import { LoginDto } from '../services/auth/dtos/login.dto';
+import { RedisService } from '../infrastructure/redis/redis.service';
+import { DataSource } from 'typeorm';
 
-export function createAuthRouter(
+export const createAuthRouter = (
   dataSource: DataSource,
   jwtService: JwtService,
   userService: UserService
-): Router {
+) => {
   const router = Router();
 
-  // Initialize dependencies
-  const authService = new AuthService(userService, jwtService);
+  // Inicializar servicios específicos de auth
+  const redisService = new RedisService();
+  const tokenBlacklistService = new TokenBlacklistService(redisService);
+  const authService = new AuthService(userService, jwtService, tokenBlacklistService);
   const authController = new AuthController(authService);
 
-  // Define routes
-  router.post('/login', validate(LoginDto), authController.login.bind(authController));
+  // Inicializar middleware de autenticación
+  const authMiddleware = new AuthMiddleware(jwtService, userService, authService);
+
+  // Rutas públicas
+  router.post(
+    '/login',
+    ValidationMiddleware.validate(LoginDto),
+    authController.login.bind(authController)
+  );
 
   router.post('/refresh', authController.refreshToken.bind(authController));
 
-  router.post('/logout', authController.logout.bind(authController));
+  // Rutas protegidas
+  router.get(
+    '/validate',
+    authMiddleware.authenticate,
+    authController.validateToken.bind(authController)
+  );
 
-  router.get('/validate', authController.validateToken.bind(authController));
+  router.post('/logout', authMiddleware.authenticate, authController.logout.bind(authController));
 
   return router;
-}
+};

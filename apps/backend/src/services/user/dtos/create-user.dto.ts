@@ -1,46 +1,30 @@
-import {
-  IsString,
-  IsEmail,
-  IsUUID,
-  IsOptional,
-  MinLength,
-  IsBoolean,
-} from "class-validator";
-import { RoleType } from "../../../domain/entities/role.entity";
+import { IsString, IsEmail, MinLength, IsUUID, IsBoolean, IsOptional } from 'class-validator';
 
 export class CreateUserDto {
-  @IsString()
-  @MinLength(3)
-  username!: string;
-
   @IsEmail()
-  email!: string;
+  email: string;
+
+  @IsString()
+  username: string;
 
   @IsString()
   @MinLength(8)
-  password!: string;
+  password: string;
 
-  @IsUUID()
-  role_id!: string;
+  @IsString()
+  first_name: string;
+
+  @IsString()
+  last_name: string;
 
   @IsString()
   @IsOptional()
-  full_name?: string;
+  phone?: string;
+
+  @IsUUID()
+  role_id: string;
 
   @IsBoolean()
   @IsOptional()
   is_active?: boolean = true;
-}
-
-// DTO para respuestas (sin campos sensibles)
-export class UserResponseDto {
-  id!: string;
-  username!: string;
-  email!: string;
-  full_name?: string;
-  role_id!: string;
-  role_name!: RoleType;
-  is_active!: boolean;
-  created_at!: Date;
-  updated_at!: Date;
 }

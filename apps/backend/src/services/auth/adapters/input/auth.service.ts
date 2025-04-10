@@ -1,78 +1,69 @@
 import { UserService } from '../../../user/adapters/input/user.service';
 import { JwtService } from './jwt.service';
-import { LoginDto, LoginResponseDto } from '../../dtos/login.dto';
+import { TokenBlacklistService } from './token-blacklist.service';
+import { LoginDto, LoginResponseDto, TokenPayload } from '../../dtos/login.dto';
 import { UnauthorizedException } from '../../../../common/exceptions/unauthorized.exception';
-
-export interface AuthConfig {
-  jwtExpiresIn?: string;
-  jwtRefreshExpiresIn?: string;
-}
+import { BadRequestException } from '../../../../common/exceptions/bad-request.exception';
+import { User } from '../../../../domain/entities/user.entity';
 
 export class AuthService {
   constructor(
     private readonly userService: UserService,
-    private readonly jwtService: JwtService
+    private readonly jwtService: JwtService,
+    private readonly tokenBlacklistService: TokenBlacklistService
   ) {}
 
   async login(loginDto: LoginDto): Promise<LoginResponseDto> {
-    const user = await this.userService.findByUsername(loginDto.username);
+    const user = await this.userService.findByEmail(loginDto.email);
     if (!user) {
-      throw new UnauthorizedException('Invalid credentials');
+      throw new UnauthorizedException('Credenciales inválidas');
     }
 
     if (!user.is_active) {
-      throw new UnauthorizedException('User is inactive');
+      throw new UnauthorizedException('Usuario inactivo');
     }
 
-    const isValid = await this.userService.validateCredentials(
-      loginDto.username,
-      loginDto.password
-    );
+    const isValid = await this.userService.validateCredentials(loginDto.email, loginDto.password);
 
     if (!isValid) {
-      throw new UnauthorizedException('Invalid credentials');
+      throw new UnauthorizedException('Credenciales inválidas');
     }
 
-    const accessToken = this.jwtService.sign({ sub: user.id });
+    const payload: TokenPayload = {
+      sub: user.id,
+      role: user.role.name
+    };
+
+    const accessToken = this.jwtService.sign(payload);
     const refreshToken = this.jwtService.createRefreshToken(user.id);
 
     return {
       access_token: accessToken,
       refresh_token: refreshToken,
-      user: {
-        id: user.id,
-        username: user.username,
-        email: user.email,
-        first_name: user.first_name,
-        last_name: user.last_name,
-        role: user.role,
-        is_active: user.is_active,
-        permissions: [] // Ya no tenemos permisos en la BD actual
-      }
+      user: this.mapUserToDto(user)
     };
   }
 
   async validateToken(token: string): Promise<LoginResponseDto['user']> {
     try {
+      const isBlacklisted = await this.tokenBlacklistService.isBlacklisted(token);
+      if (isBlacklisted) {
+        throw new UnauthorizedException('Token invalidado');
+      }
+
       const payload = this.jwtService.verify(token);
       const user = await this.userService.findById(payload.sub);
 
       if (!user || !user.is_active) {
-        throw new UnauthorizedException();
+        throw new UnauthorizedException('Usuario inactivo o no encontrado');
       }
 
-      return {
-        id: user.id,
-        username: user.username,
-        email: user.email,
-        first_name: user.first_name,
-        last_name: user.last_name,
-        role: user.role,
-        is_active: user.is_active,
-        permissions: [] // Ya no tenemos permisos en la BD actual
-      };
+      return this.mapUserToDto(user);
     } catch (error) {
-      throw new UnauthorizedException();
+      if (error instanceof UnauthorizedException) {
+        throw error;
+      }
+      throw new UnauthorizedException('Token inválido');
     }
   }
 
@@ -82,42 +73,51 @@ export class AuthService {
       const user = await this.userService.findById(payload.sub);
 
       if (!user || !user.is_active) {
-        throw new UnauthorizedException();
+        throw new UnauthorizedException('Usuario inactivo o no encontrado');
       }
 
-      const accessToken = this.jwtService.sign({ sub: user.id });
+      const accessToken = this.jwtService.sign({ sub: user.id, role: user.role.name });
       return { access_token: accessToken };
     } catch (error) {
-      throw new UnauthorizedException();
-    }
-  }
-
-  async validateAndExtractPayload(token: string): Promise<{ userId: string }> {
-    try {
-      const payload = this.jwtService.verify(token);
-      return { userId: payload.sub };
-    } catch (error) {
-      throw new UnauthorizedException();
+      throw new UnauthorizedException('Token de refresco inválido');
     }
   }
 
   async logout(token: string): Promise<void> {
-    // In a real application, you might want to blacklist the token
-    // or implement a token revocation mechanism
-    if (!this.jwtService.validateToken(token)) {
-      throw new UnauthorizedException();
+    try {
+      const payload = this.jwtService.verify(token);
+      if (!payload || !payload.exp) {
+        throw new BadRequestException('Token inválido');
+      }
+
+      const now = Math.floor(Date.now() / 1000);
+      const timeToExpire = payload.exp - now;
+
+      if (timeToExpire > 0) {
+        await this.tokenBlacklistService.addToBlacklist(token, timeToExpire);
+      }
+    } catch (error) {
+      if (error instanceof BadRequestException) {
+        throw error;
+      }
+      throw new UnauthorizedException('Error al cerrar sesión');
     }
   }
 
-  isTokenValid(token: string): boolean {
-    return this.jwtService.validateToken(token);
+  async isTokenBlacklisted(token: string): Promise<boolean> {
+    return this.tokenBlacklistService.isBlacklisted(token);
   }
 
-  isTokenExpired(token: string): boolean {
-    return this.jwtService.isTokenExpired(token);
-  }
-
-  decodeToken(token: string) {
-    return this.jwtService.decodeToken(token);
+  private mapUserToDto(user: User): LoginResponseDto['user'] {
+    return {
+      id: user.id,
+      email: user.email,
+      username: user.username,
+      first_name: user.first_name,
+      last_name: user.last_name,
+      role: user.role.name,
+      permissions: user.role.permissions.map(p => p.name),
+      is_active: user.is_active
+    };
   }
 }

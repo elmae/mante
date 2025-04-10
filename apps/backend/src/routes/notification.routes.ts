@@ -2,7 +2,7 @@ import { Router } from 'express';
 import { DataSource } from 'typeorm';
 import { NotificationController } from '../controllers/notification.controller';
 import { NotificationService } from '../services/notifications/notification.service';
-import { validate } from '../middleware/validation.middleware';
+import { ValidationMiddleware } from '../middleware/validation.middleware';
 import { createAuthMiddleware } from '../middleware/auth.middleware';
 import {
   CreateNotificationDto,
@@ -31,7 +31,7 @@ export function createNotificationRouter(
   router.post(
     '/',
     authMiddleware.hasRole(['admin']),
-    validate(CreateNotificationDto),
+    ValidationMiddleware.validate(CreateNotificationDto),
     notificationController.create.bind(notificationController)
   );
 
@@ -60,8 +60,15 @@ export function createNotificationRouter(
   router.put(
     '/preferences',
     authMiddleware.authenticate,
-    validate(UpdateNotificationPreferencesDto),
+    ValidationMiddleware.validate(UpdateNotificationPreferencesDto),
     notificationController.updatePreferences.bind(notificationController)
+  );
+
+  // Marcar todas las notificaciones como leídas
+  router.post(
+    '/mark-all-read',
+    authMiddleware.authenticate,
+    notificationController.markAllAsRead.bind(notificationController)
   );
 
   return router;

@@ -1,34 +1,35 @@
-import { IsString, MinLength } from 'class-validator';
+import { IsEmail, IsString, MinLength } from 'class-validator';
+import { User } from '../../../domain/entities/user.entity';
 
 export class LoginDto {
-  @IsString()
-  @MinLength(3)
-  username!: string;
+  @IsEmail()
+  email: string;
 
   @IsString()
   @MinLength(8)
-  password!: string;
+  password: string;
+}
+
+export interface TokenPayload {
+  sub: string;
+  role: string;
+  iat?: number;
+  exp?: number;
 }
 
 export interface LoginResponseDto {
   access_token: string;
   refresh_token: string;
-  user: UserResponseDto;
+  user: {
+    id: string;
+    email: string;
+    username: string;
+    first_name: string;
+    last_name: string;
+    role: string;
+    permissions: string[];
+    is_active: boolean;
+  };
 }
 
-export interface UserResponseDto {
-  id: string;
-  username: string;
-  email: string;
-  first_name: string;
-  last_name: string;
-  role: string;
-  is_active: boolean;
-  permissions: string[];
-}
-
-export interface TokenPayload {
-  sub: string;
-  iat?: number;
-  exp?: number;
-}
+export type AuthenticatedUser = Pick<User, 'id' | 'email' | 'role' | 'is_active'>;

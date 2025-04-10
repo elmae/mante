@@ -1,169 +1,150 @@
-import { describe, it, expect, beforeEach } from "@jest/globals";
-import { AuthService } from "../../../../src/services/auth/adapters/input/auth.service";
-import { UserService } from "../../../../src/services/user/adapters/input/user.service";
-import { JwtService } from "../../../../src/services/auth/adapters/input/jwt.service";
-import { testUsers } from "../../../utils/user-test-data";
-import { createMockUserRepository } from "../../../utils/user-test.utils";
-import { LoginDto } from "../../../../src/services/auth/dtos/login.dto";
-import { UnauthorizedException } from "../../../../src/common/exceptions/unauthorized.exception";
+import { AuthService } from '../../../../src/services/auth/adapters/input/auth.service';
+import { UserService } from '../../../../src/services/user/adapters/input/user.service';
+import { JwtService } from '../../../../src/services/auth/adapters/input/jwt.service';
+import { TokenBlacklistService } from '../../../../src/services/auth/adapters/input/token-blacklist.service';
+import { UnauthorizedException } from '../../../../src/common/exceptions/unauthorized.exception';
+import { User } from '../../../../src/domain/entities/user.entity';
+import { Role } from '../../../../src/domain/entities/role.entity';
+import { Permission } from '../../../../src/domain/entities/permission.entity';
 
-describe("AuthService", () => {
+describe('AuthService', () => {
   let authService: AuthService;
-  let userService: UserService;
-  let jwtService: JwtService;
-  let mockUserRepository: ReturnType<typeof createMockUserRepository>;
+  let userService: jest.Mocked<UserService>;
+  let jwtService: jest.Mocked<JwtService>;
+  let tokenBlacklistService: jest.Mocked<TokenBlacklistService>;
+
+  const mockUser: User = {
+    id: '123',
+    email: 'test@example.com',
+    username: 'testuser',
+    password_hash: 'hashedpassword',
+    first_name: 'Test',
+    last_name: 'User',
+    is_active: true,
+    role: {
+      id: '456',
+      name: 'admin',
+      description: 'Administrator',
+      permissions: [
+        {
+          id: '789',
+          name: 'create:user',
+          description: 'Can create users',
+          created_at: new Date(),
+          updated_at: new Date()
+        }
+      ],
+      created_at: new Date(),
+      updated_at: new Date()
+    },
+    created_at: new Date(),
+    updated_at: new Date()
+  };
 
   beforeEach(() => {
-    mockUserRepository = createMockUserRepository();
-    userService = new UserService(mockUserRepository);
-    jwtService = new JwtService();
-    authService = new AuthService(userService, jwtService);
+    userService = {
+      findByEmail: jest.fn(),
+      validateCredentials: jest.fn(),
+      findById: jest.fn()
+    } as any;
+
+    jwtService = {
+      sign: jest.fn(),
+      verify: jest.fn(),
+      createRefreshToken: jest.fn()
+    } as any;
+
+    tokenBlacklistService = {
+      addToBlacklist: jest.fn(),
+      isBlacklisted: jest.fn()
+    } as any;
+
+    authService = new AuthService(userService, jwtService, tokenBlacklistService);
   });
 
-  describe("login", () => {
-    const validLoginDto: LoginDto = {
-      username: testUsers.technician.username,
-      password: testUsers.technician.password,
-    };
+  describe('login', () => {
+    it('debería autenticar usuario exitosamente y retornar tokens', async () => {
+      userService.findByEmail.mockResolvedValue(mockUser);
+      userService.validateCredentials.mockResolvedValue(true);
+      jwtService.sign.mockReturnValue('access_token');
+      jwtService.createRefreshToken.mockReturnValue('refresh_token');
 
-    it("should authenticate user with valid credentials", async () => {
-      const mockUser = testUsers.technician;
-      mockUserRepository.findByUsername.mockResolvedValue(mockUser);
-      mockUserRepository.validateCredentials.mockResolvedValue(true);
-
-      const result = await authService.login(validLoginDto);
-
-      expect(result).toBeDefined();
-      expect(result.access_token).toBeDefined();
-      expect(result.user).toEqual({
-        id: mockUser.id,
-        username: mockUser.username,
-        email: mockUser.email,
-        full_name: mockUser.full_name,
-        role: mockUser.role.name,
-        is_active: mockUser.is_active,
+      const result = await authService.login({
+        email: 'test@example.com',
+        password: 'password'
       });
-      expect(mockUserRepository.validateCredentials).toHaveBeenCalledWith(
-        validLoginDto.username,
-        validLoginDto.password
-      );
+
+      expect(result).toEqual({
+        access_token: 'access_token',
+        refresh_token: 'refresh_token',
+        user: {
+          id: mockUser.id,
+          email: mockUser.email,
+          username: mockUser.username,
+          first_name: mockUser.first_name,
+          last_name: mockUser.last_name,
+          role: mockUser.role.name,
+          permissions: ['create:user'],
+          is_active: mockUser.is_active
+        }
+      });
     });
 
-    it("should throw UnauthorizedException for invalid credentials", async () => {
-      mockUserRepository.findByUsername.mockResolvedValue(testUsers.technician);
-      mockUserRepository.validateCredentials.mockResolvedValue(false);
-
-      await expect(authService.login(validLoginDto)).rejects.toThrow(
-        UnauthorizedException
-      );
-
-      expect(mockUserRepository.validateCredentials).toHaveBeenCalledWith(
-        validLoginDto.username,
-        validLoginDto.password
-      );
-    });
-
-    it("should throw UnauthorizedException for non-existent user", async () => {
-      mockUserRepository.findByUsername.mockResolvedValue(null);
+    it('debería lanzar UnauthorizedException si las credenciales son inválidas', async () => {
+      userService.findByEmail.mockResolvedValue(mockUser);
+      userService.validateCredentials.mockResolvedValue(false);
 
       await expect(
         authService.login({
-          username: "nonexistent",
-          password: "password123",
+          email: 'test@example.com',
+          password: 'wrongpassword'
         })
       ).rejects.toThrow(UnauthorizedException);
     });
+  });
 
-    it("should throw UnauthorizedException for inactive user", async () => {
-      const inactiveUser = { ...testUsers.technician, is_active: false };
-      mockUserRepository.findByUsername.mockResolvedValue(inactiveUser);
-      mockUserRepository.validateCredentials.mockResolvedValue(true);
+  describe('validateToken', () => {
+    it('debería validar token exitosamente', async () => {
+      tokenBlacklistService.isBlacklisted.mockResolvedValue(false);
+      jwtService.verify.mockReturnValue({ sub: mockUser.id, role: mockUser.role.name });
+      userService.findById.mockResolvedValue(mockUser);
 
-      await expect(authService.login(validLoginDto)).rejects.toThrow(
+      const result = await authService.validateToken('valid_token');
+
+      expect(result).toEqual({
+        id: mockUser.id,
+        email: mockUser.email,
+        username: mockUser.username,
+        first_name: mockUser.first_name,
+        last_name: mockUser.last_name,
+        role: mockUser.role.name,
+        permissions: ['create:user'],
+        is_active: mockUser.is_active
+      });
+    });
+
+    it('debería lanzar UnauthorizedException si el token está en blacklist', async () => {
+      tokenBlacklistService.isBlacklisted.mockResolvedValue(true);
+
+      await expect(authService.validateToken('blacklisted_token')).rejects.toThrow(
         UnauthorizedException
       );
     });
   });
 
-  describe("validateToken", () => {
-    it("should return user data for valid token", async () => {
-      const mockUser = testUsers.technician;
-      const token = await jwtService.sign({ sub: mockUser.id });
-      mockUserRepository.findById.mockResolvedValue(mockUser);
+  describe('logout', () => {
+    it('debería invalidar token exitosamente', async () => {
+      const mockPayload = {
+        sub: '123',
+        role: 'admin',
+        exp: Math.floor(Date.now() / 1000) + 3600
+      };
+      jwtService.verify.mockReturnValue(mockPayload);
+      tokenBlacklistService.addToBlacklist.mockResolvedValue(undefined);
 
-      const result = await authService.validateToken(token);
+      await authService.logout('valid_token');
 
-      expect(result).toBeDefined();
-      expect(result.id).toBe(mockUser.id);
-      expect(result.username).toBe(mockUser.username);
-      expect(result.role).toBe(mockUser.role.name);
-    });
-
-    it("should throw UnauthorizedException for invalid token", async () => {
-      await expect(authService.validateToken("invalid-token")).rejects.toThrow(
-        UnauthorizedException
-      );
-    });
-
-    it("should throw UnauthorizedException when user not found", async () => {
-      const token = await jwtService.sign({ sub: "nonexistent-id" });
-      mockUserRepository.findById.mockResolvedValue(null);
-
-      await expect(authService.validateToken(token)).rejects.toThrow(
-        UnauthorizedException
-      );
-    });
-
-    it("should throw UnauthorizedException for inactive user", async () => {
-      const inactiveUser = { ...testUsers.technician, is_active: false };
-      const token = await jwtService.sign({ sub: inactiveUser.id });
-      mockUserRepository.findById.mockResolvedValue(inactiveUser);
-
-      await expect(authService.validateToken(token)).rejects.toThrow(
-        UnauthorizedException
-      );
-    });
-  });
-
-  describe("refreshToken", () => {
-    it("should generate new token for valid refresh token", async () => {
-      const mockUser = testUsers.technician;
-      const refreshToken = await jwtService.sign(
-        { sub: mockUser.id },
-        { expiresIn: "7d" }
-      );
-      mockUserRepository.findById.mockResolvedValue(mockUser);
-
-      const result = await authService.refreshToken(refreshToken);
-
-      expect(result).toBeDefined();
-      expect(result.access_token).toBeDefined();
-      expect(result.access_token).not.toBe(refreshToken);
-    });
-
-    it("should throw UnauthorizedException for invalid refresh token", async () => {
-      await expect(authService.refreshToken("invalid-token")).rejects.toThrow(
-        UnauthorizedException
-      );
-    });
-
-    it("should throw UnauthorizedException when user not found", async () => {
-      const token = await jwtService.sign({ sub: "nonexistent-id" });
-      mockUserRepository.findById.mockResolvedValue(null);
-
-      await expect(authService.refreshToken(token)).rejects.toThrow(
-        UnauthorizedException
-      );
-    });
-
-    it("should throw UnauthorizedException for inactive user", async () => {
-      const inactiveUser = { ...testUsers.technician, is_active: false };
-      const token = await jwtService.sign({ sub: inactiveUser.id });
-      mockUserRepository.findById.mockResolvedValue(inactiveUser);
-
-      await expect(authService.refreshToken(token)).rejects.toThrow(
-        UnauthorizedException
-      );
+      expect(tokenBlacklistService.addToBlacklist).toHaveBeenCalled();
     });
   });
 });

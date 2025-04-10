@@ -10,7 +10,7 @@ import { StatCard } from "@/components/dashboard/StatCard";
 import { DashboardSkeleton } from "@/components/dashboard/DashboardSkeleton";
 import { DashboardError } from "@/components/dashboard/DashboardError";
 import { ActivityTable } from "@/components/dashboard/ActivityTable";
-import { DashboardMetrics } from "@/components/tickets/TicketMetrics";
+import { DashboardMetrics } from "@/components/tickets/TicketMetrics/DashboardMetrics";
 import { useDashboard } from "@/hooks/useDashboard";
 
 export default function DashboardPage() {

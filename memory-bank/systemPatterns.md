@@ -163,18 +163,40 @@
 
 1. Relaciones
 
-- One-to-Many
-- Many-to-One
-- Many-to-Many
+   - One-to-Many
+   - Many-to-One
+   - Many-to-Many
 
 2. Migraciones
 
-- Versionado de esquema
-- Rollback support
-- Seed data
+   - Versionado de esquema
+   - Rollback support
+   - Seed data
 
 3. Queries
 
-- Eager loading
-- Lazy loading
-- Query optimization
+   - Eager loading
+   - Lazy loading
+   - Query optimization
+
+## Versionado de API
+
+1. Estrategia
+
+   - Versionado en URL (/api/v1)
+   - Compatibilidad hacia atrás
+   - Documentación por versión
+
+2. Convenciones
+
+   - Todos los endpoints deben incluir /api/v1
+   - Cambios breaking requieren nueva versión
+   - Mantener versiones anteriores durante transición
+
+3. Plan para Futuras Versiones
+
+   - Versión actual: v1
+   - Ciclo de vida de versiones: 12 meses
+   - Deprecation policy: 3 meses de aviso
+   - Migración automática para cambios no-breaking
+   - Guías de migración para cambios breaking

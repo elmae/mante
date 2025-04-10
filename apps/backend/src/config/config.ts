@@ -1,54 +1,41 @@
-import dotenv from 'dotenv';
-import { config as configEnv } from './env.config';
+import * as dotenv from 'dotenv';
+import { join } from 'path';
 
-dotenv.config();
+// Cargar variables de entorno según el ambiente
+const env = process.env.NODE_ENV || 'development';
+const envFile = env === 'test' ? '.env.test' : '.env';
+dotenv.config({ path: join(__dirname, '../../', envFile) });
 
-const config = {
-  admin: {
-    email: process.env.ADMIN_EMAIL || 'dmiles@grupoefrain.com',
-    password: process.env.ADMIN_PASSWORD || 'DMdr@#2008'
-  },
-  env: process.env.NODE_ENV || 'development',
+export const config = {
+  env,
   port: parseInt(process.env.PORT || '3000', 10),
   apiPrefix: process.env.API_PREFIX || '/api/v1',
-
   database: {
     host: process.env.DB_HOST || 'localhost',
     port: parseInt(process.env.DB_PORT || '5432', 10),
     username: process.env.DB_USER || 'cmms_user',
-    password: process.env.DB_PASSWORD || 'cmms_password2',
-    database: process.env.DB_NAME || 'mante_db'
+    password: process.env.DB_PASS || 'cmms_password2',
+    database: process.env.DB_NAME || 'mante_db',
+    entities: [join(__dirname, '../domain/entities/*.entity{.ts,.js}')],
+    migrations: [join(__dirname, '../infrastructure/database/migrations/*.{ts,js}')],
+    synchronize: env === 'development',
+    logging: env === 'development'
   },
-
   jwt: {
     secret: process.env.JWT_SECRET || 'your-secret-key',
-    expiresIn: process.env.JWT_EXPIRES_IN || '1d'
+    expiresIn: process.env.JWT_EXPIRES_IN || '1h',
+    refreshExpiresIn: process.env.JWT_REFRESH_EXPIRES_IN || '7d'
   },
-
-  bcrypt: {
-    saltRounds: parseInt(process.env.BCRYPT_SALT_ROUNDS || '10', 10)
-  },
-
   redis: {
     host: process.env.REDIS_HOST || 'localhost',
-    port: parseInt(process.env.REDIS_PORT || '6379', 10)
+    port: parseInt(process.env.REDIS_PORT || '6379', 10),
+    password: process.env.REDIS_PASSWORD,
+    db: parseInt(process.env.REDIS_DB || '0', 10)
   },
-
-  minio: {
-    endPoint: process.env.MINIO_ENDPOINT || 'localhost',
-    port: parseInt(process.env.MINIO_PORT || '9000', 10),
-    useSSL: process.env.MINIO_USE_SSL === 'true',
-    accessKey: process.env.MINIO_ACCESS_KEY || 'minioadmin',
-    secretKey: process.env.MINIO_SECRET_KEY || 'minioadmin',
-    bucket: process.env.MINIO_BUCKET || 'cmms-files'
-  },
-
   cors: {
-    origin: process.env.CORS_ORIGIN || '*',
-    credentials: true
-  },
-
-  ...configEnv
+    origin: process.env.CORS_ORIGIN?.split(',') || ['http://localhost:3000'],
+    credentials: process.env.CORS_CREDENTIALS === 'true'
+  }
 };
 
-export default config;
+export type Config = typeof config;

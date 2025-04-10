@@ -19,18 +19,29 @@ export class NotificationController {
 
   async getUserNotifications(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
+      console.log('[DEBUG] GET /notifications - userId:', req.user.id);
       const notifications = await this.notificationService.getUserNotifications(req.user.id);
+      console.log('[DEBUG] Notificaciones encontradas:', notifications.length);
       res.json(notifications);
     } catch (error) {
+      console.error('[ERROR] getUserNotifications:', error);
       next(error);
     }
   }
 
   async markAsRead(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
+      console.log(
+        '[DEBUG] PATCH /notifications/:id/read - notificationId:',
+        req.params.id,
+        'userId:',
+        req.user.id
+      );
       const notification = await this.notificationService.markAsRead(req.params.id, req.user.id);
+      console.log('[DEBUG] Notificación marcada como leída:', notification.id);
       res.json(notification);
     } catch (error) {
+      console.error('[ERROR] markAsRead:', error);
       next(error);
     }
   }
@@ -52,6 +63,18 @@ export class NotificationController {
       );
       res.json({ message: 'Notification preferences updated successfully' });
     } catch (error) {
+      next(error);
+    }
+  }
+
+  async markAllAsRead(req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      console.log('[DEBUG] POST /notifications/mark-all-read - userId:', req.user.id);
+      await this.notificationService.markAllAsRead(req.user.id);
+      console.log('[DEBUG] Todas las notificaciones marcadas como leídas');
+      res.json({ message: 'All notifications marked as read' });
+    } catch (error) {
+      console.error('[ERROR] markAllAsRead:', error);
       next(error);
     }
   }

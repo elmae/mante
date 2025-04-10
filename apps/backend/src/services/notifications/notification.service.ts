@@ -97,4 +97,11 @@ export class NotificationService {
       notification_preferences: updatedPreferences
     });
   }
+
+  async markAllAsRead(userId: string): Promise<void> {
+    await this.notificationRepository.update(
+      { user_id: userId, is_read: false },
+      { is_read: true }
+    );
+  }
 }

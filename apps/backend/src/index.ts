@@ -1,46 +1,55 @@
-import 'reflect-metadata';
-import config from './config/config';
-import Logger from './config/logger.config';
-import { app, initializeApp } from './app';
+import { createApp } from './app';
+import { config } from './config/config';
+import { DataSource } from 'typeorm';
+import { join } from 'path';
 
-// Inicialización del servidor
 const startServer = async () => {
   try {
-    // Inicializar la aplicación (base de datos y rutas)
-    await initializeApp();
+    // Configurar la conexión a la base de datos
+    const dataSource = new DataSource({
+      type: 'postgres',
+      host: config.database.host,
+      port: config.database.port,
+      username: config.database.username,
+      password: config.database.password,
+      database: config.database.database,
+      entities: [join(__dirname, './domain/entities/*.entity{.ts,.js}')],
+      synchronize: config.database.synchronize,
+      logging: config.database.logging
+    });
 
-    // Iniciar servidor
+    // Inicializar la conexión a la base de datos
+    await dataSource.initialize();
+    console.log('🗄️  Conexión a base de datos establecida');
+
+    // Crear la aplicación Express
+    const app = await createApp();
+
+    // Iniciar el servidor
     app.listen(config.port, () => {
-      Logger.info(`Server running on port ${config.port}`);
-      Logger.info(`Environment: ${config.env}`);
+      console.log(`🚀 Servidor iniciado en http://localhost:${config.port}`);
+      console.log(`🌍 Ambiente: ${config.env}`);
+      console.log(`🔑 API Base URL: ${config.apiPrefix}`);
+    });
+
+    // Manejo de señales de terminación
+    const signals = ['SIGTERM', 'SIGINT'];
+    signals.forEach(signal => {
+      process.on(signal, async () => {
+        console.log(`\n${signal} recibido. Cerrando servidor...`);
+
+        // Cerrar conexión a la base de datos
+        await dataSource.destroy();
+        console.log('🗄️  Conexión a base de datos cerrada');
+
+        // Salir del proceso
+        process.exit(0);
+      });
     });
   } catch (error) {
-    Logger.error('Failed to start server:', error);
+    console.error('❌ Error al iniciar el servidor:', error);
     process.exit(1);
   }
 };
 
-// Manejo de señales de terminación
-process.on('SIGTERM', () => {
-  Logger.info('SIGTERM signal received');
-  process.exit(0);
-});
-
-process.on('SIGINT', () => {
-  Logger.info('SIGINT signal received');
-  process.exit(0);
-});
-
-process.on('unhandledRejection', error => {
-  Logger.error('Unhandled Rejection:', error);
-  process.exit(1);
-});
-
-process.on('uncaughtException', error => {
-  Logger.error('Uncaught Exception:', error);
-  process.exit(1);
-});
-
 startServer();
-
-export default app;

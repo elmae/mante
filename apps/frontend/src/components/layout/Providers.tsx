@@ -4,6 +4,7 @@ import React from "react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "sonner";
 import MainLayout from "./MainLayout";
+import { AuthProvider } from "@/contexts/auth/AuthContext"; // Importar AuthProvider
 
 // Crear una instancia de QueryClient con configuración personalizada
 const queryClient = new QueryClient({
@@ -22,24 +23,28 @@ const queryClient = new QueryClient({
 
 export function Providers({ children }: { children: React.ReactNode }) {
   return (
-    <QueryClientProvider client={queryClient}>
-      <MainLayout>{children}</MainLayout>
-      <Toaster
-        position="top-right"
-        expand={false}
-        richColors
-        closeButton
-        theme="light"
-        duration={4000}
-        visibleToasts={3}
-        toastOptions={{
-          style: {
-            fontFamily: "inherit",
-          },
-          className: "my-toast-class",
-        }}
-      />
-    </QueryClientProvider>
+    <AuthProvider>
+      {" "}
+      {/* Envolver con AuthProvider */}
+      <QueryClientProvider client={queryClient}>
+        <MainLayout>{children}</MainLayout>
+        <Toaster
+          position="top-right"
+          expand={false}
+          richColors
+          closeButton
+          theme="light"
+          duration={4000}
+          visibleToasts={3}
+          toastOptions={{
+            style: {
+              fontFamily: "inherit",
+            },
+            className: "my-toast-class",
+          }}
+        />
+      </QueryClientProvider>
+    </AuthProvider>
   );
 }
 

@@ -9,6 +9,7 @@ import { Comment } from './comment.entity';
 import { Attachment } from './attachment.entity';
 import { GeographicZone } from './geographic-zone.entity';
 import { SLAConfig } from './sla-config.entity';
+import { UserSession } from './user-session.entity';
 
 // Enums
 export { PermissionEnum } from './permission.entity';
@@ -28,7 +29,8 @@ export const entities = [
   Comment,
   Attachment,
   GeographicZone,
-  SLAConfig
+  SLAConfig,
+  UserSession
 ];
 
 export {
@@ -42,5 +44,6 @@ export {
   Comment,
   Attachment,
   GeographicZone,
-  SLAConfig
+  SLAConfig,
+  UserSession
 };
