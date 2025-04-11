@@ -17,4 +17,5 @@
 - **Never assume missing context. Ask questions if uncertain.**
 - **Never hallucinate libraries or functions** – only use known, verified packages.
 - **Always confirm file paths and module names** exist before referencing them in code or tests.
-- **Never delete or overwrite existing code** unless explicitly instructed to or if part of a task from `/memory-bank`.
+- **Never delete or overwrite existing code** unless explicitly instructed to or if part of a task from memory bank.
+- **Always update instead of overwrite files in memory bank** unless explicitly instructed to.
