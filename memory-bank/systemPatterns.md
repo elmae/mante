@@ -146,6 +146,9 @@
 - JWT tokens
 - Session management
 - Role-based access
+- **Nuevo**: Token Blacklist Pattern
+- **Nuevo**: Refresh Token Rotation
+- **Nuevo**: Modular Auth Services
 
 2. Autorización
 
@@ -158,6 +161,25 @@
 - Input sanitization
 - Data validation
 - Error handling
+
+## Patrones de Autenticación (Nuevo)
+
+1. Token Blacklist Pattern
+
+   - Almacenamiento en Redis
+   - Invalidación inmediata
+   - Limpieza automática
+
+2. Refresh Token Rotation
+
+   - Un solo uso
+   - Caducidad independiente
+   - Revocación en cadena
+
+3. Auth Service Modularization
+   - Servicio JWT independiente
+   - Servicio Auth centralizado
+   - Inyección de dependencias
 
 ## Patrones de Datos
 

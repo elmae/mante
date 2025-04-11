@@ -1,5 +1,32 @@
 # Active Context
 
+## Sistema de Autenticación - Estado Actual
+
+### Implementaciones Recientes:
+
+1. Token Blacklist:
+
+   - Invalidación activa de tokens
+   - Persistencia en Redis
+   - Integración con logout
+
+2. Refresh Tokens:
+
+   - Generación segura
+   - Rotación automática
+   - Validación estricta
+
+3. Mejoras de Seguridad:
+
+   - Logging detallado
+   - Manejo de errores mejorado
+   - Validación de tokens reforzada
+
+4. Modularización:
+   - Servicios independientes para JWT
+   - Servicio de autenticación centralizado
+   - Inyección de dependencias
+
 ## Enfoque Actual
 
 ### Frontend: Vista de Tickets
@@ -77,3 +104,4 @@
 - /maintenance ✅
 - /clients ✅
 - /settings ✅
+- /auth (login/logout/refresh/validate) ✅

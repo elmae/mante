@@ -8,7 +8,7 @@
 - **Base de Datos:** PostgreSQL
 - **Almacenamiento de Archivos:** MinIO
 - **Caché y Queue:** Redis
-- **Autenticación y Autorización:** JWT
+- **Autenticación y Autorización:** JWT, Refresh Tokens, Token Blacklist
 - **Infraestructura Cloud:** AWS, Google Cloud o similar (a definir)
 - **Herramientas de Desarrollo:** VSCode, Git, Docker, npm/yarn
 - **Identificación de ATMs:** Códigos QR
@@ -36,6 +36,27 @@
 
 ## Dependencias
 
-- **Librerías y Frameworks:** React, React Native, Next.js, Express.js, PostgreSQL, MinIO, Redis, JWT, etc. (detallar versiones mas recientes en `package.json`)
+- **Librerías y Frameworks:** React, React Native, Next.js, Express.js, PostgreSQL, MinIO, Redis, JWT, jsonwebtoken (v9.0.2), bcryptjs (v2.4.3), uuid (v9.0.1)
 - **Servicios Cloud:** AWS, Google Cloud o similar (a definir)
 - **Servicios Externos:** Posible integración con APIs de terceros para geolocalización, mapas, etc. (a definir)
+
+## Configuraciones de Autenticación (Nuevo)
+
+- **JWT Config:**
+
+  - Access Token Expiry: 15m
+  - Refresh Token Expiry: 7d
+  - Algorithm: HS256
+  - Secret Rotation: Enabled
+
+- **Redis Config:**
+
+  - Blacklist TTL: 30d
+  - Refresh Token Store: Enabled
+  - Connection Pool: 10
+
+- **Security Headers:**
+  - Strict-Transport-Security
+  - Content-Security-Policy
+  - X-Frame-Options
+  - X-Content-Type-Options

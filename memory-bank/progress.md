@@ -10,6 +10,10 @@
    - Manejo de sesiones
    - Roles y permisos
    - Middleware de autenticación
+   - **Nuevo**: Sistema de blacklist para tokens
+   - **Nuevo**: Implementación de refresh tokens
+   - **Nuevo**: Mejor logging y manejo de errores
+   - **Nuevo**: Modularización de servicios
 
 2. Gestión de Usuarios
 
@@ -109,3 +113,18 @@
 - Issues abiertos: 12
 - Pull requests pendientes: 3
 - Tiempo medio de resolución: 2.5 días
+
+### 2025-04-11 - update
+
+- **Autor**: Sistema
+- **Descripción**: Mejoras en sistema de autenticación
+- **Cambios implementados**:
+  - Sistema de blacklist para tokens
+  - Implementación de refresh tokens
+  - Mejor logging y manejo de errores
+  - Modularización de servicios de autenticación
+- **Archivos afectados**:
+  - memory-bank/progress.md
+  - memory-bank/activeContext.md
+  - memory-bank/systemPatterns.md
+  - memory-bank/techContext.md
