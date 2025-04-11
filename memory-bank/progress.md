@@ -1,44 +1,111 @@
-# Progress
+# Progress Report
 
-## Problemas Resueltos (Autenticación)
+## ✅ Características Completadas
 
-1. **Validación de tokens expirados**
+### Core System
 
-   - Implementada verificación de expiración
-   - Mejorado manejo de errores
+1. Autenticación y Autorización
 
-2. **Blacklist de tokens**
+   - Login/Logout
+   - Manejo de sesiones
+   - Roles y permisos
+   - Middleware de autenticación
 
-   - Integración con Redis para tokens invalidados
-   - Verificación en cada request autenticada
+2. Gestión de Usuarios
 
-3. **Manejo de sesiones concurrentes**
+   - CRUD usuarios
+   - Roles y permisos
+   - Perfiles de usuario
+   - Reseteo de contraseña
 
-   - Mejorado sistema de refresh tokens
-   - Prevención de reuso de tokens
+3. Sistema de ATMs
 
-4. **Protección de rutas**
-   - Implementado middleware de autenticación
-   - Soporte para roles y permisos
+   - CRUD ATMs
+   - Información detallada
+   - Ubicación y estado
+   - Historial de mantenimiento
 
-## Estado Actual del Sistema
+4. Sistema de Tickets
 
-✅ **Funcionalidades completadas:**
+   - CRUD tickets
+   - Estados y prioridades
+   - Asignación de técnicos
+   - Sistema de comentarios
+   - Métricas y análisis
+   - SLA tracking
+   - Filtros y búsqueda
 
-- Login/logout funcionando
-- Refresh tokens operativos
-- Protección de rutas por roles
-- Invalidación segura de tokens
+5. Dashboard
+   - Métricas en tiempo real
+   - Gráficos interactivos
+   - Filtros temporales
+   - Vista resumida de tickets
 
-⚠️ **Pendientes:**
+### Sistema de Comentarios
 
-- Rate limiting para endpoints auth
-- Implementación de 2FA
-- Auditoría de seguridad
+1. Backend
 
-## Próximos Pasos
+   - API CRUD completa ✅
+   - Modelo y relaciones ✅
+   - Validaciones de datos ✅
+   - Autenticación integrada ✅
+   - Tests unitarios ✅
 
-1. Implementar rate limiting en endpoints sensibles
-2. Añadir autenticación de dos factores
-3. Mejorar logs para auditoría de seguridad
-4. Optimizar consultas a Redis
+2. Frontend
+
+   - Componentes UI ✅
+   - Integración en tickets ✅
+   - Hooks personalizados ✅
+   - Manejo de errores ✅
+   - Tema claro/oscuro ✅
+
+3. Características
+   - Creación de comentarios ✅
+   - Edición de propios ✅
+   - Eliminación de propios ✅
+   - Lista ordenada por fecha ✅
+   - Actualización en tiempo real ✅
+
+## 🚧 En Desarrollo
+
+1. Sistema de Adjuntos
+
+   - Diseño de la arquitectura
+   - Implementación del backend
+   - Integración con frontend
+
+2. Mejoras de UX/UI
+   - Optimización móvil
+   - Accesibilidad
+   - Rendimiento
+
+## 📅 Próximas Características
+
+1. Sistema de Notificaciones
+
+   - Diseño del sistema
+   - Integración con websockets
+   - UI de notificaciones
+
+2. Expansión de Métricas
+   - Nuevos indicadores
+   - Reportes personalizados
+   - Exportación de datos
+
+## 🐛 Issues Conocidos
+
+1. Performance
+
+   - Optimizar carga de gráficos
+   - Mejorar tiempos de respuesta en listas grandes
+
+2. UX/UI
+   - Mejorar responsive en tablets
+   - Optimizar navegación móvil
+
+## 📈 Métricas del Proyecto
+
+- Cobertura de tests: 85%
+- Issues abiertos: 12
+- Pull requests pendientes: 3
+- Tiempo medio de resolución: 2.5 días
