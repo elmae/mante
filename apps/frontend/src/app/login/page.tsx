@@ -29,8 +29,11 @@ const LoginPage = () => {
     setLoading(true);
 
     try {
+      console.log("🔵 [Login] Iniciando proceso de login...");
       await login(formData.email, formData.password);
+      console.log("🟢 [Login] Login exitoso - Redirigiendo a /dashboard");
       router.push("/dashboard");
+      console.log("🔁 [Login] Redirección iniciada");
     } catch (err) {
       setError(err instanceof Error ? err.message : "Error al iniciar sesión");
     } finally {

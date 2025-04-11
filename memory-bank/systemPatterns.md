@@ -1,202 +1,44 @@
 # System Patterns
 
-## Arquitectura
+## Patrón de Manejo de Tokens
 
-### Patrón de Capas
+- **Implementación**: JWT con firma HMAC-SHA256
+- **Flujo**:
 
-- Presentación (Frontend)
-- Lógica de Negocio (Backend Services)
-- Acceso a Datos (Repositories)
-- Infraestructura (Database)
+  1. Login genera access token (1h) y refresh token (7d)
+  2. Access token usado para autenticar requests
+  3. Refresh token usado para obtener nuevo access token
+  4. Logout invalida tokens en Redis
 
-### Clean Architecture
+- **Seguridad**:
+  - Tokens almacenados en HttpOnly cookies
+  - Blacklist de tokens inválidos en Redis
+  - Verificación de firma y expiración
 
-- Entities: Modelos de dominio
-- Use Cases: Servicios de aplicación
-- Interfaces: Puertos y adaptadores
-- Frameworks: Express, TypeORM, React
+## Integración con Redis
 
-## Patrones de Diseño
+- **Propósito**: Cache y manejo de estado de autenticación
+- **Implementación**:
 
-### Frontend
+  - Almacenamiento de tokens invalidados (logout)
+  - TTL automático igual a expiración del token
+  - Reconexión automática en fallos
 
-1. Custom Hooks
+- **Estructura de claves**:
+  - `token_blacklist:<jti>` para tokens invalidados
+  - TTL igual a tiempo restante del token
 
-- useTicket: Gestión de estado de tickets
-- useComments: Gestión de comentarios
-- useUser: Información del usuario actual
-- useDashboard: Métricas y análisis
+## Manejo de Rutas Protegidas
 
-2. Component Patterns
+- **Middleware**: Autenticación en capa de rutas
+- **Jerarquía**:
 
-- Container/Presentational
-- Higher-Order Components
-- Render Props
-- Compound Components
+  1. Verificación de token válido
+  2. Validación de usuario activo
+  3. Comprobación de roles
+  4. Verificación de permisos específicos
 
-3. Estado y Eventos
-
-- Custom Hooks para estado local
-- Context para estado global
-- Event Handlers consistentes
-- Patrón de Observador para actualizaciones
-
-### Backend
-
-1. Repository Pattern
-
-- Abstracción de acceso a datos
-- Interfaces genéricas
-- Implementaciones específicas
-- Unit of Work
-
-2. Service Layer
-
-- Lógica de negocio encapsulada
-- Validación de datos
-- Manejo de transacciones
-- Eventos del dominio
-
-3. Controller Pattern
-
-- Manejo de requests HTTP
-- Validación de inputs
-- Transformación de datos
-- Manejo de respuestas
-
-### Sistema de Comentarios
-
-1. Arquitectura
-
-- Entidad Comment independiente
-- Relación Many-to-One con Ticket
-- Relación Many-to-One con User
-- Validación en múltiples capas
-
-2. Patrones Frontend
-
-- Hook useComments para gestión de estado
-- Componente Comments para UI
-- Patrón de composición para integración
-- Manejo de errores consistente
-
-3. Patrones Backend
-
-- Repository para acceso a datos
-- Service para lógica de negocio
-- Controller para endpoints API
-- DTOs para validación
-
-## Principios SOLID
-
-1. Single Responsibility
-
-- Cada clase tiene una única responsabilidad
-- Servicios especializados
-- Componentes cohesivos
-
-2. Open/Closed
-
-- Extensión mediante interfaces
-- Plugins y middleware
-- Configuración flexible
-
-3. Liskov Substitution
-
-- Interfaces consistentes
-- Herencia apropiada
-- Contratos claros
-
-4. Interface Segregation
-
-- Interfaces específicas
-- DTOs especializados
-- Contratos minimales
-
-5. Dependency Inversion
-
-- Inyección de dependencias
-- Inversión de control
-- Abstracciones estables
-
-## Patrones de Testing
-
-1. Unit Testing
-
-- Tests aislados
-- Mocks y stubs
-- Cobertura alta
-
-2. Integration Testing
-
-- APIs end-to-end
-- Database interactions
-- Service integration
-
-3. E2E Testing
-
-- User workflows
-- UI interactions
-- Cross-browser testing
-
-## Patrones de Seguridad
-
-1. Autenticación
-
-- JWT tokens
-- Session management
-- Role-based access
-
-2. Autorización
-
-- Permisos granulares
-- Middleware de autorización
-- Validación de roles
-
-3. Validación
-
-- Input sanitization
-- Data validation
-- Error handling
-
-## Patrones de Datos
-
-1. Relaciones
-
-   - One-to-Many
-   - Many-to-One
-   - Many-to-Many
-
-2. Migraciones
-
-   - Versionado de esquema
-   - Rollback support
-   - Seed data
-
-3. Queries
-
-   - Eager loading
-   - Lazy loading
-   - Query optimization
-
-## Versionado de API
-
-1. Estrategia
-
-   - Versionado en URL (/api/v1)
-   - Compatibilidad hacia atrás
-   - Documentación por versión
-
-2. Convenciones
-
-   - Todos los endpoints deben incluir /api/v1
-   - Cambios breaking requieren nueva versión
-   - Mantener versiones anteriores durante transición
-
-3. Plan para Futuras Versiones
-
-   - Versión actual: v1
-   - Ciclo de vida de versiones: 12 meses
-   - Deprecation policy: 3 meses de aviso
-   - Migración automática para cambios no-breaking
-   - Guías de migración para cambios breaking
+- **Patrones**:
+  - `authenticate`: Verifica token válido
+  - `hasRole`: Valida rol requerido
+  - `hasPermission`: Verifica permisos específicos

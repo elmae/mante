@@ -97,7 +97,8 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         throw new Error(data.error?.message || "Error al iniciar sesión");
       }
 
-      localStorage.setItem("token", data.data.access_token);
+      console.log("📦 Guardando token:", data.data.token);
+      localStorage.setItem("token", data.data.token);
       localStorage.setItem("user", JSON.stringify(data.data.user));
 
       dispatch({

@@ -9,6 +9,12 @@ import {
 } from 'typeorm';
 import { Role } from './role.entity';
 
+export interface NotificationPreferences {
+  email_notifications: boolean;
+  in_app_notifications: boolean;
+  push_notifications: boolean;
+}
+
 @Entity('users')
 export class User {
   @PrimaryGeneratedColumn('uuid')
@@ -50,6 +56,15 @@ export class User {
 
   @Column({ name: 'updated_by', nullable: true })
   updated_by?: string;
+
+  @Column({
+    type: 'jsonb',
+    name: 'notification_preferences',
+    nullable: true,
+    default: () =>
+      '\'{"email_notifications": true, "in_app_notifications": true, "push_notifications": false}\''
+  })
+  notification_preferences?: NotificationPreferences;
 
   constructor(partial: Partial<User>) {
     Object.assign(this, partial);

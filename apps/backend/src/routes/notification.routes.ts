@@ -12,10 +12,13 @@ import { JwtService } from '../services/auth/adapters/input/jwt.service';
 import { UserService } from '../services/user/adapters/input/user.service';
 import { Notification } from '../domain/entities/notification.entity';
 
+import { AuthService } from '../services/auth/adapters/input/auth.service';
+
 export function createNotificationRouter(
   dataSource: DataSource,
   jwtService: JwtService,
-  userService: UserService
+  userService: UserService,
+  authService: AuthService
 ): Router {
   const router = Router();
 
@@ -25,7 +28,7 @@ export function createNotificationRouter(
   );
 
   const notificationController = new NotificationController(notificationService);
-  const authMiddleware = createAuthMiddleware(jwtService, userService);
+  const authMiddleware = createAuthMiddleware(jwtService, userService, authService);
 
   // Crear notificación (solo para uso interno/admin)
   router.post(
@@ -54,6 +57,20 @@ export function createNotificationRouter(
     '/:id/read',
     authMiddleware.authenticate,
     notificationController.markAsRead.bind(notificationController)
+  );
+
+  // Obtener preferencias de notificaciones
+  router.get(
+    '/preferences',
+    authMiddleware.authenticate,
+    notificationController.getPreferences.bind(notificationController)
+  );
+
+  // Obtener preferencias de notificaciones
+  router.get(
+    '/preferences',
+    authMiddleware.authenticate,
+    notificationController.getPreferences.bind(notificationController)
   );
 
   // Actualizar preferencias de notificaciones

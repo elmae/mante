@@ -11,10 +11,19 @@ export const api = axios.create({
 
 // Interceptor para manejar tokens
 api.interceptors.request.use((config) => {
+  console.log("Interceptor ejecutado para URL:", config.url);
   const token = localStorage.getItem("token");
+  console.log("Interceptor - Token encontrado:", token);
   if (token) {
+    console.log("Interceptor - Token válido:", !!token);
+    console.log("Interceptor - Agregando header Authorization");
     config.headers.Authorization = `Bearer ${token}`;
+    console.log("Interceptor - Header agregado:", config.headers.Authorization);
   }
+  console.log("Interceptor - Config final:", {
+    url: config.url,
+    headers: config.headers,
+  });
   return config;
 });
 

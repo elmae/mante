@@ -1,4 +1,10 @@
 import 'reflect-metadata';
+import * as dotenv from 'dotenv';
+import { join } from 'path';
+dotenv.config({ path: join(__dirname, '../../.env') });
+
+// Importar config primero para asegurar carga de variables
+import '../src/config/config';
 import { User } from '../src/domain/entities/user.entity';
 import { Role } from '../src/domain/entities/role.entity';
 import AppDataSource from '../src/config/datasource';

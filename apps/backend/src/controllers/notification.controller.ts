@@ -78,4 +78,20 @@ export class NotificationController {
       next(error);
     }
   }
+
+  async getPreferences(req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      const preferences = await this.notificationService.getNotificationPreferences(req.user.id);
+      // Devolver las preferencias o un objeto por defecto si son null/undefined
+      res.json(
+        preferences ?? {
+          email_notifications: true,
+          in_app_notifications: true,
+          push_notifications: false
+        }
+      );
+    } catch (error) {
+      next(error);
+    }
+  }
 }

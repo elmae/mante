@@ -14,6 +14,9 @@ import { createNotificationRouter } from './notification.routes';
 import { createCommentRouter } from './comment.routes';
 import { JwtService } from '../services/auth/adapters/input/jwt.service';
 import { UserService } from '../services/user/adapters/input/user.service';
+import { RedisService } from '../infrastructure/redis/redis.service';
+import { TokenBlacklistService } from '../services/auth/adapters/input/token-blacklist.service';
+import { AuthService } from '../services/auth/adapters/input/auth.service';
 
 /**
  * Crea y configura todas las rutas de la aplicación
@@ -29,42 +32,75 @@ export const createRouter = async (dataSource: DataSource): Promise<Router> => {
   // Inicializar servicios comunes
   const jwtService = new JwtService();
   const userService = new UserService(dataSource.getRepository('User'));
+  const redisService = new RedisService();
+  const tokenBlacklistService = new TokenBlacklistService(redisService);
+  const authService = new AuthService(userService, jwtService, tokenBlacklistService);
 
   // Montar las diferentes rutas
-  const authRouter = await createAuthRouter(dataSource, jwtService, userService);
+  const authRouter = await createAuthRouter(dataSource, jwtService, userService, authService);
   apiRouter.use('/auth', authRouter);
 
-  const usersRouter = await createUserRouter(dataSource, jwtService, userService);
+  const usersRouter = await createUserRouter(dataSource, jwtService, userService, authService);
   apiRouter.use('/users', usersRouter);
 
-  const atmsRouter = await createAtmRouter(dataSource, jwtService, userService);
+  const atmsRouter = await createAtmRouter(dataSource, jwtService, userService, authService);
   apiRouter.use('/atms', atmsRouter);
 
-  const ticketsRouter = await createTicketRouter(dataSource, jwtService, userService);
+  const ticketsRouter = await createTicketRouter(dataSource, jwtService, userService, authService);
   apiRouter.use('/tickets', ticketsRouter);
 
-  const maintenanceRouter = await createMaintenanceRouter(dataSource, jwtService, userService);
+  const maintenanceRouter = await createMaintenanceRouter(
+    dataSource,
+    jwtService,
+    userService,
+    authService
+  );
   apiRouter.use('/maintenance', maintenanceRouter);
 
-  const clientsRouter = await createClientRouter(dataSource, jwtService, userService);
+  const clientsRouter = await createClientRouter(dataSource, jwtService, userService, authService);
   apiRouter.use('/clients', clientsRouter);
 
-  const settingsRouter = await createSettingsRouter(dataSource, jwtService, userService);
+  const settingsRouter = await createSettingsRouter(
+    dataSource,
+    jwtService,
+    userService,
+    authService
+  );
   apiRouter.use('/settings', settingsRouter);
 
-  const slaRouter = await createSlaRouter(dataSource, jwtService, userService);
+  const slaRouter = await createSlaRouter(dataSource, jwtService, userService, authService);
   apiRouter.use('/sla', slaRouter);
 
-  const attachmentsRouter = await createAttachmentRouter(dataSource, jwtService, userService);
+  const attachmentsRouter = await createAttachmentRouter(
+    dataSource,
+    jwtService,
+    userService,
+    authService
+  );
   apiRouter.use('/attachments', attachmentsRouter);
 
-  const dashboardRouter = await createDashboardRouter(dataSource, jwtService, userService);
+  const dashboardRouter = await createDashboardRouter(
+    dataSource,
+    jwtService,
+    userService,
+    authService
+  );
   apiRouter.use('/dashboard', dashboardRouter);
 
-  const notificationsRouter = await createNotificationRouter(dataSource, jwtService, userService);
+  const notificationsRouter = await createNotificationRouter(
+    dataSource,
+    jwtService,
+    userService,
+    authService
+  );
   apiRouter.use('/notifications', notificationsRouter);
 
-  const commentsRouter = await createCommentRouter(dataSource, jwtService, userService);
+  const commentsRouter = await createCommentRouter(
+    dataSource,
+    jwtService,
+    userService,
+    authService
+  );
   apiRouter.use('/comments', commentsRouter);
 
   // Montar todas las rutas bajo /api/v1

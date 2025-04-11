@@ -47,15 +47,33 @@ export class RedisService {
   }
 
   async get(key: string): Promise<string | null> {
-    return await this.client.get(key);
+    await this.ensureConnection();
+    try {
+      return await this.client.get(key);
+    } catch (error) {
+      console.error('❌ Error en Redis get:', error);
+      throw error;
+    }
   }
 
   async exists(key: string): Promise<number> {
-    return await this.client.exists(key);
+    await this.ensureConnection();
+    try {
+      return await this.client.exists(key);
+    } catch (error) {
+      console.error('❌ Error en Redis exists:', error);
+      throw error;
+    }
   }
 
   async del(key: string): Promise<number> {
-    return await this.client.del(key);
+    await this.ensureConnection();
+    try {
+      return await this.client.del(key);
+    } catch (error) {
+      console.error('❌ Error en Redis del:', error);
+      throw error;
+    }
   }
 
   async disconnect(): Promise<void> {

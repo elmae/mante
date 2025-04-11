@@ -7,7 +7,7 @@ import { INotificationProvider } from './providers/notification-provider.interfa
 import { EmailNotificationProvider } from './providers/email-notification.provider';
 import { InAppNotificationProvider } from './providers/in-app-notification.provider';
 import { UserService } from '../user/adapters/input/user.service';
-import { NotificationPreferences } from '../../domain/entities/user.entity';
+import { NotificationPreferences, User } from '../../domain/entities/user.entity';
 
 @Injectable()
 export class NotificationService {
@@ -32,14 +32,24 @@ export class NotificationService {
       throw new Error('User not found');
     }
 
-    const { notification_preferences } = user;
+    const prefs = user.notification_preferences ?? {
+      email_notifications: true,
+      in_app_notifications: true,
+      push_notifications: false
+    };
 
     if (
-      (dto.type === 'email' && !notification_preferences?.email_notifications) ||
-      (dto.type === 'in_app' && !notification_preferences?.in_app_notifications) ||
-      (dto.type === 'push' && !notification_preferences?.push_notifications)
+      (dto.type === 'email' && !prefs.email_notifications) ||
+      (dto.type === 'in_app' && !prefs.in_app_notifications) ||
+      (dto.type === 'push' && !prefs.push_notifications)
     ) {
-      throw new Error(`${dto.type} notifications are disabled for this user`);
+      // Considerar si lanzar un error o simplemente no enviar si están deshabilitadas
+      console.warn(
+        `Notificación tipo ${dto.type} no enviada porque las preferencias están deshabilitadas para el usuario ${user.id}`
+      );
+      // Podríamos retornar aquí o manejarlo de otra forma según la lógica de negocio
+      // throw new Error(`${dto.type} notifications are disabled for this user`);
+      return notification; // Opcional: retornar la notificación creada pero no enviada
     }
 
     await this.notificationRepository.save(notification);
@@ -88,14 +98,40 @@ export class NotificationService {
       throw new Error('User not found');
     }
 
-    const updatedPreferences = {
-      ...user.notification_preferences,
+    // Asegurar que las preferencias base existan
+    const basePreferences: NotificationPreferences = user.notification_preferences ?? {
+      email_notifications: true, // Valor por defecto
+      in_app_notifications: true, // Valor por defecto
+      push_notifications: false // Valor por defecto
+    };
+
+    // Fusionar con las nuevas preferencias parciales
+    const updatedPreferences: NotificationPreferences = {
+      ...basePreferences,
       ...preferences
     };
 
+    // Validar que todas las propiedades requeridas estén presentes
+    if (
+      updatedPreferences.email_notifications === undefined ||
+      updatedPreferences.in_app_notifications === undefined ||
+      updatedPreferences.push_notifications === undefined
+    ) {
+      throw new Error('Invalid notification preferences structure after merge.');
+    }
+
     await this.userService.update(userId, {
-      notification_preferences: updatedPreferences
+      notification_preferences: updatedPreferences as NotificationPreferences // Asegurar el tipo
     });
+  }
+
+  async getNotificationPreferences(userId: string): Promise<NotificationPreferences | null> {
+    const user = await this.userService.findById(userId);
+    if (!user) {
+      throw new Error('User not found');
+    }
+    // Devolver las preferencias o null si no están definidas
+    return user.notification_preferences ?? null;
   }
 
   async markAllAsRead(userId: string): Promise<void> {

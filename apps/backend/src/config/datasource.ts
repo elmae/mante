@@ -1,7 +1,13 @@
 import { DataSource } from 'typeorm';
 import { join } from 'path';
-import config from './config';
+import * as dotenv from 'dotenv';
+import { config } from './config';
 import { entities } from '../domain/entities';
+
+// Cargar variables de entorno si config no está inicializado
+if (!config?.database) {
+  dotenv.config({ path: join(__dirname, '../../.env') });
+}
 
 const AppDataSource = new DataSource({
   type: 'postgres',
