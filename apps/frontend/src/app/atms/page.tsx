@@ -12,7 +12,7 @@ import { ConfirmDialog } from "@/components/common/ConfirmDialog";
 import { Pagination } from "@/components/common/Pagination";
 import { DashboardSkeleton } from "@/components/dashboard/DashboardSkeleton";
 import { DashboardError } from "@/components/dashboard/DashboardError";
-import type { ATM } from "@/services/api/atm";
+import type { ATM } from "@/types/entities";
 import type { CreateMaintenanceRecord } from "@/services/api/maintenance";
 
 export default function ATMsPage() {
@@ -86,7 +86,10 @@ export default function ATMsPage() {
   };
 
   const handleFormSubmit = (data: Omit<ATM, "id">) => {
-    setPendingFormData(data);
+    setPendingFormData({
+      ...data,
+      serial: data.code, // Use code as serial if not provided
+    });
     setIsConfirmSaveOpen(true);
   };
 

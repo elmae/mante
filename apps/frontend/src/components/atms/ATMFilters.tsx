@@ -2,7 +2,8 @@
 
 import { useState } from "react";
 import { MagnifyingGlassIcon } from "@heroicons/react/24/outline";
-import type { ATMFilters, ATM } from "@/services/api/atm";
+import type { ATM } from "@/types/entities";
+import type { ATMFilters } from "@/services/api/atm";
 
 interface ATMFiltersProps {
   onFilterChange: (filters: Partial<ATMFilters>) => void;

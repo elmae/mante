@@ -58,7 +58,9 @@ export function Header() {
           <Menu as="div" className="relative">
             <Menu.Button className="flex rounded-full bg-gray-100 text-sm focus:outline-none">
               <span className="h-8 w-8 rounded-full bg-primary-200 flex items-center justify-center text-primary-700">
-                {user?.name?.substring(0, 2).toUpperCase() || "US"}
+                {user
+                  ? `${user.firstName[0]}${user.lastName[0]}`.toUpperCase()
+                  : "US"}
               </span>
             </Menu.Button>
             <Transition

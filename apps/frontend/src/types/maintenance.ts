@@ -3,7 +3,7 @@ import { ATM } from "./entities";
 export type MaintenanceType = "preventive" | "corrective" | "installation";
 export type MaintenanceStatus =
   | "pending"
-  | "inProgress"
+  | "in_progress"
   | "completed"
   | "cancelled";
 export type MaintenanceFrequency =
@@ -78,3 +78,8 @@ export interface MaintenanceStats {
     avgDuration: number;
   }>;
 }
+
+export type CreateMaintenanceRecord = Omit<
+  MaintenanceRecord,
+  "id" | "created_at" | "updated_at"
+>;

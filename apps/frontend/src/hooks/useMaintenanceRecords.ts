@@ -3,16 +3,17 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import {
   maintenanceService,
   MaintenanceError,
-  type MaintenanceFilters,
-  type CreateMaintenanceRecord,
-  type PaginatedMaintenanceRecords,
-  type MaintenanceRecord,
 } from "@/services/api/maintenance";
+import type {
+  MaintenanceFilters,
+  CreateMaintenanceRecord,
+  MaintenanceRecord,
+  MaintenanceStats,
+} from "@/types/maintenance";
+import type { PaginatedMaintenanceRecords } from "@/services/api/maintenance";
 import { toast } from "sonner";
 
-interface UseMaintenanceFilters extends MaintenanceFilters {
-  atmId?: string;
-}
+type UseMaintenanceFilters = MaintenanceFilters;
 
 export function useMaintenanceRecords(
   initialFilters: UseMaintenanceFilters = {}
@@ -25,30 +26,28 @@ export function useMaintenanceRecords(
     MaintenanceError
   >({
     queryKey: ["maintenance-records", filters],
-    queryFn: () => {
-      if (!filters.atmId) {
-        throw new MaintenanceError(
-          "Se requiere el ID del ATM",
-          "VALIDATION_ERROR"
-        );
-      }
-      const { atmId, ...restFilters } = filters;
-      return maintenanceService.getMaintenanceHistory(atmId, restFilters);
-    },
-    enabled: !!filters.atmId,
+    queryFn: () => maintenanceService.getMaintenanceRecords(filters),
+    enabled: true,
     retry: (failureCount, error) => {
       if (error.code === "UNAUTHORIZED") return false;
       return failureCount < 3;
     },
   });
 
+  const { data: statsData, isLoading: isLoadingStats } = useQuery<
+    MaintenanceStats,
+    MaintenanceError
+  >({
+    queryKey: ["maintenance-stats"],
+    queryFn: () => maintenanceService.getMaintenanceStats(),
+  });
+
   const createMutation = useMutation<
     MaintenanceRecord,
     MaintenanceError,
-    { atmId: string; data: CreateMaintenanceRecord }
+    CreateMaintenanceRecord
   >({
-    mutationFn: ({ atmId, data }) =>
-      maintenanceService.createMaintenance(atmId, data),
+    mutationFn: (data) => maintenanceService.createMaintenanceRecord(data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["maintenance-records"] });
       toast.success("Mantenimiento registrado exitosamente");
@@ -61,14 +60,10 @@ export function useMaintenanceRecords(
   const updateMutation = useMutation<
     MaintenanceRecord,
     MaintenanceError,
-    {
-      atmId: string;
-      maintenanceId: string;
-      data: Partial<CreateMaintenanceRecord>;
-    }
+    { id: string; data: Partial<MaintenanceRecord> }
   >({
-    mutationFn: ({ atmId, maintenanceId, data }) =>
-      maintenanceService.updateMaintenance(atmId, maintenanceId, data),
+    mutationFn: ({ id, data }) =>
+      maintenanceService.updateMaintenanceRecord(id, data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["maintenance-records"] });
       toast.success("Mantenimiento actualizado exitosamente");
@@ -81,10 +76,10 @@ export function useMaintenanceRecords(
   const deleteMutation = useMutation<
     void,
     MaintenanceError,
-    { atmId: string; maintenanceId: string }
+    { maintenanceId: string }
   >({
-    mutationFn: ({ atmId, maintenanceId }) =>
-      maintenanceService.deleteMaintenance(atmId, maintenanceId),
+    mutationFn: ({ maintenanceId }) =>
+      maintenanceService.deleteMaintenanceRecord(maintenanceId),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["maintenance-records"] });
       toast.success("Mantenimiento eliminado exitosamente");
@@ -103,20 +98,38 @@ export function useMaintenanceRecords(
     }));
   };
 
+  const defaultStats: MaintenanceStats = {
+    totalPending: 0,
+    totalInProgress: 0,
+    totalCompleted: 0,
+    totalCancelled: 0,
+    averageDuration: 0,
+    upcomingMaintenance: 0,
+    overdueCount: 0,
+    byType: {
+      preventive: 0,
+      corrective: 0,
+      installation: 0,
+    },
+    byATM: [],
+  };
+
   return {
-    maintenanceRecords: data?.data || [],
-    total: data?.total || 0,
-    page: data?.page || 1,
-    limit: data?.limit || 10,
+    records: data?.data || [],
+    totalRecords: data?.total || 0,
+    currentPage: data?.page || 1,
     totalPages: data?.totalPages || 1,
     isLoading,
     error,
     filters,
     updateFilters,
     refetch,
-    create: createMutation.mutate,
-    update: updateMutation.mutate,
-    delete: deleteMutation.mutate,
+    stats: statsData || defaultStats,
+    isLoadingStats,
+    create: (data: CreateMaintenanceRecord) => createMutation.mutate(data),
+    update: (id: string, data: Partial<MaintenanceRecord>) =>
+      updateMutation.mutate({ id, data }),
+    delete: (id: string) => deleteMutation.mutate({ maintenanceId: id }),
     isCreating: createMutation.isPending,
     isUpdating: updateMutation.isPending,
     isDeleting: deleteMutation.isPending,

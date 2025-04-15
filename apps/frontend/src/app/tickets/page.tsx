@@ -1,3 +1,4 @@
+"use client";
 import { TicketList } from "@/components/tickets/TicketList";
 
 export default function TicketsPage() {

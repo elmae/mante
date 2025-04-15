@@ -1,5 +1,5 @@
-import { Comment } from "../../types/entities";
-
+import { TicketComment } from "../../types/entities";
+import { apiClient } from "./client";
 const BASE_URL = "/comments";
 
 export interface CreateCommentDto {
@@ -12,60 +12,25 @@ export interface UpdateCommentDto {
 }
 
 export const CommentAPI = {
-  create: async (data: CreateCommentDto): Promise<Comment> => {
-    const response = await fetch(BASE_URL, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify(data),
-      credentials: "include",
-    });
-
-    if (!response.ok) {
-      throw new Error("Error creating comment");
-    }
-
-    return response.json();
+  create: async (data: CreateCommentDto): Promise<TicketComment> => {
+    const response = await apiClient.post(BASE_URL, data);
+    return response.data;
   },
 
-  getByTicketId: async (ticketId: string): Promise<Comment[]> => {
-    const response = await fetch(`${BASE_URL}/ticket/${ticketId}`, {
-      credentials: "include",
-    });
-
-    if (!response.ok) {
-      throw new Error("Error fetching comments");
-    }
-
-    return response.json();
+  getByTicketId: async (ticketId: string): Promise<TicketComment[]> => {
+    const response = await apiClient.get(`${BASE_URL}/ticket/${ticketId}`);
+    return response.data;
   },
 
-  update: async (id: string, data: UpdateCommentDto): Promise<Comment> => {
-    const response = await fetch(`${BASE_URL}/${id}`, {
-      method: "PATCH",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify(data),
-      credentials: "include",
-    });
-
-    if (!response.ok) {
-      throw new Error("Error updating comment");
-    }
-
-    return response.json();
+  update: async (
+    id: string,
+    data: UpdateCommentDto
+  ): Promise<TicketComment> => {
+    const response = await apiClient.patch(`${BASE_URL}/${id}`, data);
+    return response.data;
   },
 
   delete: async (id: string): Promise<void> => {
-    const response = await fetch(`${BASE_URL}/${id}`, {
-      method: "DELETE",
-      credentials: "include",
-    });
-
-    if (!response.ok) {
-      throw new Error("Error deleting comment");
-    }
+    await apiClient.delete(`${BASE_URL}/${id}`);
   },
 };

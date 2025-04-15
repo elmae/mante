@@ -1,5 +1,5 @@
 import React from "react";
-import { useMaintenance } from "@/hooks/useMaintenance";
+import { useMaintenanceRecords } from "@/hooks/useMaintenanceRecords";
 import type {
   MaintenanceRecord,
   MaintenanceStatus,
@@ -18,7 +18,7 @@ const STATUS_VARIANTS: Record<
   "info" | "warning" | "success" | "error"
 > = {
   pending: "warning",
-  inProgress: "info",
+  in_progress: "info",
   completed: "success",
   cancelled: "error",
 };
@@ -29,7 +29,14 @@ const TYPE_VARIANTS: Record<MaintenanceType, "info" | "warning" | "success"> = {
   installation: "success",
 };
 
-export function MaintenanceList() {
+interface MaintenanceListProps {
+  initialFilters?: { atmId?: string };
+}
+
+export const MaintenanceList = React.forwardRef<
+  HTMLDivElement,
+  MaintenanceListProps
+>(function MaintenanceList({ initialFilters = {} }, ref) {
   const {
     records,
     totalRecords,
@@ -41,7 +48,7 @@ export function MaintenanceList() {
     updateFilters,
     stats,
     isLoadingStats,
-  } = useMaintenance({ limit: 10 });
+  } = useMaintenanceRecords({ limit: 10, ...initialFilters });
 
   if (isLoading || isLoadingStats) {
     return <DashboardSkeleton />;
@@ -141,7 +148,7 @@ export function MaintenanceList() {
   ];
 
   return (
-    <div className="space-y-6">
+    <div ref={ref} className="space-y-6">
       {/* Header con estadísticas */}
       {stats && (
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-4">
@@ -205,4 +212,4 @@ export function MaintenanceList() {
       </div>
     </div>
   );
-}
+});

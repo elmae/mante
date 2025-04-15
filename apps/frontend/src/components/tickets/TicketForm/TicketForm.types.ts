@@ -1,5 +1,5 @@
 import { ATM, User } from "@/types/entities";
-import { TicketPriority, TicketStatus, TicketType } from "@/types/entities";
+import { TicketPriority, TicketType } from "@/types/entities";
 
 export interface ITicketFormProps {
   onSubmit: (data: ITicketFormData) => void;
@@ -13,9 +13,9 @@ export interface ITicketFormData {
   description: string;
   type: TicketType;
   priority: TicketPriority;
-  atm_id: string;
-  assigned_to?: string;
-  due_date?: Date;
+  atmId: string;
+  assignedTo?: string;
+  dueDate?: Date;
 }
 
 export interface IFormContext {

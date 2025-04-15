@@ -13,8 +13,14 @@ export default function CreateTicketPage() {
   const handleSubmit = async (data: ITicketFormData) => {
     try {
       await createTicket({
-        ...data,
-        status: TicketStatus.OPEN, // Estado inicial para tickets nuevos
+        title: data.title,
+        description: data.description,
+        type: data.type,
+        priority: data.priority,
+        atmId: data.atmId,
+        assignedToId: data.assignedTo,
+        dueDate: data.dueDate?.toISOString(),
+        status: TicketStatus.OPEN,
       });
       router.push("/tickets");
     } catch (error) {

@@ -20,7 +20,7 @@ const STATUS_VARIANTS: Record<
 > = {
   open: "info",
   assigned: "warning",
-  inProgress: "primary",
+  in_progress: "primary",
   resolved: "success",
   closed: "success",
 };
@@ -125,7 +125,7 @@ export function TicketList() {
     },
     {
       header: "Fecha Creación",
-      accessor: "created_at",
+      accessor: "createdAt",
       cell: (value) => new Date(value as string).toLocaleDateString(),
     },
     {

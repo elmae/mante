@@ -1,21 +1,26 @@
-## Language
+## Lenguaje
 
-- **Always use spanish** as primary language
+- **Usar siempre español** como idioma principal.
 
-### 📎 Version control & Conventions
+## 📎 Control de versiones y convenciones
 
-- **Always follow conventional commits specifications** as the convention on git commits.
+- **Seguir siempre las especificaciones de Conventional Commits** como convención para los mensajes de commits en Git.
 
-### 🧱 Code Structure & Modularity
+## Guía de Contribución al Memory Bank
 
-- **Never create a file longer than 600 lines of code.** If a file approaches this limit, refactor by splitting it into modules or helper files.
-- **Always check the coding-standards.md file in memory bank**
-- **Use clear, consistent imports** (prefer relative imports within packages).
+- **Leer primero todos los archivos del ./memory-bank/** Antes de realzar cualquier actualizacion, despues de cada reinicio o al iniciar una nueva tarea.
+- **Siempre actualiza en lugar de sobrescribir archivos en el ./memory-bank/** a menos que se indique explícitamente lo contrario.
 
-### 🧠 AI Behavior Rules
+## 🧱 Estructura del código y modularidad
 
-- **Never assume missing context. Ask questions if uncertain.**
-- **Never hallucinate libraries or functions** – only use known, verified packages.
-- **Always confirm file paths and module names** exist before referencing them in code or tests.
-- **Never delete or overwrite existing code** unless explicitly instructed to or if part of a task from memory bank.
-- **Always update instead of overwrite files in memory bank** unless explicitly instructed to.
+- **Siempre consultar el archivo ./memory-bank/coding-standards.md** para asegurar la concistencia en codigo del proyecto
+- **Nunca crear un archivo que exceda las 600 líneas de código.** Si un archivo se acerca a este límite, refactorizar dividiéndolo en módulos o archivos auxiliares.
+- **Utilizar imports claros y consistentes** (preferir imports relativos dentro de los paquetes).
+
+## 🧠 Reglas de comportamiento de IA
+
+- **Nunca asumir contexto faltante. Hacer preguntas si hay incertidumbre.**
+- **Nunca imaginar bibliotecas o funciones inexistentes** – usar solo paquetes conocidos y verificados.
+- **Confirmar siempre que las rutas de los archivos y nombres de los módulos** existan antes de referenciarlos en el código o las pruebas.
+- **Nunca eliminar o sobrescribir código existente** a menos que se indique explícitamente o forme parte de una tarea de memory bank.
+- **Actualizar siempre en lugar de sobrescribir archivos en memory bank**, a menos que se indique explícitamente.

@@ -1,41 +1,240 @@
 import { Request, Response, NextFunction } from 'express';
-import { validate as classValidate } from 'class-validator';
-import { plainToClass } from 'class-transformer';
-import { ValidationException } from '../common/exceptions/validation.exception';
+import { Role } from '../domain/entities/role.entity';
 
-type Type<T> = {
-  new (...args: any[]): T;
-};
+export interface ValidationRuleBase {
+  in: string[];
+  optional?: boolean;
+  errorMessage?: string;
+}
 
-export class ValidationMiddleware {
-  static async validateDto<T extends object>(type: Type<T>, data: any): Promise<T> {
-    const dto = plainToClass(type, data);
-    const errors = await classValidate(dto, {
-      whitelist: true,
-      forbidNonWhitelisted: true
-    });
+export interface ISO8601ValidationRule extends ValidationRuleBase {
+  isISO8601: true;
+}
 
-    if (errors.length > 0) {
-      const formattedErrors = errors.map(error => ({
-        property: error.property,
-        constraints: error.constraints,
-        value: error.value
-      }));
+export interface UUIDValidationRule extends ValidationRuleBase {
+  isUUID: true;
+}
 
-      throw new ValidationException('La validación falló', formattedErrors);
+export interface BooleanValidationRule extends ValidationRuleBase {
+  isBoolean: true;
+}
+
+export interface StringValidationRule extends ValidationRuleBase {
+  isString: true;
+}
+
+export interface IntValidationRule extends ValidationRuleBase {
+  isInt: {
+    options: { min: number; max: number };
+    errorMessage: string;
+  };
+}
+
+export interface EnumValidationRule extends ValidationRuleBase {
+  isIn: {
+    options: [any[]];
+    errorMessage: string;
+  };
+}
+
+export type ValidationRule =
+  | ISO8601ValidationRule
+  | UUIDValidationRule
+  | BooleanValidationRule
+  | StringValidationRule
+  | IntValidationRule
+  | EnumValidationRule;
+
+export interface ValidationSchema {
+  [key: string]: ValidationRule;
+}
+
+export interface ValidationError {
+  param: string;
+  msg: string;
+}
+
+// Helpers para crear reglas de validación tipadas
+export const createDateRule = (
+  errorMessage: string = 'Fecha inválida',
+  optional: boolean = true
+): ISO8601ValidationRule => ({
+  in: ['query'],
+  optional,
+  isISO8601: true,
+  errorMessage
+});
+
+export const createUUIDRule = (
+  errorMessage: string = 'UUID inválido',
+  optional: boolean = true
+): UUIDValidationRule => ({
+  in: ['query'],
+  optional,
+  isUUID: true,
+  errorMessage
+});
+
+export const createBooleanRule = (
+  errorMessage: string = 'Valor booleano inválido',
+  optional: boolean = true
+): BooleanValidationRule => ({
+  in: ['query'],
+  optional,
+  isBoolean: true,
+  errorMessage
+});
+
+export const createStringRule = (
+  errorMessage: string = 'Texto inválido',
+  optional: boolean = true
+): StringValidationRule => ({
+  in: ['query'],
+  optional,
+  isString: true,
+  errorMessage
+});
+
+export const createIntRule = (
+  min: number,
+  max: number,
+  errorMessage: string,
+  optional: boolean = true
+): IntValidationRule => ({
+  in: ['query'],
+  optional,
+  isInt: {
+    options: { min, max },
+    errorMessage
+  }
+});
+
+export const createEnumRule = <T extends string | number>(
+  values: readonly T[] | T[],
+  errorMessage: string,
+  optional: boolean = true
+): EnumValidationRule => ({
+  in: ['query'],
+  optional,
+  isIn: {
+    options: [Array.from(values)],
+    errorMessage
+  }
+});
+
+export const validatePermission = (requiredPermission: string) => {
+  return async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+    const userRole = (req as any).user?.role as Role;
+
+    if (!userRole || !userRole.permissions) {
+      res.status(403).json({ error: 'No tienes permisos suficientes' });
+      return;
     }
 
-    return dto;
-  }
+    const hasPermission = userRole.permissions.some(
+      permission => permission.name === requiredPermission
+    );
 
-  static validate<T extends object>(type: Type<T>) {
-    return async (req: Request, res: Response, next: NextFunction) => {
-      try {
-        req.body = await this.validateDto(type, req.body);
-        next();
-      } catch (error) {
-        next(error);
+    if (!hasPermission) {
+      res.status(403).json({
+        error: `Se requiere el permiso: ${requiredPermission}`
+      });
+      return;
+    }
+
+    next();
+  };
+};
+
+export const validateQueryParams = (schema: ValidationSchema) => {
+  return async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+    const errors: ValidationError[] = [];
+
+    for (const [param, rules] of Object.entries(schema)) {
+      const value = req.query[param];
+
+      // Si el parámetro es opcional y no está presente, continuar
+      if (rules.optional && value === undefined) {
+        continue;
       }
-    };
-  }
-}
+
+      // Si el parámetro es requerido y no está presente
+      if (!rules.optional && value === undefined) {
+        errors.push({
+          param,
+          msg: rules.errorMessage || `El parámetro ${param} es requerido`
+        });
+        continue;
+      }
+
+      // Validar según el tipo
+      if (value !== undefined) {
+        if ('isISO8601' in rules) {
+          const date = new Date(value as string);
+          if (isNaN(date.getTime())) {
+            errors.push({
+              param,
+              msg: rules.errorMessage || `${param} debe ser una fecha válida`
+            });
+          }
+        }
+
+        if ('isUUID' in rules) {
+          const uuidRegex =
+            /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+          if (!uuidRegex.test(value as string)) {
+            errors.push({
+              param,
+              msg: rules.errorMessage || `${param} debe ser un UUID válido`
+            });
+          }
+        }
+
+        if ('isBoolean' in rules) {
+          if (value !== 'true' && value !== 'false') {
+            errors.push({
+              param,
+              msg: rules.errorMessage || `${param} debe ser un booleano`
+            });
+          }
+        }
+
+        if ('isIn' in rules) {
+          const validValues = rules.isIn.options[0];
+          if (!validValues.includes(value)) {
+            errors.push({
+              param,
+              msg: rules.isIn.errorMessage || `${param} debe ser uno de: ${validValues.join(', ')}`
+            });
+          }
+        }
+
+        if ('isInt' in rules) {
+          const num = parseInt(value as string);
+          if (isNaN(num) || num < rules.isInt.options.min || num > rules.isInt.options.max) {
+            errors.push({
+              param,
+              msg:
+                rules.isInt.errorMessage ||
+                `${param} debe ser un número entre ${rules.isInt.options.min} y ${rules.isInt.options.max}`
+            });
+          }
+        }
+
+        if ('isString' in rules && typeof value !== 'string') {
+          errors.push({
+            param,
+            msg: rules.errorMessage || `${param} debe ser un texto`
+          });
+        }
+      }
+    }
+
+    if (errors.length > 0) {
+      res.status(400).json({ errors });
+      return;
+    }
+
+    next();
+  };
+};

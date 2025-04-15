@@ -3,7 +3,7 @@
 import React, { useState } from "react";
 import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
-import { ITicketFiltersProps } from "./TicketFilters.types";
+import { ITicketFiltersProps, ITicketFilters } from "./TicketFilters.types";
 import { TicketPriority, TicketStatus, TicketType } from "@/types/entities";
 import { useATMs } from "@/hooks/useATMs";
 import { useUsers } from "@/hooks/useUsers";
@@ -13,11 +13,16 @@ export const TicketFilters: React.FC<ITicketFiltersProps> = ({
   onFilterChange,
   isLoading,
 }) => {
-  const { data: atms } = useATMs();
+  const { atms } = useATMs() as {
+    atms: Array<{ id: string; code: string; location: { address: string } }>;
+  };
   const { data: users } = useUsers();
   const [expanded, setExpanded] = useState(false);
 
-  const handleFilterChange = (key: keyof typeof filters, value: any) => {
+  const handleFilterChange = (
+    key: keyof ITicketFilters,
+    value: string | string[] | Date | null | boolean | undefined
+  ) => {
     onFilterChange({
       ...filters,
       [key]: value,
@@ -77,7 +82,10 @@ export const TicketFilters: React.FC<ITicketFiltersProps> = ({
               onChange={(e) =>
                 handleFilterChange(
                   "status",
-                  Array.from(e.target.selectedOptions, (option) => option.value)
+                  Array.from(
+                    e.target.selectedOptions,
+                    (option) => option.value as TicketStatus
+                  )
                 )
               }
               className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500 sm:text-sm"
@@ -110,7 +118,10 @@ export const TicketFilters: React.FC<ITicketFiltersProps> = ({
               onChange={(e) =>
                 handleFilterChange(
                   "priority",
-                  Array.from(e.target.selectedOptions, (option) => option.value)
+                  Array.from(
+                    e.target.selectedOptions,
+                    (option) => option.value as TicketPriority
+                  )
                 )
               }
               className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500 sm:text-sm"
@@ -141,13 +152,16 @@ export const TicketFilters: React.FC<ITicketFiltersProps> = ({
               onChange={(e) =>
                 handleFilterChange(
                   "type",
-                  Array.from(e.target.selectedOptions, (option) => option.value)
+                  Array.from(
+                    e.target.selectedOptions,
+                    (option) => option.value as TicketType
+                  )
                 )
               }
               className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500 sm:text-sm"
               disabled={isLoading}
             >
-              {Object.values(TicketType).map((type) => (
+              {["preventive", "corrective", "installation"].map((type) => (
                 <option key={type} value={type}>
                   {type === "preventive"
                     ? "Preventivo"
@@ -165,17 +179,23 @@ export const TicketFilters: React.FC<ITicketFiltersProps> = ({
               ATM
             </label>
             <select
-              value={filters.atm_id || ""}
-              onChange={(e) => handleFilterChange("atm_id", e.target.value)}
+              value={filters.atmId || ""}
+              onChange={(e) => handleFilterChange("atmId", e.target.value)}
               className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500 sm:text-sm"
               disabled={isLoading}
             >
               <option value="">Todos los ATMs</option>
-              {atms?.map((atm) => (
-                <option key={atm.id} value={atm.id}>
-                  {atm.serial} - {atm.location}
-                </option>
-              ))}
+              {atms?.map(
+                (atm: {
+                  id: string;
+                  code: string;
+                  location: { address: string };
+                }) => (
+                  <option key={atm.id} value={atm.id}>
+                    {atm.code} - {atm.location.address}
+                  </option>
+                )
+              )}
             </select>
           </div>
 
@@ -185,15 +205,13 @@ export const TicketFilters: React.FC<ITicketFiltersProps> = ({
               Técnico Asignado
             </label>
             <select
-              value={filters.assigned_to || ""}
-              onChange={(e) =>
-                handleFilterChange("assigned_to", e.target.value)
-              }
+              value={filters.assignedTo || ""}
+              onChange={(e) => handleFilterChange("assignedTo", e.target.value)}
               className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500 sm:text-sm"
               disabled={isLoading}
             >
               <option value="">Todos los técnicos</option>
-              {users?.map((user) => (
+              {users?.map((user: { id: string; name: string }) => (
                 <option key={user.id} value={user.id}>
                   {user.name}
                 </option>
@@ -208,15 +226,19 @@ export const TicketFilters: React.FC<ITicketFiltersProps> = ({
             </label>
             <div className="flex space-x-2">
               <DatePicker
-                selected={filters.date_from}
-                onChange={(date) => handleFilterChange("date_from", date)}
+                selected={filters.dateFrom ?? null}
+                onChange={(date: Date | null) =>
+                  handleFilterChange("dateFrom", date)
+                }
                 className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500 sm:text-sm"
                 placeholderText="Fecha inicio"
                 disabled={isLoading}
               />
               <DatePicker
-                selected={filters.date_to}
-                onChange={(date) => handleFilterChange("date_to", date)}
+                selected={filters.dateTo ?? null}
+                onChange={(date: Date | null) =>
+                  handleFilterChange("dateTo", date)
+                }
                 className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500 sm:text-sm"
                 placeholderText="Fecha fin"
                 disabled={isLoading}
@@ -230,12 +252,10 @@ export const TicketFilters: React.FC<ITicketFiltersProps> = ({
               SLA
             </label>
             <select
-              value={
-                filters.met_sla === undefined ? "" : String(filters.met_sla)
-              }
+              value={filters.metSla === undefined ? "" : String(filters.metSla)}
               onChange={(e) =>
                 handleFilterChange(
-                  "met_sla",
+                  "metSla",
                   e.target.value === "" ? undefined : e.target.value === "true"
                 )
               }

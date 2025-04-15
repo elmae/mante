@@ -9,6 +9,8 @@ export interface DateInputProps
   wrapperClassName?: string;
   inputClassName?: string;
   onChange?: (value: string) => void;
+  minDate?: string;
+  maxDate?: string;
 }
 
 export const DateInput = forwardRef<HTMLInputElement, DateInputProps>(
@@ -23,6 +25,8 @@ export const DateInput = forwardRef<HTMLInputElement, DateInputProps>(
       value,
       disabled = false,
       id,
+      minDate,
+      maxDate,
       ...props
     },
     ref
@@ -53,6 +57,8 @@ export const DateInput = forwardRef<HTMLInputElement, DateInputProps>(
             value={value || ""}
             onChange={handleChange}
             disabled={disabled}
+            min={minDate}
+            max={maxDate}
             className={cn(
               "block w-full rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500 sm:text-sm",
               error && "border-red-300 focus:border-red-500 focus:ring-red-500",

@@ -42,24 +42,17 @@ const getPriorityBadgeClass = (priority: TicketPriority) => {
 export const TicketList: React.FC = () => {
   const {
     tickets,
-    total,
-    page,
-    limit,
-    isLoading,
+    totalTickets: total,
+    currentPage: page,
+    totalPages,
     filters,
+    isLoading,
     updateFilters,
-    setPage,
   } = useTickets();
-
-  const totalPages = Math.ceil(total / limit);
 
   return (
     <div className="space-y-4">
-      <TicketFilters
-        filters={filters}
-        onFilterChange={updateFilters}
-        isLoading={isLoading}
-      />
+      <TicketFilters currentFilters={filters} onFilterChange={updateFilters} />
 
       {isLoading ? (
         <div className="text-center py-8">Cargando tickets...</div>
@@ -115,13 +108,13 @@ export const TicketList: React.FC = () => {
                           ticket.status
                         )}`}
                       >
-                        {ticket.status === "open"
+                        {ticket.status === TicketStatus.OPEN
                           ? "Abierto"
-                          : ticket.status === "assigned"
+                          : ticket.status === TicketStatus.ASSIGNED
                           ? "Asignado"
-                          : ticket.status === "in_progress"
+                          : ticket.status === TicketStatus.IN_PROGRESS
                           ? "En Progreso"
-                          : ticket.status === "resolved"
+                          : ticket.status === TicketStatus.RESOLVED
                           ? "Resuelto"
                           : "Cerrado"}
                       </span>
@@ -132,11 +125,11 @@ export const TicketList: React.FC = () => {
                           ticket.priority
                         )}`}
                       >
-                        {ticket.priority === "low"
+                        {ticket.priority === TicketPriority.LOW
                           ? "Baja"
-                          : ticket.priority === "medium"
+                          : ticket.priority === TicketPriority.MEDIUM
                           ? "Media"
-                          : ticket.priority === "high"
+                          : ticket.priority === TicketPriority.HIGH
                           ? "Alta"
                           : "Crítica"}
                       </span>
@@ -148,19 +141,19 @@ export const TicketList: React.FC = () => {
                       {ticket.assignedTo?.name || "Sin asignar"}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                      {ticket.due_date
-                        ? formatDate(new Date(ticket.due_date))
+                      {ticket.dueDate
+                        ? formatDate(new Date(ticket.dueDate))
                         : "-"}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <span
                         className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
-                          ticket.met_sla
+                          ticket.metSla
                             ? "bg-green-100 text-green-800"
                             : "bg-red-100 text-red-800"
                         }`}
                       >
-                        {ticket.met_sla ? "Cumple" : "No cumple"}
+                        {ticket.metSla ? "Cumple" : "No cumple"}
                       </span>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
@@ -181,14 +174,19 @@ export const TicketList: React.FC = () => {
           <div className="flex justify-between items-center bg-white px-4 py-3 rounded-lg shadow sm:px-6">
             <div className="flex-1 flex justify-between sm:hidden">
               <button
-                onClick={() => setPage(page - 1)}
+                onClick={() =>
+                  page > 1 && updateFilters({ ...filters, page: page - 1 })
+                }
                 disabled={page === 1}
                 className="relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 disabled:bg-gray-100 disabled:text-gray-500"
               >
                 Anterior
               </button>
               <button
-                onClick={() => setPage(page + 1)}
+                onClick={() =>
+                  page < totalPages &&
+                  updateFilters({ ...filters, page: page + 1 })
+                }
                 disabled={page === totalPages}
                 className="ml-3 relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 disabled:bg-gray-100 disabled:text-gray-500"
               >
@@ -199,10 +197,12 @@ export const TicketList: React.FC = () => {
               <div>
                 <p className="text-sm text-gray-700">
                   Mostrando{" "}
-                  <span className="font-medium">{(page - 1) * limit + 1}</span>{" "}
+                  <span className="font-medium">
+                    {tickets.length ? (page - 1) * 10 + 1 : 0}
+                  </span>{" "}
                   a{" "}
                   <span className="font-medium">
-                    {Math.min(page * limit, total)}
+                    {Math.min(page * 10, total)}
                   </span>{" "}
                   de <span className="font-medium">{total}</span> resultados
                 </p>
@@ -213,7 +213,9 @@ export const TicketList: React.FC = () => {
                   aria-label="Pagination"
                 >
                   <button
-                    onClick={() => setPage(page - 1)}
+                    onClick={() =>
+                      page > 1 && updateFilters({ ...filters, page: page - 1 })
+                    }
                     disabled={page === 1}
                     className="relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50 disabled:bg-gray-100"
                   >
@@ -222,7 +224,7 @@ export const TicketList: React.FC = () => {
                   {[...Array(totalPages)].map((_, i) => (
                     <button
                       key={i + 1}
-                      onClick={() => setPage(i + 1)}
+                      onClick={() => updateFilters({ ...filters, page: i + 1 })}
                       className={`relative inline-flex items-center px-4 py-2 border text-sm font-medium ${
                         page === i + 1
                           ? "z-10 bg-primary-50 border-primary-500 text-primary-600"
@@ -233,7 +235,10 @@ export const TicketList: React.FC = () => {
                     </button>
                   ))}
                   <button
-                    onClick={() => setPage(page + 1)}
+                    onClick={() =>
+                      page < totalPages &&
+                      updateFilters({ ...filters, page: page + 1 })
+                    }
                     disabled={page === totalPages}
                     className="relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50 disabled:bg-gray-100"
                   >

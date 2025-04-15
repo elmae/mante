@@ -1,4 +1,4 @@
-import { type MaintenanceRecord } from "@/services/api/maintenance";
+import { type MaintenanceRecord } from "@/types/maintenance";
 
 interface MaintenanceTableProps {
   records: MaintenanceRecord[];
@@ -17,17 +17,20 @@ export function MaintenanceTable({
     completed: "bg-green-100 text-green-800",
     pending: "bg-yellow-100 text-yellow-800",
     in_progress: "bg-blue-100 text-blue-800",
+    cancelled: "bg-red-100 text-red-800",
   };
 
   const typeLabels = {
     preventive: "Preventivo",
     corrective: "Correctivo",
+    installation: "Instalación",
   };
 
   const statusLabels = {
     completed: "Completado",
     pending: "Pendiente",
     in_progress: "En Progreso",
+    cancelled: "Cancelado",
   };
 
   return (
@@ -91,10 +94,12 @@ export function MaintenanceTable({
                     {record.description}
                   </td>
                   <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-500">
-                    {new Date(record.date).toLocaleDateString()}
+                    {new Date(record.startDate).toLocaleDateString()}
                   </td>
                   <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-500">
-                    {new Date(record.nextMaintenanceDate).toLocaleDateString()}
+                    {record.schedule?.nextDate
+                      ? new Date(record.schedule.nextDate).toLocaleDateString()
+                      : "No programado"}
                   </td>
                   <td className="relative whitespace-nowrap py-4 pl-3 pr-4 text-right text-sm font-medium sm:pr-0">
                     <div className="flex justify-end gap-2">

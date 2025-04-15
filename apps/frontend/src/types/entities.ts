@@ -1,17 +1,22 @@
 export enum TicketStatus {
   OPEN = "open",
   ASSIGNED = "assigned",
-  IN_PROGRESS = "inProgress",
+  IN_PROGRESS = "in_progress",
   RESOLVED = "resolved",
   CLOSED = "closed",
 }
+
 export enum TicketPriority {
   LOW = "low",
   MEDIUM = "medium",
   HIGH = "high",
   CRITICAL = "critical",
 }
-export type TicketType = "preventive" | "corrective" | "installation";
+export enum TicketType {
+  PREVENTIVE = "preventive",
+  CORRECTIVE = "corrective",
+  INSTALLATION = "installation",
+}
 
 export interface User {
   id: string;
@@ -26,6 +31,7 @@ export interface User {
 export interface ATM {
   id: string;
   code: string;
+  serial: string;
   model: string;
   location: {
     address: string;
@@ -42,15 +48,24 @@ export interface ATM {
   zone: string;
 }
 
-export interface Comment {
+export interface TicketComment {
   id: string;
   content: string;
   ticket: Ticket;
   ticketId: string;
   createdBy: User;
-  createdById: string;
-  created_at: string;
-  updated_at: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface TicketAttachment {
+  id: string;
+  filename: string;
+  path: string;
+  ticket: Ticket;
+  ticketId: string;
+  uploadedBy: User;
+  uploadedAt: string;
 }
 
 export interface Ticket {
@@ -65,8 +80,48 @@ export interface Ticket {
   assignedTo?: User;
   assignedToId?: string;
   createdBy: User;
-  createdById: string;
-  created_at: string;
-  updated_at: string;
-  comments: Comment[];
+  createdAt: string;
+  updatedAt: string;
+  dueDate?: string;
+  metSla: boolean;
+  comments: TicketComment[];
+  attachments: TicketAttachment[];
 }
+
+export interface MaintenanceRecord {
+  id: string;
+  type: "preventive" | "corrective";
+  status: "pending" | "in_progress" | "completed";
+  description: string;
+  atm: ATM;
+  atmId: string;
+  assignedTo?: User;
+  assignedToId?: string;
+  scheduledDate: string;
+  completionDate?: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export type MaintenanceFilters = {
+  type?: "preventive" | "corrective";
+  status?: "pending" | "in_progress" | "completed";
+  atmId?: string;
+  startDate?: string;
+  endDate?: string;
+  page?: number;
+  limit?: number;
+};
+
+export interface PaginatedMaintenanceRecords {
+  records: MaintenanceRecord[];
+  total: number;
+  page: number;
+  limit: number;
+  totalPages: number;
+}
+
+export type CreateMaintenanceRecord = Omit<
+  MaintenanceRecord,
+  "id" | "atm" | "created_at" | "updated_at" | "completion_date"
+>;

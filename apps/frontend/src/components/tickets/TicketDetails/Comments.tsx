@@ -1,6 +1,6 @@
 import { useComments } from "@/hooks/useComments";
 import { useState, useEffect } from "react";
-import { Comment } from "@/types/entities";
+import { TicketComment } from "@/types/entities";
 
 interface CommentsProps {
   ticketId: string;
@@ -78,16 +78,16 @@ export function Comments({ ticketId, currentUser }: CommentsProps) {
             {currentUser ? "Sé el primero en comentar." : ""}
           </p>
         ) : (
-          comments.map((comment: Comment) => (
+          comments.map((comment: TicketComment) => (
             <div
               key={comment.id}
               className="bg-white dark:bg-gray-800 rounded-lg shadow p-4"
             >
               <div className="flex justify-between items-start mb-2">
                 <div>
-                  <span className="font-medium">{comment.created_by.name}</span>
+                  <span className="font-medium">{comment.createdBy.name}</span>
                   <span className="text-gray-500 dark:text-gray-400 text-sm ml-2">
-                    {new Date(comment.created_at).toLocaleDateString("es", {
+                    {new Date(comment.createdAt).toLocaleDateString("es", {
                       year: "numeric",
                       month: "long",
                       day: "numeric",
@@ -96,7 +96,7 @@ export function Comments({ ticketId, currentUser }: CommentsProps) {
                     })}
                   </span>
                 </div>
-                {currentUser?.id === comment.created_by.id && (
+                {currentUser?.id === comment.createdBy.id && (
                   <div className="flex gap-2">
                     <button
                       onClick={() => {

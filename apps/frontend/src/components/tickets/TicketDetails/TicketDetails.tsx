@@ -113,7 +113,7 @@ export const TicketDetails = ({
                 Modelo: {ticket.atm.model}
               </p>
               <p className="text-gray-600 dark:text-gray-300">
-                Ubicación: {ticket.atm.location}
+                Ubicación: {ticket.atm.location.address}
               </p>
             </div>
           </div>
@@ -147,16 +147,16 @@ export const TicketDetails = ({
             <div className="space-y-1">
               <p className="text-sm">
                 <span className="font-medium">Creado:</span>{" "}
-                {formatDate(ticket.created_at)}
+                {formatDate(new Date(ticket.createdAt))}
               </p>
               <p className="text-sm">
                 <span className="font-medium">Actualizado:</span>{" "}
-                {formatDate(ticket.updated_at)}
+                {formatDate(new Date(ticket.updatedAt))}
               </p>
-              {ticket.due_date && (
+              {ticket.dueDate && (
                 <p className="text-sm">
                   <span className="font-medium">Fecha límite:</span>{" "}
-                  {formatDate(ticket.due_date)}
+                  {formatDate(new Date(ticket.dueDate))}
                 </p>
               )}
             </div>
@@ -168,10 +168,10 @@ export const TicketDetails = ({
           <h3 className="text-lg font-semibold mb-2">Métricas</h3>
           <span
             className={`px-3 py-1 rounded-full text-white text-sm font-medium ${
-              ticket.met_sla ? "bg-green-500" : "bg-red-500"
+              ticket.metSla ? "bg-green-500" : "bg-red-500"
             }`}
           >
-            {ticket.met_sla ? "Cumple SLA" : "No cumple SLA"}
+            {ticket.metSla ? "Cumple SLA" : "No cumple SLA"}
           </span>
         </div>
 

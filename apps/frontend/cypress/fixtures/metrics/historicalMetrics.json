@@ -1,0 +1,66 @@
+[
+  {
+    "date": "2025-04-01T00:00:00.000Z",
+    "metrics": {
+      "timeMetrics": {
+        "averageResponseTime": 120,
+        "averageResolutionTime": 480,
+        "slaComplianceRate": 95
+      },
+      "ticketMetrics": {
+        "total": 100,
+        "openTickets": 30,
+        "closedTickets": 60,
+        "inProgressTickets": 10
+      }
+    }
+  },
+  {
+    "date": "2025-04-02T00:00:00.000Z",
+    "metrics": {
+      "timeMetrics": {
+        "averageResponseTime": 115,
+        "averageResolutionTime": 460,
+        "slaComplianceRate": 96
+      },
+      "ticketMetrics": {
+        "total": 105,
+        "openTickets": 25,
+        "closedTickets": 70,
+        "inProgressTickets": 10
+      }
+    }
+  },
+  {
+    "date": "2025-04-03T00:00:00.000Z",
+    "metrics": {
+      "timeMetrics": {
+        "averageResponseTime": 110,
+        "averageResolutionTime": 440,
+        "slaComplianceRate": 97
+      },
+      "ticketMetrics": {
+        "total": 110,
+        "openTickets": 20,
+        "closedTickets": 80,
+        "inProgressTickets": 10
+      }
+    }
+  },
+  {
+    "date": "2025-04-04T00:00:00.000Z",
+    "metrics": {
+      "timeMetrics": {
+        "averageResponseTime": 105,
+        "averageResolutionTime": 420,
+        "slaComplianceRate": 98
+      },
+      "ticketMetrics": {
+        "total": 115,
+        "openTickets": 15,
+        "closedTickets": 90,
+        "inProgressTickets": 10
+      }
+    }
+  }
+]

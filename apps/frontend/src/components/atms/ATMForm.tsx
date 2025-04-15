@@ -1,9 +1,10 @@
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import type { ATM } from "@/services/api/atm";
+import type { ATM } from "@/types/entities";
 
 const atmSchema = z.object({
+  serial: z.string().min(1, "El serial es requerido"),
   code: z.string().min(1, "El código es requerido"),
   model: z.string().min(1, "El modelo es requerido"),
   location: z.object({
@@ -13,9 +14,7 @@ const atmSchema = z.object({
       longitude: z.number(),
     }),
   }),
-  status: z
-    .enum(["operational", "maintenance", "offline", "error"])
-    .default("operational"),
+  status: z.enum(["operational", "maintenance", "offline", "error"]),
   lastMaintenance: z
     .string()
     .min(1, "La fecha del último mantenimiento es requerida"),
@@ -31,7 +30,7 @@ type ATMFormData = z.infer<typeof atmSchema>;
 
 interface ATMFormProps {
   atm?: ATM;
-  onSubmit: (data: Omit<ATM, "id">) => void;
+  onSubmit: (data: z.infer<typeof atmSchema>) => void;
   onCancel: () => void;
   isSubmitting?: boolean;
   error?: {
@@ -55,6 +54,7 @@ export function ATMForm({
   } = useForm<ATMFormData>({
     resolver: zodResolver(atmSchema),
     defaultValues: atm || {
+      serial: "",
       code: "",
       model: "",
       location: {
@@ -65,10 +65,10 @@ export function ATMForm({
         },
       },
       status: "operational",
-      lastMaintenance: new Date().toISOString().split("T")[0], // Fecha actual como valor por defecto
+      lastMaintenance: new Date().toISOString().split("T")[0],
       nextMaintenance: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000)
         .toISOString()
-        .split("T")[0], // 30 días después como valor por defecto
+        .split("T")[0],
       manufacturer: "",
       installationDate: "",
       zone: "",
@@ -76,7 +76,10 @@ export function ATMForm({
   });
 
   return (
-    <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
+    <form
+      onSubmit={handleSubmit((data) => onSubmit(data))}
+      className="space-y-6"
+    >
       {error && (
         <div className="rounded-md bg-red-50 p-4">
           <div className="flex">
@@ -104,6 +107,26 @@ export function ATMForm({
           </div>
         </div>
       )}
+
+      <div>
+        <label
+          htmlFor="serial"
+          className="block text-sm font-medium leading-6 text-gray-900"
+        >
+          Serial
+        </label>
+        <div className="mt-2">
+          <input
+            type="text"
+            id="serial"
+            {...register("serial")}
+            className="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-primary-600 sm:text-sm sm:leading-6"
+          />
+          {errors.serial && (
+            <p className="mt-2 text-sm text-red-600">{errors.serial.message}</p>
+          )}
+        </div>
+      </div>
 
       <div>
         <label

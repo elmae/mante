@@ -41,7 +41,16 @@ export const useTicket = (id?: string) => {
   };
 
   const createTicket = async (
-    ticketData: Omit<Ticket, "id" | "created_at" | "updated_at">
+    ticketData: Omit<
+      Ticket,
+      | "id"
+      | "createdAt"
+      | "updatedAt"
+      | "createdBy"
+      | "metSla"
+      | "comments"
+      | "attachments"
+    >
   ) => {
     try {
       setIsLoading(true);

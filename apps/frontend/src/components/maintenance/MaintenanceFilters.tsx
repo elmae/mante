@@ -13,7 +13,7 @@ interface MaintenanceFiltersProps {
 const STATUS_OPTIONS: SelectOption[] = [
   { label: "Todos los estados", value: "" },
   { label: "Pendiente", value: "pending" },
-  { label: "En Progreso", value: "inProgress" },
+  { label: "En Progreso", value: "in_progress" },
   { label: "Completado", value: "completed" },
   { label: "Cancelado", value: "cancelled" },
 ];

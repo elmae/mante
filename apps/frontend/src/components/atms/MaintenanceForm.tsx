@@ -1,23 +1,21 @@
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import type { ATM } from "@/services/api/atm";
-import type { CreateMaintenanceRecord } from "@/services/api/maintenance";
+import type { ATM } from "@/types/entities";
+import type { CreateMaintenanceRecord } from "@/types/maintenance";
 
 const maintenanceSchema = z.object({
+  atmId: z.string(),
   type: z.enum(["preventive", "corrective"] as const, {
     required_error: "El tipo de mantenimiento es requerido",
   }),
   description: z.string().min(1, "La descripción es requerida"),
   findings: z.string().min(1, "Los hallazgos son requeridos"),
-  actions: z.string().min(1, "Las acciones son requeridas"),
-  recommendations: z.string().min(1, "Las recomendaciones son requeridas"),
+  recommendations: z.string().optional(),
   status: z.enum(["completed", "pending", "in_progress"] as const, {
     required_error: "El estado es requerido",
   }),
-  nextMaintenanceDate: z
-    .string()
-    .min(1, "La fecha del próximo mantenimiento es requerida"),
+  startDate: z.string().min(1, "La fecha de inicio es requerida"),
 });
 
 type MaintenanceFormData = z.infer<typeof maintenanceSchema>;
@@ -48,20 +46,27 @@ export function MaintenanceForm({
   } = useForm<MaintenanceFormData>({
     resolver: zodResolver(maintenanceSchema),
     defaultValues: {
+      atmId: atm.id,
       type: "preventive",
       description: "",
       findings: "",
-      actions: "",
       recommendations: "",
       status: "pending",
-      nextMaintenanceDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000)
-        .toISOString()
-        .split("T")[0], // 30 días después por defecto
+      startDate: new Date().toISOString().split("T")[0],
     },
   });
 
+  const handleFormSubmit = handleSubmit((data) => {
+    const formData: CreateMaintenanceRecord = {
+      ...data,
+      atmId: atm.id,
+      recommendations: data.recommendations || "",
+    };
+    onSubmit(formData);
+  });
+
   return (
-    <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
+    <form onSubmit={handleFormSubmit} className="space-y-6">
       {/* Información del ATM */}
       <div className="rounded-md bg-gray-50 p-4">
         <h4 className="text-sm font-medium text-gray-900">
@@ -183,21 +188,21 @@ export function MaintenanceForm({
 
       <div>
         <label
-          htmlFor="actions"
+          htmlFor="startDate"
           className="block text-sm font-medium leading-6 text-gray-900"
         >
-          Acciones Realizadas
+          Fecha de Inicio
         </label>
         <div className="mt-2">
-          <textarea
-            id="actions"
-            rows={3}
-            {...register("actions")}
+          <input
+            type="date"
+            id="startDate"
+            {...register("startDate")}
             className="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-primary-600 sm:text-sm sm:leading-6"
           />
-          {errors.actions && (
+          {errors.startDate && (
             <p className="mt-2 text-sm text-red-600">
-              {errors.actions.message}
+              {errors.startDate.message}
             </p>
           )}
         </div>
@@ -244,28 +249,6 @@ export function MaintenanceForm({
           </select>
           {errors.status && (
             <p className="mt-2 text-sm text-red-600">{errors.status.message}</p>
-          )}
-        </div>
-      </div>
-
-      <div>
-        <label
-          htmlFor="nextMaintenanceDate"
-          className="block text-sm font-medium leading-6 text-gray-900"
-        >
-          Próximo Mantenimiento
-        </label>
-        <div className="mt-2">
-          <input
-            type="date"
-            id="nextMaintenanceDate"
-            {...register("nextMaintenanceDate")}
-            className="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-primary-600 sm:text-sm sm:leading-6"
-          />
-          {errors.nextMaintenanceDate && (
-            <p className="mt-2 text-sm text-red-600">
-              {errors.nextMaintenanceDate.message}
-            </p>
           )}
         </div>
       </div>

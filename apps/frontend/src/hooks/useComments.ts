@@ -1,9 +1,9 @@
 import { useState, useCallback } from "react";
-import { Comment } from "../types/entities";
+import { TicketComment } from "../types/entities";
 import { CommentAPI } from "../services/api/comments";
 
 export function useComments(ticketId: string) {
-  const [comments, setComments] = useState<Comment[]>([]);
+  const [comments, setComments] = useState<TicketComment[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 

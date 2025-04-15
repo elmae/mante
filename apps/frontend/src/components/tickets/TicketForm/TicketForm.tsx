@@ -4,7 +4,7 @@ import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
 import { styles } from "./TicketForm.styles";
 import { ITicketFormProps, ITicketFormData } from "./TicketForm.types";
-import { TicketPriority, TicketType } from "@/types/entities";
+import { ATM, TicketPriority, TicketType } from "@/types/entities";
 import { useATMs } from "@/hooks/useATMs";
 import { useUsers } from "@/hooks/useUsers";
 
@@ -14,7 +14,7 @@ export const TicketForm: React.FC<ITicketFormProps> = ({
   initialData,
   isLoading,
 }) => {
-  const { data: atms, isLoading: isLoadingAtms } = useATMs();
+  const { atms, isLoading: isLoadingAtms } = useATMs();
   const { data: users, isLoading: isLoadingUsers } = useUsers();
 
   const {
@@ -121,34 +121,34 @@ export const TicketForm: React.FC<ITicketFormProps> = ({
       </div>
 
       <div className={styles.formGroup}>
-        <label htmlFor="atm_id" className={styles.label}>
+        <label htmlFor="atmId" className={styles.label}>
           ATM
         </label>
         <select
-          id="atm_id"
+          id="atmId"
           className={styles.select}
-          {...register("atm_id", { required: "El ATM es requerido" })}
+          {...register("atmId", { required: "El ATM es requerido" })}
         >
           <option value="">Seleccionar ATM</option>
-          {atms?.map((atm) => (
+          {atms?.map((atm: ATM) => (
             <option key={atm.id} value={atm.id}>
-              {atm.serial} - {atm.location}
+              {atm.serial} - {atm.location.address}
             </option>
           ))}
         </select>
-        {errors.atm_id && (
-          <span className={styles.errorText}>{errors.atm_id.message}</span>
+        {errors.atmId && (
+          <span className={styles.errorText}>{errors.atmId.message}</span>
         )}
       </div>
 
       <div className={styles.formGroup}>
-        <label htmlFor="assigned_to" className={styles.label}>
+        <label htmlFor="assignedTo" className={styles.label}>
           Asignar a
         </label>
         <select
-          id="assigned_to"
+          id="assignedTo"
           className={styles.select}
-          {...register("assigned_to")}
+          {...register("assignedTo")}
         >
           <option value="">Sin asignar</option>
           {users?.map((user) => (
@@ -160,15 +160,15 @@ export const TicketForm: React.FC<ITicketFormProps> = ({
       </div>
 
       <div className={styles.formGroup}>
-        <label htmlFor="due_date" className={styles.label}>
+        <label htmlFor="dueDate" className={styles.label}>
           Fecha límite
         </label>
         <Controller
           control={control}
-          name="due_date"
+          name="dueDate"
           render={({ field }) => (
             <DatePicker
-              id="due_date"
+              id="dueDate"
               selected={field.value}
               onChange={(date) => field.onChange(date)}
               className={styles.datePicker}

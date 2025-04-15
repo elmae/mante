@@ -1,6 +1,6 @@
 "use client";
 
-import type { ATM } from "@/services/api/atm";
+import type { ATM } from "@/types/entities";
 
 interface ATMDetailsProps {
   atm: ATM;

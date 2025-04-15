@@ -4,8 +4,7 @@ import { useState } from "react";
 import { TicketMetrics } from "@/components/tickets/TicketMetrics";
 import { useATMs } from "@/hooks/useATMs";
 import { useUsers } from "@/hooks/useUsers";
-import { User } from "@/types/entities";
-import { ATM } from "@/services/api/atm";
+import { User, ATM } from "@/types/entities";
 
 export default function TicketMetricsPage() {
   const [startDate, setStartDate] = useState<string>("");

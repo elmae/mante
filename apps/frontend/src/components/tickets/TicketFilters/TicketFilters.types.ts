@@ -5,11 +5,11 @@ export interface ITicketFilters {
   status?: TicketStatus[];
   priority?: TicketPriority[];
   type?: TicketType[];
-  atm_id?: string;
-  assigned_to?: string;
-  date_from?: Date;
-  date_to?: Date;
-  met_sla?: boolean;
+  atmId?: string;
+  assignedTo?: string;
+  dateFrom?: Date;
+  dateTo?: Date;
+  metSla?: boolean;
 }
 
 export interface ITicketFiltersProps {

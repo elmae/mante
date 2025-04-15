@@ -1,107 +1,165 @@
-# Active Context
+# Contexto Activo del Proyecto
 
-## Sistema de Autenticación - Estado Actual
+## Sistema de Métricas (Abril 2025)
 
-### Implementaciones Recientes:
+### Estado Actual
 
-1. Token Blacklist:
+- ✅ Implementación base del sistema de métricas completada
+- ✅ Frontend y backend integrados
+- ✅ Tests unitarios y de integración implementados
+- 🏗️ Fase 2 en progreso: Gráficos avanzados
 
-   - Invalidación activa de tokens
-   - Persistencia en Redis
-   - Integración con logout
+### Decisiones Clave
 
-2. Refresh Tokens:
+1. **Cálculo de Métricas**
 
-   - Generación segura
-   - Rotación automática
-   - Validación estricta
+   - Decisión: Cálculo bajo demanda vs pre-calculado
+   - Elegido: Bajo demanda inicialmente
+   - Razón: Mayor flexibilidad y datos siempre actualizados
+   - Siguiente paso: Evaluar necesidad de pre-cálculo según uso
 
-3. Mejoras de Seguridad:
+2. **Visualización**
 
-   - Logging detallado
-   - Manejo de errores mejorado
-   - Validación de tokens reforzada
+   - Decisión: Librería de gráficos
+   - Elegido: Recharts
+   - Razón: Mejor balance entre funcionalidad y facilidad de uso
+   - Beneficios: TypeScript, rendimiento, documentación
 
-4. Modularización:
-   - Servicios independientes para JWT
-   - Servicio de autenticación centralizado
-   - Inyección de dependencias
+3. **Arquitectura**
+   - Patrón: Servicios especializados
+   - Backend: MetricsService centralizado
+   - Frontend: Hook useMetrics para gestión de estado
+   - Testing: Cobertura completa con Jest
 
-## Enfoque Actual
+### Próximos Pasos
 
-### Frontend: Vista de Tickets
+1. **Corto Plazo (2-4 semanas)**
 
-#### Completado:
+   - Implementar gráficos históricos avanzados
+   - Optimizar consultas de base de datos
+   - Añadir más tests E2E
 
-- Frontend implementado ✅
-- Backend APIs listas ✅
-- Integración completa ✅
-- Componentes:
-  - TicketList (tabla principal) ✅
-  - Filtros básicos ✅
-  - TicketForm (creación/edición) ✅
-  - TicketDetails (vista detallada) ✅
-  - TicketMetrics (análisis y gráficos) ✅
-  - DashboardMetrics (resumen en panel) ✅
-  - Sistema de comentarios ✅
-- Servicios API tipados ✅
-- Hook useTicket para estado ✅
-- Hook useTicketMetrics para análisis ✅
-- Hook useComments para gestión de comentarios ✅
-- Rutas:
-  - /tickets (lista) ✅
-  - /tickets/new (creación) ✅
-  - /tickets/[id]/edit (edición) ✅
-  - /tickets/[id] (vista detallada) ✅
-  - /tickets/metrics (análisis) ✅
+2. **Medio Plazo (1-2 meses)**
 
-#### Implementaciones Recientes:
+   - Implementar sistema de caché
+   - Añadir filtros avanzados
+   - Mejorar UX de visualizaciones
 
-1. Sistema de Comentarios:
+3. **Largo Plazo (3+ meses)**
+   - Implementar análisis predictivo
+   - Exportación de reportes
+   - Dashboard personalizable
 
-   - Backend CRUD completo ✅
-   - Frontend integrado ✅
-   - Validaciones implementadas ✅
-   - Autenticación integrada ✅
-   - Manejo de errores ✅
-   - UI responsive ✅
-   - Tema oscuro soportado ✅
+### Métricas Implementadas
 
-2. Sistema de Métricas:
+1. **Tiempo**
 
-   - Gráficos de estado y prioridad ✅
-   - Indicadores de rendimiento ✅
-   - Filtros temporales y por ATM ✅
-   - Integración en dashboard ✅
-   - Vista detallada independiente ✅
+   - Tiempo promedio de respuesta
+   - Tiempo promedio de resolución
+   - Tasa de cumplimiento SLA
 
-3. Mejoras de Dashboard:
-   - Reemplazo de gráficos antiguos ✅
-   - Métricas más detalladas ✅
-   - Vista compacta para panel ✅
-   - Actualización en tiempo real ✅
+2. **Tickets**
 
-#### Plan de Desarrollo:
+   - Total y distribución por estado
+   - Categorización
+   - Tendencias temporales
 
-1. ~~Implementar sistema de comentarios~~ ✅
-2. Añadir soporte para adjuntos
-3. Mejorar UX/UI general
-4. Expandir métricas y análisis
-5. Implementar notificaciones
+3. **Performance**
+   - Eficiencia de técnicos
+   - Utilización de recursos
+   - Patrones de incidentes
 
-## Próximos Pasos
+### Actualización Next.js 14.2.28 (12/04/2025)
 
-1. ~~Diseñar sistema de comentarios~~ ✅
-2. Planificar gestión de adjuntos
-3. Identificar métricas adicionales
-4. Mejorar experiencia móvil
-5. Optimizar rendimiento de gráficos
+#### Estado
 
-## Rutas implementadas:
+- ✅ Paquetes actualizados: next@14.2.28, eslint-config-next@14.2.28
+- ⚠️ Errores de tipos identificados en componentes y pruebas
+- 🔄 Verificación de archivos críticos exitosa
 
-- /atms ✅
-- /tickets ✅
-- /maintenance ✅
-- /clients ✅
-- /settings ✅
-- /auth (login/logout/refresh/validate) ✅
+#### Próximos Pasos
+
+1. Actualizar tipos de dependencias (@types/\*)
+2. Resolver errores en tests de Cypress
+3. Actualizar tipado de componentes con Server Actions
+4. Verificar compatibilidad de dependencias
+
+### Consideraciones Técnicas
+
+1. **Performance**
+
+   - Monitoreo de tiempos de respuesta
+   - Optimización de consultas frecuentes
+   - Control de tamaño de respuestas
+
+2. **Seguridad**
+
+   - Validación de permisos
+   - Sanitización de parámetros
+   - Rate limiting implementado
+
+3. **Mantenibilidad**
+   - Documentación actualizada
+   - Tests comprensivos
+   - Código tipado
+
+### Riesgos y Mitigaciones
+
+1. **Técnicos**
+
+   - Riesgo: Rendimiento con grandes conjuntos de datos
+   - Mitigación: Paginación y caché planificados
+
+2. **Funcionales**
+
+   - Riesgo: Complejidad de filtros
+   - Mitigación: UI/UX optimizada para usabilidad
+
+3. **Operacionales**
+   - Riesgo: Carga en base de datos
+   - Mitigación: Monitoreo y optimización continua
+
+### Dependencias
+
+1. **Internas**
+
+   - Sistema de tickets
+   - Sistema de usuarios
+   - Sistema de notificaciones
+
+2. **Externas**
+   - Recharts para visualización
+   - TypeORM para base de datos
+   - Jest para testing
+
+### Métricas de Éxito
+
+1. **Técnicas**
+
+   - Tiempo de respuesta < 500ms
+   - Cobertura de tests > 80%
+   - Zero downtime en producción
+
+2. **Funcionales**
+   - Adopción por usuarios > 75%
+   - Satisfacción de usuario > 4/5
+   - Reducción de tiempo en reportes
+
+### Lecciones Aprendidas
+
+1. **Arquitectura**
+
+   - Separación clara de responsabilidades
+   - Importancia de tipos fuertes
+   - Valor de tests comprensivos
+
+2. **Implementación**
+
+   - Start simple, iterate often
+   - Test early, test often
+   - Document as you go
+
+3. **Proceso**
+   - Comunicación clara de requisitos
+   - Feedback temprano de usuarios
+   - Iteraciones cortas y focalizadas

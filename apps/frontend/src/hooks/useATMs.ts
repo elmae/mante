@@ -1,11 +1,7 @@
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import {
-  atmService,
-  type ATMFilters,
-  type ATM,
-  ATMError,
-} from "@/services/api/atm";
+import { atmService, type ATMFilters, ATMError } from "@/services/api/atm";
+import type { ATM } from "@/types/entities";
 import {
   maintenanceService,
   type CreateMaintenanceRecord,
@@ -36,7 +32,7 @@ export function useATMs(initialFilters: ATMFilters = {}) {
 
   // Mutation para crear un ATM
   const createMutation = useMutation({
-    mutationFn: atmService.createATM,
+    mutationFn: (data: Omit<ATM, "id">) => atmService.createATM(data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["atms"] });
       toast.success("ATM creado exitosamente");
@@ -79,7 +75,7 @@ export function useATMs(initialFilters: ATMFilters = {}) {
     }: {
       atmId: string;
       data: CreateMaintenanceRecord;
-    }) => maintenanceService.createMaintenance(atmId, data),
+    }) => maintenanceService.createMaintenanceRecord({ ...data, atmId }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["atms"] });
       toast.success("Mantenimiento registrado exitosamente");

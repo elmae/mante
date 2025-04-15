@@ -6,7 +6,7 @@ import {
   EyeIcon,
   WrenchScrewdriverIcon,
 } from "@heroicons/react/24/outline";
-import type { ATM } from "@/services/api/atm";
+import type { ATM } from "@/types/entities";
 
 interface ATMTableProps {
   atms: ATM[];

@@ -1,3 +1,4 @@
+"use client";
 import { settingsNavigation } from "@/lib/settings-navigation";
 import Link from "next/link";
 import { usePathname } from "next/navigation";

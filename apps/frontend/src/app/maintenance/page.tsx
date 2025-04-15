@@ -2,7 +2,13 @@
 
 import { MaintenanceList } from "@/components/maintenance/MaintenanceList";
 
-export default function MaintenancePage() {
+interface MaintenancePageProps {
+  params?: {
+    atmId?: string;
+  };
+}
+
+export default function MaintenancePage({ params = {} }: MaintenancePageProps) {
   return (
     <div className="container mx-auto px-4 py-8">
       <div className="mb-8">
@@ -26,7 +32,7 @@ export default function MaintenancePage() {
         </div>
       </div>
 
-      <MaintenanceList />
+      <MaintenanceList initialFilters={{ atmId: params.atmId }} />
     </div>
   );
 }

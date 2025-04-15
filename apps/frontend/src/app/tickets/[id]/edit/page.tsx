@@ -19,6 +19,9 @@ export default function EditTicketPage({ params }: EditTicketPageProps) {
     try {
       await updateTicket({
         ...data,
+        assignedToId: data.assignedTo,
+        assignedTo: undefined,
+        dueDate: data.dueDate?.toISOString(),
       });
       router.push("/tickets");
     } catch (error) {
@@ -48,9 +51,9 @@ export default function EditTicketPage({ params }: EditTicketPageProps) {
     description: ticket.description,
     type: ticket.type,
     priority: ticket.priority,
-    atm_id: ticket.atm_id,
-    assigned_to: ticket.assigned_to,
-    due_date: ticket.due_date ? new Date(ticket.due_date) : undefined,
+    atmId: ticket.atmId,
+    assignedTo: ticket.assignedTo?.id ?? undefined,
+    dueDate: ticket.dueDate ? new Date(ticket.dueDate) : undefined,
   };
 
   return (

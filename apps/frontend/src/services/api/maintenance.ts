@@ -4,7 +4,16 @@ import type {
   MaintenanceSchedule,
   MaintenanceFilters,
   MaintenanceStats,
+  CreateMaintenanceRecord,
 } from "@/types/maintenance";
+
+export type {
+  MaintenanceRecord,
+  MaintenanceSchedule,
+  MaintenanceFilters,
+  MaintenanceStats,
+  CreateMaintenanceRecord,
+};
 
 export interface PaginatedMaintenanceRecords {
   data: MaintenanceRecord[];
@@ -60,7 +69,7 @@ export const maintenanceService = {
   },
 
   async createMaintenanceRecord(
-    data: Omit<MaintenanceRecord, "id" | "created_at" | "updated_at">
+    data: CreateMaintenanceRecord
   ): Promise<MaintenanceRecord> {
     try {
       const response = await apiClient.post("/maintenance/records", data);

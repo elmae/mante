@@ -1,23 +1,5 @@
 import { apiClient, handleApiError } from "./client";
-
-export interface ATM {
-  id: string;
-  code: string;
-  model: string;
-  location: {
-    address: string;
-    coordinates: {
-      latitude: number;
-      longitude: number;
-    };
-  };
-  status: "operational" | "maintenance" | "offline" | "error";
-  lastMaintenance: string;
-  nextMaintenance: string;
-  manufacturer: string;
-  installationDate: string;
-  zone: string;
-}
+import type { ATM } from "@/types/entities";
 
 export interface ATMFilters {
   status?: ATM["status"];

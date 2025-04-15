@@ -1,4 +1,4 @@
-import { type MaintenanceRecord } from "@/services/api/maintenance";
+import { type MaintenanceRecord } from "@/types/maintenance";
 
 interface MaintenanceDetailsProps {
   record: MaintenanceRecord;
@@ -8,18 +8,21 @@ export function MaintenanceDetails({ record }: MaintenanceDetailsProps) {
   const typeLabels = {
     preventive: "Preventivo",
     corrective: "Correctivo",
+    installation: "Instalación",
   };
 
   const statusLabels = {
     completed: "Completado",
     pending: "Pendiente",
     in_progress: "En Progreso",
+    cancelled: "Cancelado",
   };
 
   const statusColors = {
     completed: "bg-green-100 text-green-800",
     pending: "bg-yellow-100 text-yellow-800",
     in_progress: "bg-blue-100 text-blue-800",
+    cancelled: "bg-red-100 text-red-800",
   };
 
   return (
@@ -79,15 +82,6 @@ export function MaintenanceDetails({ record }: MaintenanceDetailsProps) {
 
           <div className="px-4 py-6 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-0">
             <dt className="text-sm font-medium leading-6 text-gray-900">
-              Acciones Realizadas
-            </dt>
-            <dd className="mt-1 text-sm leading-6 text-gray-700 sm:col-span-2 sm:mt-0">
-              {record.actions}
-            </dd>
-          </div>
-
-          <div className="px-4 py-6 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-0">
-            <dt className="text-sm font-medium leading-6 text-gray-900">
               Recomendaciones
             </dt>
             <dd className="mt-1 text-sm leading-6 text-gray-700 sm:col-span-2 sm:mt-0">
@@ -100,7 +94,7 @@ export function MaintenanceDetails({ record }: MaintenanceDetailsProps) {
               Fecha de Mantenimiento
             </dt>
             <dd className="mt-1 text-sm leading-6 text-gray-700 sm:col-span-2 sm:mt-0">
-              {new Date(record.date).toLocaleDateString()}
+              {new Date(record.startDate).toLocaleDateString()}
             </dd>
           </div>
 
@@ -109,7 +103,9 @@ export function MaintenanceDetails({ record }: MaintenanceDetailsProps) {
               Próximo Mantenimiento
             </dt>
             <dd className="mt-1 text-sm leading-6 text-gray-700 sm:col-span-2 sm:mt-0">
-              {new Date(record.nextMaintenanceDate).toLocaleDateString()}
+              {record.schedule?.nextDate
+                ? new Date(record.schedule.nextDate).toLocaleDateString()
+                : "No programado"}
             </dd>
           </div>
 
@@ -118,7 +114,7 @@ export function MaintenanceDetails({ record }: MaintenanceDetailsProps) {
               Creado
             </dt>
             <dd className="mt-1 text-sm leading-6 text-gray-700 sm:col-span-2 sm:mt-0">
-              {new Date(record.createdAt).toLocaleString()}
+              {new Date(record.created_at).toLocaleString()}
             </dd>
           </div>
 
@@ -127,7 +123,7 @@ export function MaintenanceDetails({ record }: MaintenanceDetailsProps) {
               Última Actualización
             </dt>
             <dd className="mt-1 text-sm leading-6 text-gray-700 sm:col-span-2 sm:mt-0">
-              {new Date(record.updatedAt).toLocaleString()}
+              {new Date(record.updated_at).toLocaleString()}
             </dd>
           </div>
         </dl>
