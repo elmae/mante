@@ -11,6 +11,7 @@ import { GeographicZone } from './geographic-zone.entity';
 import { SLAConfig } from './sla-config.entity';
 import { UserSession } from './user-session.entity';
 import { Notification } from './notification.entity';
+import { Client } from './client.entity';
 
 // Enums
 export { PermissionEnum } from './permission.entity';
@@ -24,6 +25,7 @@ export const entities = [
   Role,
   Permission,
   ATM,
+  Client, // Agregada la entidad Client
   Ticket,
   MaintenanceRecord,
   MaintenanceComment,
@@ -40,6 +42,7 @@ export {
   Role,
   Permission,
   ATM,
+  Client, // Agregada la exportación de Client
   Ticket,
   MaintenanceRecord,
   MaintenanceComment,

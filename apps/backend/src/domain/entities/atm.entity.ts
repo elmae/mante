@@ -5,110 +5,99 @@ import {
   CreateDateColumn,
   UpdateDateColumn,
   ManyToOne,
-  OneToMany,
   JoinColumn,
-} from "typeorm";
-import { User } from "./user.entity";
-import { Ticket } from "./ticket.entity";
-import { Point } from "geojson";
+  OneToMany
+} from 'typeorm';
+import { Point } from 'geojson';
+import { Client } from './client.entity';
+import { User } from './user.entity';
+import { GeographicZone } from './geographic-zone.entity';
+import { MaintenanceRecord } from './maintenance-record.entity';
+import { Ticket } from './ticket.entity';
 
-@Entity("atms")
+@Entity('atms')
 export class ATM {
-  @PrimaryGeneratedColumn("uuid")
+  @PrimaryGeneratedColumn('uuid')
   id: string;
 
-  @Column({ type: "varchar", unique: true })
+  @Column()
   serial_number: string;
 
-  @Column({ type: "varchar" })
+  @Column()
   model: string;
 
-  @Column({ type: "varchar" })
-  brand: string;
+  @Column({ type: 'text', nullable: true })
+  description: string;
+
+  @Column()
+  address: string;
 
   @Column({
-    type: "geometry",
-    spatialFeatureType: "Point",
-    srid: 4326,
+    type: 'geometry',
+    spatialFeatureType: 'Point',
+    srid: 4326
   })
   location: Point;
 
-  @Column({ type: "text" })
-  address: string;
-
-  @Column({ type: "jsonb" })
-  technical_specs: {
-    cpu: string;
-    memory: string;
-    os: string;
-    cash_capacity: number;
-    supported_transactions: string[];
-    [key: string]: any;
+  @Column({ type: 'jsonb', nullable: true })
+  technical_details: {
+    manufacturer: string;
+    installation_date: Date;
+    last_maintenance_date: Date;
+    software_version: string;
+    hardware_version: string;
+    network_config: {
+      ip_address: string;
+      subnet_mask: string;
+      gateway: string;
+    };
+    capabilities: string[];
   };
 
-  @Column({ type: "uuid" })
-  client_id: string;
+  @Column({ type: 'enum', enum: ['active', 'inactive', 'maintenance', 'error'], default: 'active' })
+  status: string;
 
-  @Column({ type: "uuid" })
-  zone_id: string;
-
-  @Column({ type: "boolean", default: true })
+  @Column({ default: true })
   is_active: boolean;
 
-  @CreateDateColumn({ type: "timestamp" })
+  @Column({ type: 'uuid' })
+  client_id: string;
+
+  @Column({ type: 'uuid' })
+  zone_id: string;
+
+  @CreateDateColumn()
   created_at: Date;
 
-  @UpdateDateColumn({ type: "timestamp" })
+  @UpdateDateColumn()
   updated_at: Date;
 
-  @ManyToOne(() => User, { nullable: true })
-  @JoinColumn({ name: "created_by" })
-  created_by: User;
+  @Column({ type: 'uuid' })
+  created_by_id: string;
 
-  @ManyToOne(() => User, { nullable: true })
-  @JoinColumn({ name: "updated_by" })
-  updated_by: User;
+  @Column({ type: 'uuid' })
+  updated_by_id: string;
 
   // Relaciones
-  @OneToMany(() => Ticket, (ticket) => ticket.atm)
-  tickets: Ticket[];
+  @ManyToOne(() => Client, client => client.atms)
+  @JoinColumn({ name: 'client_id' })
+  client: Client;
+
+  @ManyToOne(() => GeographicZone, zone => zone.atms)
+  @JoinColumn({ name: 'zone_id' })
+  zone: GeographicZone;
 
   @ManyToOne(() => User)
-  @JoinColumn({ name: "client_id" })
-  client: User;
+  @JoinColumn({ name: 'created_by_id' })
+  created_by: User;
 
-  // Campos calculados
-  getStatus(): "operational" | "maintenance" | "out_of_service" {
-    // La lógica se implementará en el servicio
-    return "operational";
-  }
+  @ManyToOne(() => User)
+  @JoinColumn({ name: 'updated_by_id' })
+  updated_by: User;
 
-  getLastMaintenance(): Date | null {
-    // La lógica se implementará en el servicio
-    return null;
-  }
+  @OneToMany(() => MaintenanceRecord, record => record.atm)
+  maintenance_records: MaintenanceRecord[];
 
-  getUptime(): number {
-    // La lógica se implementará en el servicio
-    return 0;
-  }
-
-  // Métodos de validación
-  isInServiceArea(point: Point): boolean {
-    // La lógica se implementará en el servicio
-    return true;
-  }
-
-  needsMaintenance(): boolean {
-    // La lógica se implementará en el servicio
-    return false;
-  }
-
-  // Método para transformar las coordenadas a un formato más amigable
-  getCoordinates(): { latitude: number; longitude: number } {
-    return {
-      latitude: this.location.coordinates[1],
-      longitude: this.location.coordinates[0],
-    };
-  }
+  @OneToMany(() => Ticket, ticket => ticket.atm)
+  tickets: Ticket[];
 }

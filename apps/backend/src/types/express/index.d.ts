@@ -1,8 +1,7 @@
-declare namespace Express {
+import { User } from '../../domain/entities/user.entity';
+
+declare global {
   interface Request {
-    user: {
-      id: string;
-      [key: string]: any;
-    };
+    user: User;
   }
 }

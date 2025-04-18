@@ -1,4 +1,4 @@
-import config from '../../src/config/config';
+import { config } from '../../src/config/config';
 import { DataSource } from 'typeorm';
 import { join } from 'path';
 

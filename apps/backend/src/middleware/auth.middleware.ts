@@ -32,6 +32,11 @@ export class AuthMiddleware {
     private readonly authService: AuthService
   ) {}
   authenticate = async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
+    // Logs de diagnóstico solicitados
+    console.log('Request Method:', req.method);
+    console.log('Original URL:', req.originalUrl);
+    console.log('Authorization Header:', req.headers.authorization);
+
     let token: string | undefined;
     try {
       token = this.extractTokenFromHeader(req);

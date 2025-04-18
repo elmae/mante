@@ -4,7 +4,7 @@ import { join } from 'path';
 // Cargar variables de entorno según el ambiente
 const env = process.env.NODE_ENV || 'development';
 const envFile = env === 'test' ? '.env.test' : '.env';
-dotenv.config({ path: join(__dirname, '../../', envFile) });
+dotenv.config({ path: join(process.cwd(), envFile) });
 
 export const config = {
   env,

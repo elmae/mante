@@ -238,3 +238,42 @@ export const validateQueryParams = (schema: ValidationSchema) => {
     next();
   };
 };
+
+import { plainToInstance } from 'class-transformer';
+import {
+  validate as classValidate,
+  ValidationError as ClassValidationError
+} from 'class-validator';
+import { RequestHandler } from 'express'; // Asegúrate de que RequestHandler esté importado
+
+export class ValidationMiddleware {
+  static validate<T extends object>(dtoClass: new () => T): RequestHandler {
+    // <-- Línea restaurada
+    return async (req: Request, res: Response, next: NextFunction) => {
+      // Usar plainToInstance para convertir el cuerpo de la solicitud al DTO
+      // Esto también aplica transformaciones definidas con @Transform si existen
+      const dtoInstance = plainToInstance(dtoClass, req.body);
+
+      // Validar la instancia del DTO usando class-validator
+      const errors: ClassValidationError[] = await classValidate(dtoInstance);
+
+      if (errors.length > 0) {
+        // Mapear los errores de class-validator a un formato más simple si es necesario
+        const validationErrors: ValidationError[] = errors.map((error: ClassValidationError) => ({
+          param: error.property,
+          // Concatenar todos los mensajes de error para esa propiedad
+          msg: Object.values(error.constraints || {}).join(', ')
+        }));
+        // Devolver un error 400 con los detalles de la validación
+        return res.status(400).json({ errors: validationErrors });
+      } else {
+        // Si la validación es exitosa, sobrescribir req.body con la instancia
+        // del DTO validada y potencialmente transformada.
+        // Esto asegura que los siguientes middlewares/controladores reciban el objeto tipado correcto.
+        req.body = dtoInstance;
+        // Pasar al siguiente middleware/controlador
+        next();
+      }
+    };
+  }
+}
