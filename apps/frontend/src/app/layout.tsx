@@ -1,12 +1,9 @@
-import { Inter } from "next/font/google";
-import { Providers } from "@/components/layout/Providers";
-import "@/app/globals.css";
-
-const inter = Inter({ subsets: ["latin"] });
+import { Providers } from "./providers";
+import "./globals.css";
 
 export const metadata = {
-  title: "CMMS - Sistema de Gestión de Mantenimiento",
-  description: "Sistema de gestión de mantenimiento para ATMs",
+  title: "ATM Management System",
+  description: "Sistema de gestión de ATMs",
 };
 
 export default function RootLayout({
@@ -16,7 +13,7 @@ export default function RootLayout({
 }) {
   return (
     <html lang="es">
-      <body className={inter.className}>
+      <body>
         <Providers>{children}</Providers>
       </body>
     </html>

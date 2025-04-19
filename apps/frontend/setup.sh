@@ -1,59 +1,24 @@
 #!/bin/bash
 
-echo "🚀 Iniciando setup del proyecto frontend..."
+# Instalar dependencias principales
+npm install @tanstack/react-query @tanstack/react-query-devtools
+npm install axios
+npm install react-leaflet leaflet
+npm install react-hook-form @hookform/resolvers/zod zod
+npm install @types/leaflet --save-dev
 
-# Limpiar instalación existente
-echo "🧹 Limpiando instalación existente..."
-rm -rf node_modules
-rm -rf .next
-npm run clean 2>/dev/null || true
-
-# Instalar dependencias
-echo "📦 Instalando dependencias..."
-npm install --legacy-peer-deps
-
-# Verificar versiones
-echo "✅ Verificando versiones instaladas..."
-echo "Node version: $(node -v)"
-echo "NPM version: $(npm -v)"
-echo "ESLint version: $(npx eslint --version)"
-echo "Jest version: $(npx jest --version)"
-
-# Verificar configuración
-echo "🔍 Verificando configuración de ESLint..."
-if [ -f ".eslintrc.json" ]; then
-    echo "✓ Archivo .eslintrc.json encontrado"
-else
-    echo "✗ Archivo .eslintrc.json no encontrado"
-    exit 1
-fi
-
-if [ -f "next.config.js" ]; then
-    echo "✓ Archivo next.config.js encontrado"
-else
-    echo "✗ Archivo next.config.js no encontrado"
-    exit 1
-fi
-
-# Ejecutar ESLint
-echo "🔎 Ejecutando ESLint..."
-npm run lint || true
-
-echo "✨ Setup completado."
-
-# Mostrar siguiente paso
+# Agregar estilos de Leaflet al globals.css
 echo "
-📝 Próximos pasos:
+/* Estilos de Leaflet */
+@import 'leaflet/dist/leaflet.css';
+" >> src/app/globals.css
 
-1. Verificar linting:
-   npm run lint         # corrección automática
-   npm run lint:strict  # verificación estricta
+# Crear carpetas necesarias si no existen
+mkdir -p src/components/atms
+mkdir -p src/services/api
+mkdir -p src/types
 
-2. Ejecutar tests:
-   npm test            # ejecutar tests
-   npm run test:watch  # modo watch
-   npm run test:coverage # reporte de cobertura
-
-3. Iniciar desarrollo:
-   npm run dev         # iniciar servidor de desarrollo
-"
+echo "Instalación completada. Asegúrate de:"
+echo "1. Configurar NEXT_PUBLIC_API_URL en tu .env.local si el backend no está en http://localhost:3000"
+echo "2. Iniciar el backend antes de usar el frontend"
+echo "3. Ejecutar 'npm run dev' para iniciar el servidor de desarrollo"

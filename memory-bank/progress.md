@@ -68,7 +68,6 @@
 
    - Completar gráficos comparativos
    - Optimizar consultas principales
-   - Añadir tests E2E
 
 2. **Semana del 22/04**
 
@@ -94,6 +93,8 @@
    - 🔄 Plan: Pruebas de usuario y feedback temprano
 
 3. **Técnicos**
+   - 🟢 Migración exitosa del módulo ATMs a NestJS
+   - 🟢 Framework backend estandarizado a NestJS
    - 🟢 Configuración Jest actualizada para Next.js 14
    - 🟢 Tests corregidos en MetricsDisplay (problemas de gráficos y mocks)
    - 🟢 Verificación de tipos completada exitosamente
@@ -103,10 +104,12 @@
 
 1. **Técnicos**
 
-   - Sistema base funcionando en producción
+   - Sistema base funcionando en producción con NestJS
    - Tests automatizados en CI/CD
    - Tipos TypeScript completos
-   - Framework actualizado a Next.js 14.2.28 (12/04/2025)
+   - Framework backend estandarizado en NestJS con arquitectura modular
+   - Módulos ATMs y Notificaciones refactorizados exitosamente a NestJS
+   - Framework frontend actualizado a Next.js 14.2.28 (12/04/2025)
    - Script de validación post-actualización identifica errores de tipos pendientes
 
 2. **Funcionales**
@@ -114,6 +117,7 @@
    - Métricas básicas implementadas
    - Visualizaciones responsivas
    - Integración completa front-back
+   - Tests E2E implementados y funcionales
 
 3. **Proceso**
    - Documentación al día

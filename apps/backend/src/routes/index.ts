@@ -9,7 +9,6 @@ import { createClientRouter } from './client.routes';
 import { createSettingsRouter } from './settings.routes';
 import { createSlaRouter } from './sla.routes';
 import { createAttachmentRouter } from './attachment.routes';
-import { createDashboardRouter } from './dashboard.routes';
 import { createNotificationRouter } from './notification.routes';
 import { createCommentRouter } from './comment.routes';
 import { JwtService } from '../services/auth/adapters/input/jwt.service';
@@ -78,14 +77,6 @@ export const createRouter = async (dataSource: DataSource): Promise<Router> => {
     authService
   );
   apiRouter.use('/attachments', attachmentsRouter);
-
-  const dashboardRouter = await createDashboardRouter(
-    dataSource,
-    jwtService,
-    userService,
-    authService
-  );
-  apiRouter.use('/dashboard', dashboardRouter);
 
   const notificationsRouter = await createNotificationRouter(
     dataSource,

@@ -1,5 +1,148 @@
 # Patrones del Sistema
 
+## Arquitectura NestJS
+
+### Estructura Modular
+
+- **Módulos Principal y de Características**:
+  ```typescript
+  @Module({
+    imports: [
+      ConfigModule.forRoot(),
+      TypeOrmModule.forRoot(),
+      AuthModule,
+      AtmsModule,
+      UsersModule,
+    ],
+    controllers: [],
+    providers: [],
+  })
+  export class AppModule {}
+  ```
+
+### Controladores
+
+- **Patrón de Enrutamiento y Decoradores**:
+
+  ```typescript
+  @Controller("atms")
+  export class AtmsController {
+    constructor(private readonly atmsService: AtmsService) {}
+
+    @Get()
+    @UseGuards(JwtAuthGuard, RolesGuard)
+    @Roles(Role.ADMIN, Role.OPERATOR)
+    async findAll(@Query() query: ListAtmsDto): Promise<AtmDto[]> {
+      return this.atmsService.findAll(query);
+    }
+  }
+  ```
+
+### Servicios y Proveedores
+
+- **Inyección de Dependencias**:
+  ```typescript
+  @Injectable()
+  export class AtmsService {
+    constructor(
+      @InjectRepository(Atm)
+      private atmsRepository: Repository<Atm>,
+      private configService: ConfigService,
+      private readonly logger: Logger
+    ) {}
+  }
+  ```
+
+### DTOs y Validación
+
+- **Class-validator y Transformación**:
+
+  ```typescript
+  export class CreateAtmDto {
+    @IsString()
+    @MinLength(3)
+    readonly name: string;
+
+    @IsString()
+    @IsLatitude()
+    readonly latitude: string;
+
+    @IsString()
+    @IsLongitude()
+    readonly longitude: string;
+
+    @IsOptional()
+    @IsString()
+    readonly description?: string;
+  }
+  ```
+
+### Guards y Autorización
+
+- **Protección de Rutas**:
+
+  ```typescript
+  @Injectable()
+  export class RolesGuard implements CanActivate {
+    constructor(private reflector: Reflector) {}
+
+    canActivate(context: ExecutionContext): boolean {
+      const requiredRoles = this.reflector.get<Role[]>(
+        "roles",
+        context.getHandler()
+      );
+      const request = context.switchToHttp().getRequest();
+      return requiredRoles.some((role) => request.user.roles.includes(role));
+    }
+  }
+  ```
+
+### Interceptors
+
+- **Transformación y Manejo de Respuestas**:
+  ```typescript
+  @Injectable()
+  export class TransformInterceptor<T>
+    implements NestInterceptor<T, Response<T>>
+  {
+    intercept(
+      context: ExecutionContext,
+      next: CallHandler
+    ): Observable<Response<T>> {
+      return next.handle().pipe(
+        map((data) => ({
+          data,
+          statusCode: context.switchToHttp().getResponse().statusCode,
+          timestamp: new Date().toISOString(),
+        }))
+      );
+    }
+  }
+  ```
+
+### Manejo de Errores
+
+- **Filtros de Excepción Personalizados**:
+
+  ```typescript
+  @Catch(HttpException)
+  export class HttpExceptionFilter implements ExceptionFilter {
+    catch(exception: HttpException, host: ArgumentsHost) {
+      const ctx = host.switchToHttp();
+      const response = ctx.getResponse<Response>();
+      const status = exception.getStatus();
+      const error = exception.getResponse();
+
+      response.status(status).json({
+        statusCode: status,
+        timestamp: new Date().toISOString(),
+        path: ctx.getRequest().url,
+        error,
+      });
+    }
+  }
+  ```
+
 ## Métricas y Monitoreo
 
 ### Patrón de Cálculo de Métricas

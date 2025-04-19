@@ -1,5 +1,164 @@
 # Estándares de Código
 
+## Estándares NestJS
+
+### Estructura de Módulos
+
+```typescript
+// ✅ Bueno
+@Module({
+  imports: [TypeOrmModule.forFeature([Atm])],
+  controllers: [AtmsController],
+  providers: [AtmsService, AtmsRepository],
+  exports: [AtmsService]
+})
+export class AtmsModule {}
+
+// ❌ Malo
+@Module({
+  imports: [],
+  controllers: [AtmsController],
+  providers: [AtmsService],
+  // No exportar servicios si no son necesarios
+  exports: [AtmsService, AtmsRepository]
+})
+```
+
+### Inyección de Dependencias
+
+```typescript
+// ✅ Bueno
+@Injectable()
+export class AtmsService {
+  constructor(
+    @InjectRepository(Atm)
+    private readonly atmsRepository: Repository<Atm>,
+    private readonly configService: ConfigService
+  ) {}
+}
+
+// ❌ Malo
+@Injectable()
+export class AtmsService {
+  private atmsRepository: Repository<Atm>;
+  constructor() {
+    this.atmsRepository = getRepository(Atm);
+  }
+}
+```
+
+### DTOs y Validación
+
+```typescript
+// ✅ Bueno
+export class CreateAtmDto {
+  @IsString()
+  @MinLength(3)
+  readonly name: string;
+
+  @IsOptional()
+  @IsString()
+  readonly description?: string;
+
+  @Type(() => Number)
+  @IsNumber()
+  readonly latitude: number;
+}
+
+// ❌ Malo
+export class CreateAtmDto {
+  name: string;
+  description: string;
+  latitude: any;
+}
+```
+
+### Controladores
+
+```typescript
+// ✅ Bueno
+@Controller("atms")
+export class AtmsController {
+  @Get(":id")
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(Role.ADMIN, Role.OPERATOR)
+  async findOne(@Param("id", ParseUUIDPipe) id: string): Promise<AtmDto> {
+    return this.atmsService.findOne(id);
+  }
+}
+
+// ❌ Malo
+@Controller("atms")
+export class AtmsController {
+  @Get(":id")
+  async findOne(@Param("id") id: any) {
+    return this.atmsService.findOne(id);
+  }
+}
+```
+
+### Manejo de Errores
+
+```typescript
+// ✅ Bueno
+@Injectable()
+export class AtmsService {
+  async findOne(id: string): Promise<AtmDto> {
+    const atm = await this.atmsRepository.findOne(id);
+    if (!atm) {
+      throw new NotFoundException(`ATM with ID ${id} not found`);
+    }
+    return this.mapper.toDto(atm);
+  }
+}
+
+// ❌ Malo
+@Injectable()
+export class AtmsService {
+  async findOne(id: string) {
+    try {
+      return await this.atmsRepository.findOne(id);
+    } catch (error) {
+      return null;
+    }
+  }
+}
+```
+
+### Testing
+
+```typescript
+// ✅ Bueno
+describe("AtmsService", () => {
+  let service: AtmsService;
+  let repository: MockType<Repository<Atm>>;
+
+  beforeEach(async () => {
+    const module = await Test.createTestingModule({
+      providers: [
+        AtmsService,
+        {
+          provide: getRepositoryToken(Atm),
+          useFactory: repositoryMockFactory,
+        },
+      ],
+    }).compile();
+
+    service = module.get<AtmsService>(AtmsService);
+    repository = module.get(getRepositoryToken(Atm));
+  });
+});
+
+// ❌ Malo
+describe("AtmsService", () => {
+  let service: AtmsService;
+
+  beforeEach(() => {
+    service = new AtmsService(null);
+  });
+});
+```
+
 ## Métricas y Visualización de Datos
 
 ### Nomenclatura de Métricas
@@ -168,6 +327,7 @@
 ### Validación de Props
 
 - Props required vs optional:
+
   ```typescript
   interface MetricDisplayProps {
     // Props requeridos

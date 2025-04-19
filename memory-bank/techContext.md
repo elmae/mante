@@ -14,7 +14,14 @@
 
 ### Backend
 
-- **Framework**: Express.js
+- **Framework**: NestJS (obligatorio para nuevos desarrollos)
+  - Prohibido el uso de Express puro
+  - Decoradores para metadatos
+  - Inyección de Dependencias (DI)
+  - Guards para autenticación y autorización
+  - Pipes para validación y transformación
+  - Interceptors para aspectos transversales
+  - Swagger/OpenAPI para documentación
 - **ORM**: TypeORM
 - **Base de Datos**: PostgreSQL
 - **Cache**: Redis (planificado)
