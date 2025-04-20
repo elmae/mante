@@ -1,20 +1,27 @@
 import {
   Entity,
-  PrimaryGeneratedColumn,
   Column,
-  CreateDateColumn,
-  UpdateDateColumn,
+  PrimaryGeneratedColumn,
   ManyToOne,
-  JoinColumn
+  JoinColumn,
+  CreateDateColumn,
+  UpdateDateColumn
 } from 'typeorm';
-import { MaintenanceRecord } from './maintenance-record.entity';
 import { User } from './user.entity';
+import { Maintenance } from './maintenance.entity';
 
 export enum TaskStatus {
   PENDING = 'pending',
   IN_PROGRESS = 'in_progress',
   COMPLETED = 'completed',
-  FAILED = 'failed'
+  SKIPPED = 'skipped'
+}
+
+export enum TaskPriority {
+  LOW = 'low',
+  MEDIUM = 'medium',
+  HIGH = 'high',
+  CRITICAL = 'critical'
 }
 
 @Entity('maintenance_tasks')
@@ -22,13 +29,10 @@ export class MaintenanceTask {
   @PrimaryGeneratedColumn('uuid')
   id: string;
 
-  @Column({ type: 'uuid' })
-  maintenance_record_id: string;
+  @Column()
+  title: string;
 
-  @Column({ type: 'varchar' })
-  name: string;
-
-  @Column({ type: 'text' })
+  @Column('text')
   description: string;
 
   @Column({
@@ -38,55 +42,58 @@ export class MaintenanceTask {
   })
   status: TaskStatus;
 
-  @Column({ type: 'text', nullable: true })
-  completion_notes: string;
+  @Column({
+    type: 'enum',
+    enum: TaskPriority,
+    default: TaskPriority.MEDIUM
+  })
+  priority: TaskPriority;
 
-  @Column({ type: 'timestamp', nullable: true })
-  started_at: Date;
+  @ManyToOne(() => Maintenance)
+  @JoinColumn({ name: 'maintenance_id' })
+  maintenance: Maintenance;
 
-  @Column({ type: 'timestamp', nullable: true })
-  completed_at: Date;
-
-  @CreateDateColumn({ type: 'timestamp' })
-  created_at: Date;
-
-  @UpdateDateColumn({ type: 'timestamp' })
-  updated_at: Date;
-
-  @Column({ type: 'uuid', nullable: true })
-  created_by_id: string;
-
-  @Column({ type: 'uuid', nullable: true })
-  updated_by_id: string;
-
-  @Column({ type: 'uuid', nullable: true })
-  assigned_to_id: string;
-
-  // Relaciones
-  @ManyToOne(() => MaintenanceRecord, maintenance => maintenance.tasks)
-  @JoinColumn({ name: 'maintenance_record_id' })
-  maintenance_record: MaintenanceRecord;
-
-  @ManyToOne(() => User, { nullable: true })
-  @JoinColumn({ name: 'created_by_id' })
-  created_by: User;
-
-  @ManyToOne(() => User, { nullable: true })
-  @JoinColumn({ name: 'updated_by_id' })
-  updated_by: User;
+  @Column({ name: 'maintenance_id' })
+  maintenanceId: string;
 
   @ManyToOne(() => User, { nullable: true })
   @JoinColumn({ name: 'assigned_to_id' })
-  assigned_to: User;
+  assignedTo: User;
 
-  // Métodos de utilidad
-  isComplete(): boolean {
+  @Column({ name: 'assigned_to_id', nullable: true })
+  assignedToId: string;
+
+  @Column({ type: 'int', default: 0 })
+  order: number;
+
+  @Column({ name: 'estimated_duration', type: 'interval', nullable: true })
+  estimatedDuration: string;
+
+  @Column({ name: 'actual_duration', type: 'interval', nullable: true })
+  actualDuration: string;
+
+  @Column({ name: 'started_at', type: 'timestamp', nullable: true })
+  startedAt: Date;
+
+  @Column({ name: 'completed_at', type: 'timestamp', nullable: true })
+  completedAt: Date;
+
+  @Column({ name: 'technical_notes', type: 'jsonb', nullable: true })
+  technicalNotes: Record<string, any>;
+
+  @CreateDateColumn({ name: 'created_at' })
+  createdAt: Date;
+
+  @UpdateDateColumn({ name: 'updated_at' })
+  updatedAt: Date;
+
+  // Helper methods
+  isCompleted(): boolean {
     return this.status === TaskStatus.COMPLETED;
   }
 
-  getDuration(): number | null {
-    if (!this.completed_at || !this.started_at) return null;
-    return this.completed_at.getTime() - this.started_at.getTime();
+  isInProgress(): boolean {
+    return this.status === TaskStatus.IN_PROGRESS;
   }
 
   canStart(): boolean {

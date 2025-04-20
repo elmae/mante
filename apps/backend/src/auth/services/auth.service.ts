@@ -1,60 +1,56 @@
 import { Injectable, UnauthorizedException } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
-import { ConfigService } from '@nestjs/config';
+import * as bcrypt from 'bcrypt';
+import { UsersService } from '../../users/services/users.service';
 import { LoginDto } from '../dto/login.dto';
-import { compare } from 'bcrypt';
-import { JwtPayload } from '../../common/types/auth.types';
-import { EntityManager } from 'typeorm';
+import { User } from '../../users/entities/user.entity';
 
 @Injectable()
 export class AuthService {
   constructor(
-    private readonly jwtService: JwtService,
-    private readonly configService: ConfigService,
-    private readonly entityManager: EntityManager
+    private readonly usersService: UsersService,
+    private readonly jwtService: JwtService
   ) {}
 
-  async validateUser(email: string, password: string): Promise<any> {
-    const user = await this.entityManager.query('SELECT * FROM users WHERE email = $1', [email]);
-
-    if (!user || user.length === 0) {
-      throw new UnauthorizedException('Credenciales inválidas');
+  async validateUser(email: string, password: string): Promise<User> {
+    const user = await this.usersService.findByEmail(email);
+    if (!user) {
+      throw new UnauthorizedException('Invalid credentials');
     }
 
-    const isPasswordValid = await compare(password, user[0].password);
-
+    const isPasswordValid = await bcrypt.compare(password, user.password);
     if (!isPasswordValid) {
-      throw new UnauthorizedException('Credenciales inválidas');
+      throw new UnauthorizedException('Invalid credentials');
     }
 
-    const { password: _, ...result } = user[0];
-    return result;
+    if (!user.isActive) {
+      throw new UnauthorizedException('User account is inactive');
+    }
+
+    return user;
   }
 
   async login(loginDto: LoginDto) {
     const user = await this.validateUser(loginDto.email, loginDto.password);
 
-    const payload: JwtPayload = {
-      id: user.id,
+    // Actualizar último login
+    await this.usersService.update(user.id, {
+      lastLoginAt: new Date()
+    });
+
+    return this.generateToken(user);
+  }
+
+  generateToken(user: User) {
+    const payload = {
+      sub: user.id,
       email: user.email,
-      roles: user.roles,
-      permissions: user.permissions || []
+      role: user.role,
+      username: user.username
     };
 
     return {
-      access_token: this.jwtService.sign(payload),
-      user: {
-        id: user.id,
-        email: user.email,
-        roles: user.roles,
-        permissions: user.permissions || []
-      }
+      access_token: this.jwtService.sign(payload)
     };
-  }
-
-  async validateJwtPayload(payload: JwtPayload): Promise<boolean> {
-    const user = await this.entityManager.query('SELECT * FROM users WHERE id = $1', [payload.id]);
-
-    return user && user.length > 0;
   }
 }

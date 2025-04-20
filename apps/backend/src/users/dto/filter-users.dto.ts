@@ -1,30 +1,47 @@
-import { IsOptional, IsString, IsBoolean, IsInt, Min, Max } from 'class-validator';
-import { Transform, Type } from 'class-transformer';
+import { IsOptional, IsEnum, IsBoolean, IsString, IsInt, Min, Max } from 'class-validator';
+import { Type } from 'class-transformer';
+import { ApiPropertyOptional } from '@nestjs/swagger';
+import { Role } from '../entities/user.entity';
 
 export class FilterUsersDto {
-  @IsOptional()
-  @IsInt()
-  @Min(1)
-  @Type(() => Number)
-  readonly page?: number = 1;
-
-  @IsOptional()
-  @IsInt()
-  @Min(1)
-  @Max(100)
-  @Type(() => Number)
-  readonly limit?: number = 10;
-
+  @ApiPropertyOptional()
   @IsOptional()
   @IsString()
-  readonly role?: string;
+  search?: string;
 
+  @ApiPropertyOptional({ enum: Role })
   @IsOptional()
-  @Transform(({ value }) => value === 'true')
+  @IsEnum(Role)
+  role?: Role;
+
+  @ApiPropertyOptional()
+  @IsOptional()
   @IsBoolean()
-  readonly isActive?: boolean;
+  @Type(() => Boolean)
+  isActive?: boolean;
 
+  @ApiPropertyOptional({ minimum: 1, default: 1 })
+  @IsOptional()
+  @Type(() => Number)
+  @IsInt()
+  @Min(1)
+  page?: number;
+
+  @ApiPropertyOptional({ minimum: 1, maximum: 50, default: 10 })
+  @IsOptional()
+  @Type(() => Number)
+  @IsInt()
+  @Min(1)
+  @Max(50)
+  limit?: number;
+
+  @ApiPropertyOptional()
   @IsOptional()
   @IsString()
-  readonly search?: string;
+  sortBy?: string;
+
+  @ApiPropertyOptional({ enum: ['ASC', 'DESC'], default: 'ASC' })
+  @IsOptional()
+  @IsEnum(['ASC', 'DESC'])
+  sortOrder?: 'ASC' | 'DESC';
 }

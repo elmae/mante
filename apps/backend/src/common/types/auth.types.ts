@@ -1,4 +1,5 @@
-import { Request } from 'express';
+import { ExecutionContext } from '@nestjs/common';
+import { Request as ExpressRequest } from 'express';
 
 export enum Role {
   ADMIN = 'admin',
@@ -16,8 +17,13 @@ export interface JwtPayload {
   exp?: number;
 }
 
-export interface RequestWithUser extends Request {
+// Tipos personalizados para requests con usuario autenticado
+export type RequestWithUser = ExpressRequest & {
   user?: JwtPayload;
-}
+};
 
-export type AuthorizedRequest = Request & { user: JwtPayload };
+export type AuthorizedRequest = ExpressRequest & {
+  user: JwtPayload;
+};
+
+export type RequestContext = ExecutionContext;

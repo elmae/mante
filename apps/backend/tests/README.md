@@ -1,208 +1,163 @@
-# Backend Tests Documentation
+# Testing Guide
 
-## Overview
+Este documento describe la estructura y configuración de pruebas del backend del
+sistema de mantenimiento de ATMs.
 
-This directory contains the test suite for the backend application. The tests are organized into different categories and supported by various utilities and helpers.
-
-## Directory Structure
+## Estructura de Pruebas
 
 ```
 tests/
-├── integration/          # Integration tests
-│   ├── auth/            # Authentication integration tests
-│   └── user/            # User management integration tests
-├── unit/                # Unit tests
-│   ├── controllers/     # Controller unit tests
-│   └── services/        # Service unit tests
-├── utils/               # Test utilities and helpers
-│   ├── auth-test.utils.ts
-│   ├── database-test.utils.ts
-│   ├── express-test.utils.ts
-│   └── user-test.utils.ts
-├── setup.ts             # Global test setup
-└── setupAfterEnv.ts     # Post-environment setup
+├── unit/               # Pruebas unitarias
+├── integration/        # Pruebas de integración
+├── e2e/               # Pruebas end-to-end
+└── utils/             # Utilidades compartidas para pruebas
 ```
 
-## Test Categories
+## Tipos de Pruebas
 
-### Unit Tests
+### Pruebas Unitarias
 
-- Test individual components in isolation
-- Mock external dependencies
-- Focus on business logic
-- Fast execution
+- Ubicación: `src/**/*.spec.ts`
+- Ejecutar: `npm run test:unit`
+- Prueban componentes individuales de forma aislada
+- Usan mocks y stubs para dependencias
 
-### Integration Tests
+### Pruebas de Integración
 
-- Test multiple components working together
-- Use test database
-- Test HTTP endpoints
-- Validate complete workflows
+- Ubicación: `src/**/*.integration.spec.ts`
+- Ejecutar: `npm run test:integration`
+- Prueban la interacción entre componentes
+- Pueden requerir una base de datos de prueba
 
-## Setup and Configuration
+### Pruebas E2E
 
-### Prerequisites
+- Ubicación: `tests/e2e/**/*.spec.ts`
+- Ejecutar: `npm run test:e2e`
+- Prueban el sistema completo
+- Requieren que todas las dependencias estén disponibles
 
-1. Node.js and npm installed
-2. PostgreSQL database for tests
-3. Environment variables configured
-
-### Environment Setup
-
-1. Copy `.env.test.example` to `.env.test`
-2. Configure test database settings:
-
-```env
-TEST_DB_HOST=localhost
-TEST_DB_PORT=5432
-TEST_DB_USER=postgres
-TEST_DB_PASS=postgres
-TEST_DB_NAME=mante_test
-```
-
-### Running Tests
+## Comandos de Prueba
 
 ```bash
-# Run all tests
+# Ejecutar todas las pruebas
 npm test
 
-# Run specific test file
-npm test -- path/to/test.spec.ts
+# Ejecutar pruebas unitarias
+npm run test:unit
 
-# Run tests with coverage
-npm run test:coverage
+# Ejecutar pruebas de integración
+npm run test:integration
 
-# Run tests in watch mode
+# Ejecutar pruebas e2e
+npm run test:e2e
+
+# Ejecutar pruebas con coverage
+npm run test:cov
+
+# Ejecutar pruebas en modo watch
 npm run test:watch
+
+# Ejecutar pruebas en modo debug
+npm run test:debug
 ```
 
-## Test Utilities
+## Configuración
 
-### auth-test.utils.ts
+### Jest
 
-- Mock JWT service
-- Authentication helpers
-- Token generation utilities
+- Configuración principal: `jest.config.ts`
+- Configuración E2E: `test/jest-e2e.json`
+- Setup file: `src/__tests__/jest.setup.ts`
 
-### database-test.utils.ts
+### ESLint
 
-- Database connection management
-- Test data seeding
-- Cleanup utilities
+- Configuración específica para pruebas: `.eslintrc.test.json`
+- Reglas personalizadas para archivos de prueba
 
-### express-test.utils.ts
+## Buenas Prácticas
 
-- Request/Response mocks
-- Middleware testing helpers
-- Route testing utilities
+1. Nombrado de pruebas:
 
-### user-test.utils.ts
+   - Descriptivo y claro
+   - Sigue el patrón "should [expected behavior] when [condition]"
 
-- User fixtures
-- Mock user repository
-- User-related test helpers
+2. Organización:
 
-## Custom Matchers
+   - Una prueba por comportamiento
+   - Usar `describe` para agrupar pruebas relacionadas
+   - Mantener las pruebas enfocadas y concisas
 
-```typescript
-expect(value).toBeWithinRange(min, max);
-expect(value).toBeValidDate();
-expect(value).toBeISOString();
-expect(value).toBeDatabaseId();
-expect(value).toBeValidEmail();
-```
+3. Mocks y Stubs:
 
-## Best Practices
+   - Usar `jest.mock()` para módulos
+   - Crear mocks específicos en `tests/utils`
+   - Documentar el comportamiento esperado
 
-1. Test Setup
+4. Assertions:
+   - Ser específico en las assertions
+   - Usar matchers apropiados
+   - Validar estados positivos y negativos
 
-   - Use beforeAll/beforeEach for setup
-   - Clean up after tests
-   - Keep tests isolated
+## Extendiendo las Pruebas
 
-2. Test Structure
-
-   - Follow AAA pattern (Arrange, Act, Assert)
-   - Clear test descriptions
-   - Group related tests using describe
-
-3. Mocking
-
-   - Mock external dependencies
-   - Use provided mock utilities
-   - Reset mocks between tests
-
-4. Database
-
-   - Use test database
-   - Clean up after each test
-   - Use transactions when possible
-
-5. Assertions
-   - Make specific assertions
-   - Use custom matchers
-   - Test edge cases
-
-## Examples
-
-### Unit Test Example
+### Agregar Nuevas Pruebas Unitarias
 
 ```typescript
-describe("UserService", () => {
-  it("should create user successfully", async () => {
+describe('MyService', () => {
+  let service: MyService;
+
+  beforeEach(() => {
+    service = new MyService();
+  });
+
+  it('should do something when condition', () => {
     // Arrange
-    const userDto = createMockCreateUserDto();
+    const input = ...;
 
     // Act
-    const result = await userService.create(userDto);
+    const result = service.doSomething(input);
 
     // Assert
-    expect(result).toBeDefined();
-    expect(result.email).toBe(userDto.email);
+    expect(result).toBe(expected);
   });
 });
 ```
 
-### Integration Test Example
+### Agregar Pruebas de Integración
 
 ```typescript
-describe("Auth Endpoints", () => {
-  it("should authenticate user", async () => {
-    // Arrange
-    const credentials = mockLoginDto();
+describe('Integration - MyFeature', () => {
+  let app: INestApplication;
 
-    // Act
-    const response = await request(app).post("/auth/login").send(credentials);
+  beforeAll(async () => {
+    const moduleRef = await Test.createTestingModule({
+      imports: [AppModule]
+    }).compile();
 
-    // Assert
-    expect(response.status).toBe(200);
-    expectAuthenticatedResponse(response.body);
+    app = moduleRef.createNestApplication();
+    await app.init();
+  });
+
+  afterAll(async () => {
+    await app.close();
+  });
+
+  it('should integrate correctly', async () => {
+    // Test implementation
   });
 });
 ```
 
-## Troubleshooting
+## Tips para Debugging
 
-1. Database Connection Issues
+1. Usar `console.log()` con `--verbose`
+2. Utilizar el modo debug con VS Code
+3. Revisar el coverage para identificar casos faltantes
+4. Usar `test.only()` para ejecutar pruebas específicas
 
-   - Check environment variables
-   - Verify database is running
-   - Check connection string
+## Mantenimiento
 
-2. Failed Tests
-
-   - Check test setup
-   - Verify mocks are configured
-   - Check for timing issues
-
-3. Coverage Issues
-   - Verify test patterns
-   - Check excluded files
-   - Run with --coverage flag
-
-## Contributing
-
-1. Follow existing patterns
-2. Add tests for new features
-3. Update documentation
-4. Run full test suite before committing
+1. Revisar y actualizar pruebas regularmente
+2. Mantener el coverage por encima del 70%
+3. Refactorizar pruebas cuando sea necesario
+4. Documentar cambios significativos

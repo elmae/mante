@@ -1,65 +1,64 @@
 import {
   Entity,
-  PrimaryGeneratedColumn,
   Column,
-  CreateDateColumn,
-  UpdateDateColumn,
+  PrimaryGeneratedColumn,
   ManyToOne,
-  JoinColumn
+  JoinColumn,
+  CreateDateColumn,
+  UpdateDateColumn
 } from 'typeorm';
-import { MaintenanceRecord } from './maintenance-record.entity';
 import { User } from './user.entity';
+import { Maintenance } from './maintenance.entity';
 
 @Entity('maintenance_parts')
 export class MaintenancePart {
   @PrimaryGeneratedColumn('uuid')
   id: string;
 
-  @Column({ type: 'uuid' })
-  maintenance_record_id: string;
-
-  @Column({ type: 'varchar' })
+  @Column()
   name: string;
 
-  @Column({ type: 'int' })
+  @Column()
+  part_number: string;
+
+  @Column({ type: 'decimal', precision: 10, scale: 2 })
   quantity: number;
 
-  @Column({ type: 'varchar', nullable: true })
-  serial_number: string;
+  @Column({ type: 'decimal', precision: 10, scale: 2 })
+  unit_cost: number;
+
+  @Column({ type: 'varchar', length: 50, nullable: true })
+  unit_type: string;
+
+  @ManyToOne(() => Maintenance)
+  @JoinColumn({ name: 'maintenance_id' })
+  maintenance: Maintenance;
+
+  @Column({ name: 'maintenance_id' })
+  maintenance_id: string;
+
+  @ManyToOne(() => User)
+  @JoinColumn({ name: 'added_by' })
+  added_by: User;
+
+  @Column({ name: 'added_by' })
+  added_by_id: string;
 
   @Column({ type: 'text', nullable: true })
   notes: string;
 
-  @Column({ type: 'decimal', precision: 10, scale: 2, default: 0 })
-  unit_cost: number;
+  @Column({ type: 'jsonb', nullable: true })
+  specifications: Record<string, any>;
 
-  @CreateDateColumn({ type: 'timestamp' })
+  @Column({ name: 'is_critical', default: false })
+  is_critical: boolean;
+
+  @Column({ name: 'warranty_period', type: 'interval', nullable: true })
+  warranty_period: string;
+
+  @CreateDateColumn({ name: 'created_at' })
   created_at: Date;
 
-  @UpdateDateColumn({ type: 'timestamp' })
+  @UpdateDateColumn({ name: 'updated_at' })
   updated_at: Date;
-
-  @Column({ type: 'uuid', nullable: true })
-  created_by_id: string;
-
-  @Column({ type: 'uuid', nullable: true })
-  updated_by_id: string;
-
-  // Relaciones
-  @ManyToOne(() => MaintenanceRecord, maintenance => maintenance.parts_used)
-  @JoinColumn({ name: 'maintenance_record_id' })
-  maintenance_record: MaintenanceRecord;
-
-  @ManyToOne(() => User, { nullable: true })
-  @JoinColumn({ name: 'created_by_id' })
-  created_by: User;
-
-  @ManyToOne(() => User, { nullable: true })
-  @JoinColumn({ name: 'updated_by_id' })
-  updated_by: User;
-
-  // Métodos de utilidad
-  getTotalCost(): number {
-    return this.quantity * this.unit_cost;
-  }
 }

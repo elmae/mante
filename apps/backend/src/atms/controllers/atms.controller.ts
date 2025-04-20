@@ -2,76 +2,85 @@ import {
   Controller,
   Get,
   Post,
-  Put,
-  Delete,
   Body,
+  Patch,
   Param,
+  Delete,
   Query,
   UseGuards,
-  Req,
-  HttpStatus,
-  HttpCode
+  ParseUUIDPipe
 } from '@nestjs/common';
 import { AtmsService } from '../services/atms.service';
 import { CreateAtmDto } from '../dto/create-atm.dto';
 import { UpdateAtmDto } from '../dto/update-atm.dto';
 import { FilterAtmDto } from '../dto/filter-atm.dto';
-import { JwtAuthGuard } from '../../common/guards/auth.guard';
-import { RolesGuard } from '../../common/guards/roles.guard';
-import { Roles } from '../../common/decorators/roles.decorator';
-import { AuthorizedRequest } from '../../common/types/auth.types';
+import { AuthGuard } from '../../common/guards/auth.guard';
+import { Roles, AdminAndManager, ReadOnlyAccess } from '../../common/decorators/roles.decorator';
+import { Role } from '../../common/types/roles.types';
+import { ATM } from '../../domain/entities';
 
 @Controller('atms')
-@UseGuards(JwtAuthGuard, RolesGuard)
+@UseGuards(AuthGuard)
 export class AtmsController {
   constructor(private readonly atmsService: AtmsService) {}
 
   @Post()
-  @Roles('admin', 'operator')
-  async create(@Body() createAtmDto: CreateAtmDto, @Req() req: AuthorizedRequest) {
-    return await this.atmsService.create(createAtmDto, req.user.id);
+  @Roles(Role.ADMIN)
+  async create(@Body() createAtmDto: CreateAtmDto): Promise<ATM> {
+    return this.atmsService.create(createAtmDto);
   }
 
   @Get()
+  @ReadOnlyAccess()
   async findAll(@Query() filterDto: FilterAtmDto) {
-    const [atms, total] = await this.atmsService.findAll(filterDto);
-    return {
-      data: atms,
-      total,
-      page: filterDto.page || 1,
-      limit: filterDto.limit || 10,
-      totalPages: Math.ceil(total / (filterDto.limit || 10))
-    };
-  }
-
-  @Get('proximity')
-  async findByProximity(
-    @Query('latitude') latitude: number,
-    @Query('longitude') longitude: number,
-    @Query('radius') radius: number = 5
-  ) {
-    return await this.atmsService.findByProximity(latitude, longitude, radius);
+    return this.atmsService.findAll(filterDto);
   }
 
   @Get(':id')
-  async findOne(@Param('id') id: string) {
-    return await this.atmsService.findOne(id);
+  @ReadOnlyAccess()
+  async findOne(@Param('id', ParseUUIDPipe) id: string): Promise<ATM> {
+    return this.atmsService.findOne(id);
   }
 
-  @Put(':id')
-  @Roles('admin', 'operator')
+  @Patch(':id')
+  @AdminAndManager()
   async update(
-    @Param('id') id: string,
-    @Body() updateAtmDto: UpdateAtmDto,
-    @Req() req: AuthorizedRequest
-  ) {
-    return await this.atmsService.update(id, updateAtmDto, req.user.id);
+    @Param('id', ParseUUIDPipe) id: string,
+    @Body() updateAtmDto: UpdateAtmDto
+  ): Promise<ATM> {
+    return this.atmsService.update(id, updateAtmDto);
   }
 
   @Delete(':id')
-  @Roles('admin')
-  @HttpCode(HttpStatus.NO_CONTENT)
-  async remove(@Param('id') id: string) {
-    await this.atmsService.remove(id);
+  @Roles(Role.ADMIN)
+  async remove(@Param('id', ParseUUIDPipe) id: string): Promise<void> {
+    return this.atmsService.remove(id);
+  }
+
+  @Get(':id/maintenance-history')
+  @ReadOnlyAccess()
+  async getMaintenanceHistory(@Param('id', ParseUUIDPipe) id: string) {
+    return this.atmsService.findOne(id);
+  }
+
+  @Get(':id/performance-metrics')
+  @ReadOnlyAccess()
+  async getPerformanceMetrics(@Param('id', ParseUUIDPipe) id: string) {
+    const atm = await this.atmsService.findOne(id);
+    return atm.performanceMetrics;
+  }
+
+  @Get(':id/inventory-status')
+  @ReadOnlyAccess()
+  async getInventoryStatus(@Param('id', ParseUUIDPipe) id: string) {
+    const atm = await this.atmsService.findOne(id);
+    return atm.inventoryStatus;
+  }
+
+  @Get(':id/software-status')
+  @ReadOnlyAccess()
+  async getSoftwareStatus(@Param('id', ParseUUIDPipe) id: string) {
+    const atm = await this.atmsService.findOne(id);
+    return atm.softwareUpdates;
   }
 }

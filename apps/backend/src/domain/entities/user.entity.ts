@@ -1,72 +1,51 @@
 import {
   Entity,
-  PrimaryGeneratedColumn,
   Column,
-  ManyToOne,
-  JoinColumn,
+  PrimaryGeneratedColumn,
+  ManyToMany,
+  JoinTable,
   CreateDateColumn,
   UpdateDateColumn
 } from 'typeorm';
 import { Role } from './role.entity';
 
 export interface NotificationPreferences {
-  email_notifications: boolean;
-  in_app_notifications: boolean;
-  push_notifications: boolean;
+  email: boolean;
+  push: boolean;
+  inApp: boolean;
 }
 
 @Entity('users')
 export class User {
   @PrimaryGeneratedColumn('uuid')
-  id!: string;
+  id: string;
 
   @Column({ unique: true })
-  email!: string;
+  email: string;
 
-  @Column({ unique: true })
-  username!: string;
-
-  @Column({ name: 'password_hash' })
-  password_hash!: string;
-
-  @Column({ name: 'first_name' })
-  first_name!: string;
-
-  @Column({ name: 'last_name' })
-  last_name!: string;
+  @Column()
+  password: string;
 
   @Column({ nullable: true })
-  phone?: string;
+  name: string;
 
-  @ManyToOne(() => Role, { eager: true })
-  @JoinColumn({ name: 'role_id' })
-  role!: Role;
+  @Column({ type: 'jsonb', default: { email: true, push: true, inApp: true } })
+  notificationPreferences: NotificationPreferences;
 
-  @Column({ name: 'is_active', default: true })
-  is_active!: boolean;
-
-  @CreateDateColumn({ name: 'created_at' })
-  created_at!: Date;
-
-  @UpdateDateColumn({ name: 'updated_at' })
-  updated_at!: Date;
-
-  @Column({ name: 'created_by', nullable: true })
-  created_by?: string;
-
-  @Column({ name: 'updated_by', nullable: true })
-  updated_by?: string;
-
-  @Column({
-    type: 'jsonb',
-    name: 'notification_preferences',
-    nullable: true,
-    default: () =>
-      '\'{"email_notifications": true, "in_app_notifications": true, "push_notifications": false}\''
+  @ManyToMany(() => Role)
+  @JoinTable({
+    name: 'user_roles',
+    joinColumn: { name: 'user_id', referencedColumnName: 'id' },
+    inverseJoinColumn: { name: 'role_id', referencedColumnName: 'id' }
   })
-  notification_preferences?: NotificationPreferences;
+  roles: Role[];
 
-  constructor(partial: Partial<User>) {
-    Object.assign(this, partial);
-  }
+  @Column({ type: 'timestamp', nullable: true })
+  lastLoginAt?: Date;
+
+  @CreateDateColumn()
+  createdAt: Date;
+
+  @UpdateDateColumn()
+  updatedAt: Date;
 }

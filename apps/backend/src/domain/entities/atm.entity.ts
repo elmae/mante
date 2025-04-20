@@ -1,103 +1,109 @@
 import {
   Entity,
-  PrimaryGeneratedColumn,
   Column,
-  CreateDateColumn,
-  UpdateDateColumn,
+  PrimaryGeneratedColumn,
   ManyToOne,
   JoinColumn,
-  OneToMany
+  CreateDateColumn,
+  UpdateDateColumn
 } from 'typeorm';
-import { Point } from 'geojson';
-import { Client } from './client.entity';
-import { User } from './user.entity';
-import { GeographicZone } from './geographic-zone.entity';
-import { MaintenanceRecord } from './maintenance-record.entity';
-import { Ticket } from './ticket.entity';
+import { Branch } from './branch.entity';
 
 @Entity('atms')
 export class ATM {
   @PrimaryGeneratedColumn('uuid')
   id: string;
 
-  @Column()
-  serial_number: string;
+  @Column({ unique: true })
+  serialNumber: string;
 
   @Column()
   model: string;
 
-  @Column({ type: 'text', nullable: true })
-  description: string;
+  @Column()
+  manufacturer: string;
 
   @Column()
-  address: string;
+  addressLine1: string;
 
-  @Column({
-    type: 'geometry',
-    spatialFeatureType: 'Point',
-    srid: 4326
-  })
-  location: Point;
+  @Column({ nullable: true })
+  addressLine2: string;
 
-  @Column({ type: 'jsonb', nullable: true })
-  technical_details: {
-    manufacturer: string;
-    installation_date: Date;
-    last_maintenance_date: Date;
-    software_version: string;
-    hardware_version: string;
-    network_config: {
-      ip_address: string;
-      subnet_mask: string;
-      gateway: string;
+  @Column()
+  city: string;
+
+  @Column()
+  state: string;
+
+  @Column()
+  postalCode: string;
+
+  @Column()
+  country: string;
+
+  @Column({ type: 'jsonb' })
+  location: {
+    type: 'Point';
+    coordinates: {
+      latitude: number;
+      longitude: number;
     };
-    capabilities: string[];
   };
 
-  @Column({ type: 'enum', enum: ['active', 'inactive', 'maintenance', 'error'], default: 'active' })
-  status: string;
+  @ManyToOne(() => Branch)
+  @JoinColumn({ name: 'branch_id' })
+  branch: Branch;
+
+  @Column({ name: 'branch_id' })
+  branchId: string;
+
+  @Column({ type: 'timestamp', nullable: true })
+  lastMaintenanceDate: Date;
 
   @Column({ default: true })
-  is_active: boolean;
+  isOperational: boolean;
 
-  @Column({ type: 'uuid' })
-  client_id: string;
+  @Column({ type: 'jsonb', nullable: true })
+  inventoryStatus: {
+    cashLevel: number;
+    receiptPaper: number;
+    cardStock: number;
+    lastRefillDate: Date;
+  };
 
-  @Column({ type: 'uuid' })
-  zone_id: string;
+  @Column({ type: 'jsonb', nullable: true })
+  performanceMetrics: {
+    uptime: number;
+    transactionCount: number;
+    errorRate: number;
+    lastErrorDate: Date;
+    errorTypes: string[];
+  };
 
-  @CreateDateColumn()
-  created_at: Date;
+  @Column({ type: 'jsonb', nullable: true })
+  softwareUpdates: {
+    currentVersion: string;
+    lastUpdateDate: Date;
+    pendingUpdates: boolean;
+  };
 
-  @UpdateDateColumn()
-  updated_at: Date;
+  @Column({ type: 'jsonb', nullable: true })
+  lastIncidentReport: {
+    date: Date;
+    type: string;
+    description: string;
+    resolved: boolean;
+  };
 
-  @Column({ type: 'uuid' })
-  created_by_id: string;
+  @Column({ type: 'jsonb', nullable: true })
+  specifications: Record<string, any>;
 
-  @Column({ type: 'uuid' })
-  updated_by_id: string;
+  @Column({ type: 'text', nullable: true })
+  notes: string;
 
-  // Relaciones
-  @ManyToOne(() => Client, client => client.atms)
-  @JoinColumn({ name: 'client_id' })
-  client: Client;
+  @CreateDateColumn({ name: 'created_at' })
+  createdAt: Date;
 
-  @ManyToOne(() => GeographicZone, zone => zone.atms)
-  @JoinColumn({ name: 'zone_id' })
-  zone: GeographicZone;
-
-  @ManyToOne(() => User)
-  @JoinColumn({ name: 'created_by_id' })
-  created_by: User;
-
-  @ManyToOne(() => User)
-  @JoinColumn({ name: 'updated_by_id' })
-  updated_by: User;
-
-  @OneToMany(() => MaintenanceRecord, record => record.atm)
-  maintenance_records: MaintenanceRecord[];
-
-  @OneToMany(() => Ticket, ticket => ticket.atm)
-  tickets: Ticket[];
+  @UpdateDateColumn({ name: 'updated_at' })
+  updatedAt: Date;
 }

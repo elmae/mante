@@ -1,77 +1,92 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
-import { AtmsModule } from './atms/atms.module';
+import { ScheduleModule } from '@nestjs/schedule';
+import { EventEmitterModule } from '@nestjs/event-emitter';
+
+// Módulos de la aplicación
 import { UsersModule } from './users/users.module';
+import { AuthModule } from './auth/auth.module';
 import { TicketsModule } from './tickets/tickets.module';
-import { ClientsModule } from './clients/clients.module';
 import { MaintenanceModule } from './maintenance/maintenance.module';
+import { ClientsModule } from './clients/clients.module';
 import { DashboardModule } from './dashboard/dashboard.module';
 import { AttachmentsModule } from './attachments/attachments.module';
-import { CommentsModule } from './comments/comments.module';
-import { MetricsModule } from './metrics/metrics.module';
 import { NotificationsModule } from './notifications/notifications.module';
-import { ATM } from './domain/entities/atm.entity';
-import { Client } from './domain/entities/client.entity';
-import { User } from './domain/entities/user.entity';
-import { GeographicZone } from './domain/entities/geographic-zone.entity';
-import { MaintenanceRecord } from './domain/entities/maintenance-record.entity';
-import { MaintenancePart } from './domain/entities/maintenance-part.entity';
-import { MaintenanceTask } from './domain/entities/maintenance-task.entity';
-import { MaintenanceComment } from './domain/entities/maintenance-comment.entity';
-import { MaintenanceAttachment } from './domain/entities/maintenance-attachment.entity';
-import { Ticket } from './domain/entities/ticket.entity';
-import { Comment } from './domain/entities/comment.entity';
-import { Attachment } from './domain/entities/attachment.entity';
-import { Notification } from './domain/entities/notification.entity';
+
+// Configuración
+import { configuration } from './config/configuration';
+import { validate } from './config/validation';
+import { globalInterceptors } from './common/interceptors';
+import { AllExceptionsFilter } from './common/filters/all-exceptions.filter';
+import { APP_FILTER } from '@nestjs/core';
 
 @Module({
   imports: [
+    // Framework modules
     ConfigModule.forRoot({
-      isGlobal: true
+      isGlobal: true,
+      load: [configuration],
+      validate
     }),
     TypeOrmModule.forRootAsync({
-      imports: [ConfigModule],
       useFactory: (configService: ConfigService) => ({
         type: 'postgres',
-        host: configService.get('DB_HOST'),
-        port: configService.get('DB_PORT'),
-        username: configService.get('DB_USER'),
-        password: configService.get('DB_PASSWORD'),
-        database: configService.get('DB_NAME'),
-        entities: [
-          ATM,
-          Client,
-          User,
-          GeographicZone,
-          MaintenanceRecord,
-          MaintenancePart,
-          MaintenanceTask,
-          MaintenanceComment,
-          MaintenanceAttachment,
-          Ticket,
-          Comment,
-          Attachment,
-          Notification
-        ],
-        synchronize: configService.get('NODE_ENV') !== 'production',
-        logging: configService.get('NODE_ENV') !== 'production',
-        ssl: configService.get('NODE_ENV') === 'production'
+        host: configService.get('database.host'),
+        port: configService.get('database.port'),
+        username: configService.get('database.username'),
+        password: configService.get('database.password'),
+        database: configService.get('database.name'),
+        autoLoadEntities: true,
+        synchronize: configService.get('database.synchronize'),
+        logging: configService.get('database.logging')
       }),
       inject: [ConfigService]
     }),
-    AtmsModule,
+    EventEmitterModule.forRoot({
+      // Configuración global de eventos
+      wildcard: false,
+      delimiter: '.',
+      newListener: false,
+      removeListener: false,
+      maxListeners: 10,
+      verboseMemoryLeak: true,
+      ignoreErrors: false
+    }),
+    ScheduleModule.forRoot(),
+
+    // Application modules
     UsersModule,
+    AuthModule,
     TicketsModule,
-    ClientsModule,
     MaintenanceModule,
+    ClientsModule,
     DashboardModule,
     AttachmentsModule,
-    CommentsModule,
-    MetricsModule,
     NotificationsModule
   ],
-  controllers: [],
-  providers: []
+  providers: [
+    // Global exception filter
+    {
+      provide: APP_FILTER,
+      useClass: AllExceptionsFilter
+    },
+    // Global interceptors
+    ...globalInterceptors
+  ]
 })
-export class AppModule {}
+export class AppModule {
+  constructor(private configService: ConfigService) {}
+
+  onModuleInit() {
+    // Log application configuration on startup
+    const nodeEnv = this.configService.get('NODE_ENV');
+    const port = this.configService.get('PORT');
+    const dbHost = this.configService.get('database.host');
+
+    console.log('Application Configuration:');
+    console.log(`Environment: ${nodeEnv}`);
+    console.log(`Port: ${port}`);
+    console.log(`Database Host: ${dbHost}`);
+  }
+}

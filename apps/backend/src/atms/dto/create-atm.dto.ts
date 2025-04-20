@@ -1,111 +1,73 @@
+import { IsString, IsNotEmpty, IsNumber, IsOptional, ValidateNested } from 'class-validator';
 import { Type } from 'class-transformer';
-import {
-  IsString,
-  IsNotEmpty,
-  IsUUID,
-  IsOptional,
-  IsEnum,
-  IsBoolean,
-  ValidateNested,
-  IsArray,
-  IsDateString,
-  IsIP
-} from 'class-validator';
 
-class NetworkConfig {
-  @IsIP()
+class GeoPoint {
+  @IsNumber()
   @IsNotEmpty()
-  ip_address: string;
+  longitude: number;
 
-  @IsString()
+  @IsNumber()
   @IsNotEmpty()
-  subnet_mask: string;
-
-  @IsIP()
-  @IsNotEmpty()
-  gateway: string;
-}
-
-class TechnicalDetails {
-  @IsString()
-  @IsNotEmpty()
-  manufacturer: string;
-
-  @IsDateString()
-  @IsNotEmpty()
-  installation_date: Date;
-
-  @IsDateString()
-  @IsOptional()
-  last_maintenance_date?: Date;
-
-  @IsString()
-  @IsNotEmpty()
-  software_version: string;
-
-  @IsString()
-  @IsNotEmpty()
-  hardware_version: string;
-
-  @ValidateNested()
-  @Type(() => NetworkConfig)
-  network_config: NetworkConfig;
-
-  @IsArray()
-  @IsString({ each: true })
-  capabilities: string[];
+  latitude: number;
 }
 
 class Location {
-  @IsString()
-  @IsNotEmpty()
-  type: 'Point';
+  @ValidateNested()
+  @Type(() => GeoPoint)
+  coordinates: GeoPoint;
 
-  @IsArray()
-  @IsNotEmpty()
-  coordinates: [number, number];
+  readonly type = 'Point' as const;
 }
 
 export class CreateAtmDto {
   @IsString()
   @IsNotEmpty()
-  serial_number: string;
+  serialNumber: string;
 
   @IsString()
   @IsNotEmpty()
   model: string;
 
   @IsString()
-  @IsOptional()
-  description?: string;
+  @IsNotEmpty()
+  manufacturer: string;
 
   @IsString()
   @IsNotEmpty()
-  address: string;
+  addressLine1: string;
+
+  @IsString()
+  @IsOptional()
+  addressLine2?: string;
+
+  @IsString()
+  @IsNotEmpty()
+  city: string;
+
+  @IsString()
+  @IsNotEmpty()
+  state: string;
+
+  @IsString()
+  @IsNotEmpty()
+  postalCode: string;
+
+  @IsString()
+  @IsNotEmpty()
+  country: string;
 
   @ValidateNested()
   @Type(() => Location)
-  @IsNotEmpty()
   location: Location;
 
-  @ValidateNested()
-  @Type(() => TechnicalDetails)
-  @IsOptional()
-  technical_details?: TechnicalDetails;
-
-  @IsEnum(['active', 'inactive', 'maintenance', 'error'])
-  @IsOptional()
-  status?: 'active' | 'inactive' | 'maintenance' | 'error';
-
-  @IsBoolean()
-  @IsOptional()
-  is_active?: boolean;
-
-  @IsUUID()
+  @IsString()
   @IsNotEmpty()
-  client_id: string;
+  branchId: string;
 
-  @IsUUID()
-  @IsNotEmpty()
-  zone_id: string;
+  @IsOptional()
+  @IsString()
+  notes?: string;
+
+  @IsOptional()
+  specifications?: Record<string, any>;
 }

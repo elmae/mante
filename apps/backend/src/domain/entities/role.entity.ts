@@ -1,46 +1,66 @@
 import {
   Entity,
-  PrimaryGeneratedColumn,
   Column,
+  PrimaryGeneratedColumn,
   CreateDateColumn,
-  UpdateDateColumn,
-  ManyToMany,
-  JoinTable
+  UpdateDateColumn
 } from 'typeorm';
-import { Permission } from './permission.entity';
+
+export enum RoleType {
+  ADMIN = 'admin',
+  MANAGER = 'manager',
+  SUPERVISOR = 'supervisor',
+  TECHNICIAN = 'technician',
+  OPERATOR = 'operator',
+  VIEWER = 'viewer'
+}
 
 @Entity('roles')
 export class Role {
   @PrimaryGeneratedColumn('uuid')
-  id!: string;
+  id: string;
 
-  @Column({ unique: true })
-  name!: string;
-
-  @Column()
-  description!: string;
-
-  @ManyToMany(() => Permission)
-  @JoinTable({
-    name: 'role_permissions',
-    joinColumn: {
-      name: 'role_id',
-      referencedColumnName: 'id'
-    },
-    inverseJoinColumn: {
-      name: 'permission_id',
-      referencedColumnName: 'id'
-    }
+  @Column({
+    type: 'enum',
+    enum: RoleType,
+    unique: true
   })
-  permissions!: Permission[];
+  name: RoleType;
+
+  @Column({ nullable: true })
+  description: string;
+
+  @Column({ name: 'is_active', default: true })
+  isActive: boolean;
 
   @CreateDateColumn({ name: 'created_at' })
-  created_at!: Date;
+  createdAt: Date;
 
   @UpdateDateColumn({ name: 'updated_at' })
-  updated_at!: Date;
+  updatedAt: Date;
 
-  constructor(partial: Partial<Role>) {
-    Object.assign(this, partial);
+  // Helper methods
+  isAdmin(): boolean {
+    return this.name === RoleType.ADMIN;
+  }
+
+  isManager(): boolean {
+    return this.name === RoleType.MANAGER;
+  }
+
+  isSupervisor(): boolean {
+    return this.name === RoleType.SUPERVISOR;
+  }
+
+  isTechnician(): boolean {
+    return this.name === RoleType.TECHNICIAN;
+  }
+
+  isOperator(): boolean {
+    return this.name === RoleType.OPERATOR;
+  }
+
+  isViewer(): boolean {
+    return this.name === RoleType.VIEWER;
   }
 }

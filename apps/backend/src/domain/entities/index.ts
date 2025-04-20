@@ -1,55 +1,18 @@
-import { User } from './user.entity';
-import { Role } from './role.entity';
-import { Permission } from './permission.entity';
-import { ATM } from './atm.entity';
-import { Ticket } from './ticket.entity';
-import { MaintenanceRecord } from './maintenance-record.entity';
-import { MaintenanceComment } from './maintenance-comment.entity';
-import { Comment } from './comment.entity';
-import { Attachment } from './attachment.entity';
-import { GeographicZone } from './geographic-zone.entity';
-import { SLAConfig } from './sla-config.entity';
-import { UserSession } from './user-session.entity';
-import { Notification } from './notification.entity';
-import { Client } from './client.entity';
+// User & Auth entities
+export { User } from './user.entity';
+export { Role, RoleType } from './role.entity';
 
-// Enums
-export { PermissionEnum } from './permission.entity';
-export { TicketType, TicketPriority, TicketStatus } from './ticket.entity';
-export { MaintenanceType as MaintenanceRecordType } from './maintenance-record.entity';
-export { MaintenanceType as SLAMaintenanceType } from './sla-config.entity';
+// Ticket entities
+export { Ticket, TicketStatus, TicketType, TicketPriority } from './ticket.entity';
+export { Comment } from './comment.entity';
 
-// Entidades
-export const entities = [
-  User,
-  Role,
-  Permission,
-  ATM,
-  Client, // Agregada la entidad Client
-  Ticket,
-  MaintenanceRecord,
-  MaintenanceComment,
-  Comment,
-  Attachment,
-  GeographicZone,
-  SLAConfig,
-  UserSession,
-  Notification
-];
+// Maintenance entities
+export { Maintenance, MaintenanceStatus, MaintenanceType } from './maintenance.entity';
+export { MaintenanceTask, TaskStatus, TaskPriority } from './maintenance-task.entity';
+export { MaintenancePart } from './maintenance-part.entity';
+export { MaintenanceComment } from './maintenance-comment.entity';
+export { MaintenanceAttachment } from './maintenance-attachment.entity';
 
-export {
-  User,
-  Role,
-  Permission,
-  ATM,
-  Client, // Agregada la exportación de Client
-  Ticket,
-  MaintenanceRecord,
-  MaintenanceComment,
-  Comment,
-  Attachment,
-  GeographicZone,
-  SLAConfig,
-  UserSession,
-  Notification
-};
+// ATM and Branch entities
+export { ATM } from './atm.entity';
+export { Branch } from './branch.entity';

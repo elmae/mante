@@ -1,71 +1,30 @@
-import {
-  IsEnum,
-  IsOptional,
-  IsUUID,
-  IsString,
-  IsInt,
-  Min,
-  IsArray,
-  IsDateString
-} from 'class-validator';
-import { Type } from 'class-transformer';
-import { TicketStatus, TicketType, TicketPriority } from '../../domain/entities/ticket.entity';
+import { IsOptional, IsEnum, IsUUID } from 'class-validator';
+import { TicketStatus, TicketPriority, TicketType } from '../../domain/entities';
 
-export class TicketFilterDto {
+export class FilterTicketDto {
   @IsOptional()
   @IsEnum(TicketStatus)
   status?: TicketStatus;
-
-  @IsOptional()
-  @IsEnum(TicketType)
-  type?: TicketType;
 
   @IsOptional()
   @IsEnum(TicketPriority)
   priority?: TicketPriority;
 
   @IsOptional()
-  @IsUUID()
-  atm_id?: string;
+  @IsEnum(TicketType)
+  type?: TicketType;
 
   @IsOptional()
   @IsUUID()
-  technician_id?: string;
+  assignedToId?: string;
 
   @IsOptional()
-  @IsString()
-  search?: string;
+  @IsUUID()
+  createdById?: string;
 
   @IsOptional()
-  @IsDateString()
-  start_date?: string;
+  startDate?: Date;
 
   @IsOptional()
-  @IsDateString()
-  end_date?: string;
-
-  @IsOptional()
-  @IsString()
-  category?: string;
-
-  @IsOptional()
-  @IsString()
-  subcategory?: string;
-
-  @IsOptional()
-  @IsArray()
-  @IsString({ each: true })
-  tags?: string[];
-
-  @IsOptional()
-  @Type(() => Number)
-  @IsInt()
-  @Min(1)
-  page?: number = 1;
-
-  @IsOptional()
-  @Type(() => Number)
-  @IsInt()
-  @Min(1)
-  limit?: number = 10;
+  endDate?: Date;
 }

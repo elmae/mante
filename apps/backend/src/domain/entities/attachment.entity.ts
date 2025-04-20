@@ -1,96 +1,71 @@
 import {
   Entity,
-  PrimaryGeneratedColumn,
   Column,
-  CreateDateColumn,
+  PrimaryGeneratedColumn,
   ManyToOne,
   JoinColumn,
-  DeleteDateColumn
+  CreateDateColumn,
+  UpdateDateColumn
 } from 'typeorm';
 import { User } from './user.entity';
 import { Ticket } from './ticket.entity';
-import { MaintenanceRecord } from './maintenance-record.entity';
 
 @Entity('attachments')
 export class Attachment {
   @PrimaryGeneratedColumn('uuid')
   id: string;
 
-  @Column({ type: 'uuid', nullable: true })
-  ticket_id?: string;
-
-  @Column({ type: 'uuid', nullable: true })
-  maintenance_record_id?: string;
-
-  @Column({ type: 'varchar' })
+  @Column({ name: 'file_name' })
   file_name: string;
 
-  @Column({ type: 'varchar' })
+  @Column({ name: 'file_path' })
   file_path: string;
 
-  @Column({ type: 'varchar' })
+  @Column({ name: 'mime_type' })
   mime_type: string;
 
-  @Column({ type: 'bigint' })
+  @Column({ name: 'file_size', type: 'bigint' })
   file_size: number;
 
-  @CreateDateColumn({ type: 'timestamp' })
-  created_at: Date;
+  @ManyToOne(() => User)
+  @JoinColumn({ name: 'uploaded_by' })
+  uploadedBy: User;
 
-  @Column({ type: 'uuid' })
-  created_by_id: string;
+  @Column({ name: 'uploaded_by' })
+  uploaded_by_id: string;
 
-  @DeleteDateColumn({ type: 'timestamp', nullable: true })
-  deleted_at?: Date;
-
-  @Column({ type: 'uuid', nullable: true })
-  deleted_by_id?: string;
-
-  // Relaciones
-  @ManyToOne(() => Ticket, ticket => ticket.attachments, { nullable: true })
+  @ManyToOne(() => Ticket, { nullable: true })
   @JoinColumn({ name: 'ticket_id' })
   ticket?: Ticket;
 
-  @ManyToOne(() => MaintenanceRecord, record => record.attachments, { nullable: true })
-  @JoinColumn({ name: 'maintenance_record_id' })
-  maintenance_record?: MaintenanceRecord;
+  @Column({ name: 'ticket_id', nullable: true })
+  ticket_id?: string;
 
-  @ManyToOne(() => User)
-  @JoinColumn({ name: 'created_by_id' })
-  created_by: User;
+  @Column({ name: 'maintenance_record_id', nullable: true })
+  maintenance_record_id?: string;
 
-  @ManyToOne(() => User)
+  @Column({ name: 'is_public', default: true })
+  is_public: boolean;
+
+  @Column({ type: 'jsonb', nullable: true })
+  metadata: Record<string, any>;
+
+  @Column({ name: 'retention_date', type: 'timestamp', nullable: true })
+  retention_date: Date;
+
+  @Column({ name: 'deleted_at', type: 'timestamp', nullable: true })
+  deleted_at?: Date;
+
+  @Column({ name: 'deleted_by_id', nullable: true })
+  deleted_by_id?: string;
+
+  @ManyToOne(() => User, { nullable: true })
   @JoinColumn({ name: 'deleted_by_id' })
-  deleted_by?: User;
+  deletedBy?: User;
 
-  // Métodos de utilidad
-  getFileExtension(): string {
-    return this.file_name.split('.').pop() || '';
-  }
+  @CreateDateColumn({ name: 'created_at' })
+  created_at: Date;
 
-  getFileSizeInMB(): number {
-    return Math.round((this.file_size / (1024 * 1024)) * 100) / 100;
-  }
-
-  getParentType(): 'ticket' | 'maintenance' | 'unknown' {
-    if (this.ticket_id) return 'ticket';
-    if (this.maintenance_record_id) return 'maintenance';
-    return 'unknown';
-  }
-
-  getParentId(): string | null {
-    return this.ticket_id || this.maintenance_record_id || null;
-  }
-
-  isImage(): boolean {
-    return this.mime_type.startsWith('image/');
-  }
-
-  isPDF(): boolean {
-    return this.mime_type === 'application/pdf';
-  }
-
-  getPublicUrl(): string {
-    return `/api/v1/attachments/${this.id}`;
-  }
+  @UpdateDateColumn({ name: 'updated_at' })
+  updated_at: Date;
 }

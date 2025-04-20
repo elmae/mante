@@ -1,28 +1,58 @@
-import { Body, Controller, Get, HttpCode, Post, UseGuards } from '@nestjs/common';
+import { Controller, Post, Body, UseGuards, Get } from '@nestjs/common';
+import { ApiTags, ApiOperation, ApiResponse } from '@nestjs/swagger';
 import { AuthService } from '../services/auth.service';
 import { LoginDto } from '../dto/login.dto';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
-import { User } from '../../common/decorators/user.decorator';
-import { JwtPayload } from '../../common/types/auth.types';
+import { CurrentUser } from '../../common/decorators/user.decorator';
+import { User } from '../../users/entities/user.entity';
+import { Public } from '../../common/decorators/public.decorator';
 
+@ApiTags('Auth')
 @Controller('auth')
 export class AuthController {
   constructor(private readonly authService: AuthService) {}
 
+  @Public()
   @Post('login')
-  @HttpCode(200)
+  @ApiOperation({ summary: 'User login' })
+  @ApiResponse({
+    status: 200,
+    description: 'Returns JWT access token',
+    schema: {
+      properties: {
+        access_token: { type: 'string' }
+      }
+    }
+  })
   async login(@Body() loginDto: LoginDto) {
     return this.authService.login(loginDto);
   }
 
-  @Get('profile')
   @UseGuards(JwtAuthGuard)
-  async getProfile(@User() user: JwtPayload) {
-    return {
-      id: user.id,
-      email: user.email,
-      roles: user.roles,
-      permissions: user.permissions
-    };
+  @Get('profile')
+  @ApiOperation({ summary: 'Get current user profile' })
+  @ApiResponse({
+    status: 200,
+    description: 'Returns the current user profile',
+    type: User
+  })
+  getProfile(@CurrentUser() user: User) {
+    return user;
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Post('refresh')
+  @ApiOperation({ summary: 'Refresh access token' })
+  @ApiResponse({
+    status: 200,
+    description: 'Returns new JWT access token',
+    schema: {
+      properties: {
+        access_token: { type: 'string' }
+      }
+    }
+  })
+  async refresh(@CurrentUser() user: User) {
+    return this.authService.generateToken(user);
   }
 }

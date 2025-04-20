@@ -1,82 +1,74 @@
-import { createClient, RedisClientType } from 'redis';
+import { Injectable, OnModuleDestroy, OnModuleInit } from '@nestjs/common';
+import { createClient } from 'redis';
+import { logger } from '../../config/logger.config';
 
-export class RedisService {
-  private client: RedisClientType;
+@Injectable()
+export class RedisService implements OnModuleInit, OnModuleDestroy {
+  private client: ReturnType<typeof createClient>;
 
   constructor() {
     this.client = createClient({
       url: process.env.REDIS_URL || 'redis://localhost:6379'
     });
 
-    this.client.on('error', err => {
-      console.error('❌ Redis Client Error:', err);
-      throw err; // Propagar el error para manejarlo arriba
+    this.client.on('error', (error: Error) => {
+      logger.error('Redis Client Error', { error });
+    });
+
+    this.client.on('connect', () => {
+      logger.info('Redis Client Connected');
     });
   }
 
-  private async connect(): Promise<void> {
-    try {
-      if (!this.client.isOpen) {
-        await this.client.connect();
-        console.log('✅ Conexión Redis establecida');
-      }
-    } catch (error) {
-      console.error('❌ Error conectando a Redis:', error);
-      throw error;
-    }
+  async onModuleInit() {
+    await this.client.connect();
   }
 
-  async ensureConnection(): Promise<void> {
-    if (!this.client.isOpen) {
-      await this.connect();
-    }
+  async onModuleDestroy() {
+    await this.client.quit();
   }
 
-  async set(key: string, value: string, expiresIn?: number): Promise<void> {
-    await this.ensureConnection();
+  async set(key: string, value: string, expireInSeconds?: number): Promise<void> {
     try {
-      if (expiresIn) {
-        await this.client.set(key, value, { EX: expiresIn });
+      if (expireInSeconds) {
+        await this.client.setEx(key, expireInSeconds, value);
       } else {
         await this.client.set(key, value);
       }
     } catch (error) {
-      console.error('❌ Error en Redis set:', error);
+      logger.error('Redis Set Error', { error, key });
       throw error;
     }
   }
 
   async get(key: string): Promise<string | null> {
-    await this.ensureConnection();
     try {
       return await this.client.get(key);
     } catch (error) {
-      console.error('❌ Error en Redis get:', error);
+      logger.error('Redis Get Error', { error, key });
       throw error;
     }
   }
 
-  async exists(key: string): Promise<number> {
-    await this.ensureConnection();
+  async delete(key: string): Promise<void> {
     try {
-      return await this.client.exists(key);
+      await this.client.del(key);
     } catch (error) {
-      console.error('❌ Error en Redis exists:', error);
+      logger.error('Redis Delete Error', { error, key });
       throw error;
     }
   }
 
-  async del(key: string): Promise<number> {
-    await this.ensureConnection();
+  async exists(key: string): Promise<boolean> {
     try {
-      return await this.client.del(key);
+      return (await this.client.exists(key)) === 1;
     } catch (error) {
-      console.error('❌ Error en Redis del:', error);
+      logger.error('Redis Exists Error', { error, key });
       throw error;
     }
   }
 
-  async disconnect(): Promise<void> {
-    await this.client.disconnect();
+  getClient() {
+    return this.client;
   }
 }

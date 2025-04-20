@@ -1,33 +1,34 @@
 import {
   Entity,
-  PrimaryGeneratedColumn,
   Column,
-  CreateDateColumn,
-  UpdateDateColumn,
+  PrimaryGeneratedColumn,
   ManyToOne,
   OneToMany,
-  JoinColumn
+  JoinColumn,
+  CreateDateColumn,
+  UpdateDateColumn
 } from 'typeorm';
-import { ATM } from './atm.entity';
 import { User } from './user.entity';
 import { Comment } from './comment.entity';
-import { Attachment } from './attachment.entity';
 
 export enum TicketStatus {
-  OPEN = 'OPEN',
-  IN_PROGRESS = 'IN_PROGRESS',
-  CLOSED = 'CLOSED'
-}
-
-export enum TicketType {
-  CORRECTIVE = 'CORRECTIVE',
-  PREVENTIVE = 'PREVENTIVE'
+  PENDING = 'pending',
+  IN_PROGRESS = 'in_progress',
+  RESOLVED = 'resolved',
+  CLOSED = 'closed'
 }
 
 export enum TicketPriority {
-  LOW = 'LOW',
-  MEDIUM = 'MEDIUM',
-  HIGH = 'HIGH'
+  LOW = 'low',
+  MEDIUM = 'medium',
+  HIGH = 'high',
+  URGENT = 'urgent'
+}
+
+export enum TicketType {
+  INCIDENT = 'incident',
+  REQUEST = 'request',
+  MAINTENANCE = 'maintenance'
 }
 
 @Entity('tickets')
@@ -44,15 +45,9 @@ export class Ticket {
   @Column({
     type: 'enum',
     enum: TicketStatus,
-    default: TicketStatus.OPEN
+    default: TicketStatus.PENDING
   })
   status: TicketStatus;
-
-  @Column({
-    type: 'enum',
-    enum: TicketType
-  })
-  type: TicketType;
 
   @Column({
     type: 'enum',
@@ -61,51 +56,71 @@ export class Ticket {
   })
   priority: TicketPriority;
 
-  @ManyToOne(() => ATM)
-  @JoinColumn({ name: 'atm_id' })
-  atm: ATM;
+  @Column({
+    type: 'enum',
+    enum: TicketType,
+    default: TicketType.INCIDENT
+  })
+  type: TicketType;
 
-  @Column({ name: 'atm_id' })
-  atm_id: string;
+  @ManyToOne(() => User)
+  @JoinColumn({ name: 'created_by_id' })
+  createdBy: User;
+
+  @Column({ name: 'created_by_id' })
+  createdById: string;
 
   @ManyToOne(() => User, { nullable: true })
-  @JoinColumn({ name: 'assigned_to' })
-  assigned_to: User;
+  @JoinColumn({ name: 'assigned_to_id' })
+  assignedTo: User;
 
-  @Column({ nullable: true })
-  category: string;
-
-  @Column({ nullable: true })
-  subcategory: string;
-
-  @Column('text', { array: true, nullable: true })
-  tags: string[];
-
-  @Column({ default: false })
-  met_sla: boolean;
-
-  @CreateDateColumn({ name: 'created_at' })
-  created_at: Date;
-
-  @UpdateDateColumn({ name: 'updated_at' })
-  updated_at: Date;
-
-  @Column({ type: 'timestamp', nullable: true })
-  completion_date: Date;
-
-  @Column({ type: 'timestamp', nullable: true })
-  first_response_at: Date;
+  @Column({ name: 'assigned_to_id', nullable: true })
+  assignedToId: string;
 
   @OneToMany(() => Comment, comment => comment.ticket)
   comments: Comment[];
 
-  @OneToMany(() => Attachment, attachment => attachment.ticket)
-  attachments: Attachment[];
+  @Column({ name: 'resolution_time', type: 'interval', nullable: true })
+  resolutionTime: string;
 
-  // Virtual fields
-  @Column({ nullable: true, type: 'integer' })
-  response_time?: number;
+  @Column({ name: 'first_response_time', type: 'interval', nullable: true })
+  firstResponseTime: string;
 
-  @Column({ nullable: true, type: 'integer' })
-  resolution_time?: number;
+  @Column({ name: 'met_sla', type: 'boolean', default: true })
+  metSLA: boolean;
+
+  @Column({ name: 'requires_follow_up', type: 'boolean', default: false })
+  requiresFollowUp: boolean;
+
+  @Column({ type: 'timestamp', nullable: true })
+  dueDate: Date;
+
+  @Column({ name: 'resolved_at', type: 'timestamp', nullable: true })
+  resolvedAt: Date;
+
+  @Column({ name: 'closed_at', type: 'timestamp', nullable: true })
+  closedAt: Date;
+
+  @CreateDateColumn({ name: 'created_at' })
+  createdAt: Date;
+
+  @UpdateDateColumn({ name: 'updated_at' })
+  updatedAt: Date;
+
+  // Helper methods
+  isOpen(): boolean {
+    return this.status === TicketStatus.PENDING || this.status === TicketStatus.IN_PROGRESS;
+  }
+
+  canAssign(): boolean {
+    return this.isOpen();
+  }
+
+  canClose(): boolean {
+    return this.status === TicketStatus.RESOLVED;
+  }
+
+  canResolve(): boolean {
+    return this.status === TicketStatus.IN_PROGRESS;
+  }
 }

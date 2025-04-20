@@ -1,38 +1,116 @@
+import { IsString, IsOptional, IsBoolean, IsEnum, IsDate, IsNumber } from 'class-validator';
 import { Type } from 'class-transformer';
-import { IsOptional, IsNumber, IsString, IsEnum } from 'class-validator';
+
+export enum AtmSortField {
+  SERIAL_NUMBER = 'serialNumber',
+  MODEL = 'model',
+  MANUFACTURER = 'manufacturer',
+  CREATED_AT = 'createdAt',
+  LAST_MAINTENANCE = 'lastMaintenanceDate',
+  STATUS = 'isOperational'
+}
 
 export class FilterAtmDto {
-  @IsOptional()
-  @IsNumber()
-  @Type(() => Number)
-  page?: number;
-
-  @IsOptional()
-  @IsNumber()
-  @Type(() => Number)
-  limit?: number;
-
   @IsOptional()
   @IsString()
   search?: string;
 
   @IsOptional()
-  @IsEnum(['active', 'inactive', 'maintenance', 'error'])
-  status?: 'active' | 'inactive' | 'maintenance' | 'error';
+  @IsString()
+  serialNumber?: string;
 
   @IsOptional()
   @IsString()
-  client_id?: string;
+  model?: string;
 
   @IsOptional()
   @IsString()
-  zone_id?: string;
+  manufacturer?: string;
 
   @IsOptional()
   @IsString()
-  sort_by?: string;
+  city?: string;
 
   @IsOptional()
-  @IsEnum(['ASC', 'DESC'])
-  sort_order?: 'ASC' | 'DESC';
+  @IsString()
+  state?: string;
+
+  @IsOptional()
+  @IsString()
+  branchId?: string;
+
+  @IsOptional()
+  @IsBoolean()
+  isOperational?: boolean;
+
+  @IsOptional()
+  @Type(() => Date)
+  @IsDate()
+  maintenanceFrom?: Date;
+
+  @IsOptional()
+  @Type(() => Date)
+  @IsDate()
+  maintenanceTo?: Date;
+
+  @IsOptional()
+  @IsEnum(AtmSortField)
+  sortBy?: AtmSortField = AtmSortField.CREATED_AT;
+
+  @IsOptional()
+  @IsString()
+  sortOrder?: 'ASC' | 'DESC' = 'DESC';
+
+  @IsOptional()
+  @Type(() => Number)
+  @IsNumber()
+  page?: number = 1;
+
+  @IsOptional()
+  @Type(() => Number)
+  @IsNumber()
+  limit?: number = 10;
+
+  // Filtros de ubicación
+  @IsOptional()
+  @IsNumber()
+  latitude?: number;
+
+  @IsOptional()
+  @IsNumber()
+  longitude?: number;
+
+  @IsOptional()
+  @IsNumber()
+  radius?: number; // Radio en kilómetros
+
+  // Filtros de rendimiento
+  @IsOptional()
+  @IsNumber()
+  minUptime?: number;
+
+  @IsOptional()
+  @IsNumber()
+  maxErrorRate?: number;
+
+  @IsOptional()
+  @IsBoolean()
+  requiresMaintenance?: boolean;
+
+  @IsOptional()
+  @IsBoolean()
+  hasPendingUpdates?: boolean;
+
+  // Filtros de inventario
+  @IsOptional()
+  @IsBoolean()
+  lowCashLevel?: boolean;
+
+  @IsOptional()
+  @IsBoolean()
+  lowReceiptPaper?: boolean;
+
+  @IsOptional()
+  @IsBoolean()
+  lowCardStock?: boolean;
 }

@@ -1,39 +1,44 @@
-import { IsString, IsEmail, MinLength, IsUUID, IsBoolean, IsOptional } from 'class-validator';
+import { IsString, IsEmail, MinLength, IsEnum, IsBoolean, IsOptional } from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import { Role } from '../entities/user.entity';
 
 export class CreateUserDto {
-  @ApiProperty({ description: 'Email del usuario' })
+  @ApiProperty()
   @IsEmail()
   email: string;
 
-  @ApiProperty({ description: 'Nombre de usuario' })
+  @ApiProperty()
   @IsString()
+  @MinLength(3)
   username: string;
 
-  @ApiProperty({ description: 'Contraseña del usuario', minLength: 8 })
+  @ApiProperty()
   @IsString()
-  @MinLength(8)
+  @MinLength(6)
   password: string;
 
-  @ApiProperty({ description: 'Nombre del usuario' })
+  @ApiProperty()
   @IsString()
-  first_name: string;
+  firstName: string;
 
-  @ApiProperty({ description: 'Apellido del usuario' })
+  @ApiProperty()
   @IsString()
-  last_name: string;
+  lastName: string;
 
-  @ApiPropertyOptional({ description: 'Número de teléfono' })
-  @IsString()
+  @ApiProperty({ enum: Role, default: Role.VIEWER })
+  @IsEnum(Role)
+  role: Role;
+
+  @ApiPropertyOptional()
   @IsOptional()
-  phone?: string;
-
-  @ApiProperty({ description: 'ID del rol del usuario' })
-  @IsUUID()
-  role_id: string;
-
-  @ApiPropertyOptional({ description: 'Estado del usuario', default: true })
   @IsBoolean()
+  isActive?: boolean;
+
+  @ApiPropertyOptional()
   @IsOptional()
-  is_active?: boolean = true;
+  notificationPreferences?: {
+    email: boolean;
+    inApp: boolean;
+    sms: boolean;
+  };
 }

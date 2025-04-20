@@ -24,6 +24,7 @@
 - **Confirmar siempre que las rutas de los archivos y nombres de los módulos** existan antes de referenciarlos en el código o las pruebas.
 - **Nunca eliminar o sobrescribir código existente** a menos que se indique explícitamente o forme parte de una tarea de memory bank.
 - **Actualizar siempre en lugar de sobrescribir archivos en memory bank**, a menos que se indique explícitamente.
+- **Si tienes una duda o no estas seguro de algo** consultar primero el memory bank.
 
 # Roo Memory Bank
 

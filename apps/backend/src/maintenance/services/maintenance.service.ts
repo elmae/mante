@@ -1,39 +1,40 @@
 import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository, Between } from 'typeorm';
-import { ConfigService } from '@nestjs/config';
-import { Maintenance } from '../../domain/entities/maintenance.entity';
-import { MaintenancePart } from '../../domain/entities/maintenance-part.entity';
-import { MaintenanceTask } from '../../domain/entities/maintenance-task.entity';
-import { MaintenanceComment } from '../../domain/entities/maintenance-comment.entity';
-import { MaintenanceAttachment } from '../../domain/entities/maintenance-attachment.entity';
+import { Repository } from 'typeorm';
+import {
+  Maintenance,
+  MaintenancePart,
+  MaintenanceTask,
+  MaintenanceComment,
+  MaintenanceAttachment,
+  User
+} from '../../domain/entities';
 import { CreateMaintenanceDto } from '../dto/create-maintenance.dto';
 import { UpdateMaintenanceDto } from '../dto/update-maintenance.dto';
-import { FilterMaintenanceDto, MaintenanceStatus } from '../dto/filter-maintenance.dto';
-import { User } from '../../domain/entities/user.entity';
+import { FilterMaintenanceDto } from '../dto/filter-maintenance.dto';
 
 @Injectable()
 export class MaintenanceService {
   constructor(
     @InjectRepository(Maintenance)
-    private maintenanceRepository: Repository<Maintenance>,
+    private readonly maintenanceRepository: Repository<Maintenance>,
     @InjectRepository(MaintenancePart)
-    private maintenancePartRepository: Repository<MaintenancePart>,
+    private readonly maintenancePartRepository: Repository<MaintenancePart>,
     @InjectRepository(MaintenanceTask)
-    private maintenanceTaskRepository: Repository<MaintenanceTask>,
+    private readonly maintenanceTaskRepository: Repository<MaintenanceTask>,
     @InjectRepository(MaintenanceComment)
-    private maintenanceCommentRepository: Repository<MaintenanceComment>,
+    private readonly maintenanceCommentRepository: Repository<MaintenanceComment>,
     @InjectRepository(MaintenanceAttachment)
-    private maintenanceAttachmentRepository: Repository<MaintenanceAttachment>,
-    private configService: ConfigService
+    private readonly maintenanceAttachmentRepository: Repository<MaintenanceAttachment>
   ) {}
 
   async create(
-    createMaintenanceDto: CreateMaintenanceDto & { created_by: User }
+    createMaintenanceDto: CreateMaintenanceDto & { createdBy: User }
   ): Promise<Maintenance> {
     const maintenance = this.maintenanceRepository.create({
       ...createMaintenanceDto,
-      status: MaintenanceStatus.PENDING
+      createdBy: createMaintenanceDto.createdBy,
+      createdById: createMaintenanceDto.createdBy.id
     });
 
     return this.maintenanceRepository.save(maintenance);
@@ -42,55 +43,73 @@ export class MaintenanceService {
   async findAll(filterDto: FilterMaintenanceDto) {
     const query = this.maintenanceRepository
       .createQueryBuilder('maintenance')
-      .leftJoinAndSelect('maintenance.technician', 'technician')
-      .leftJoinAndSelect('maintenance.atm', 'atm')
+      .leftJoinAndSelect('maintenance.createdBy', 'createdBy')
+      .leftJoinAndSelect('maintenance.assignedTo', 'assignedTo')
       .leftJoinAndSelect('maintenance.parts', 'parts')
-      .leftJoinAndSelect('maintenance.measurements', 'measurements');
-
-    if (filterDto.atm_id) {
-      query.andWhere('maintenance.atm_id = :atm_id', { atm_id: filterDto.atm_id });
-    }
-
-    if (filterDto.technician_id) {
-      query.andWhere('maintenance.technician_id = :technician_id', {
-        technician_id: filterDto.technician_id
-      });
-    }
+      .leftJoinAndSelect('maintenance.tasks', 'tasks')
+      .leftJoinAndSelect('maintenance.comments', 'comments');
 
     if (filterDto.status) {
       query.andWhere('maintenance.status = :status', { status: filterDto.status });
     }
 
-    if (filterDto.requires_follow_up !== undefined) {
-      query.andWhere('maintenance.requires_follow_up = :requires_follow_up', {
-        requires_follow_up: filterDto.requires_follow_up
+    if (filterDto.type) {
+      query.andWhere('maintenance.type = :type', { type: filterDto.type });
+    }
+
+    if (filterDto.assignedToId) {
+      query.andWhere('maintenance.assignedToId = :assignedToId', {
+        assignedToId: filterDto.assignedToId
       });
     }
 
-    if (filterDto.date_from && filterDto.date_to) {
-      query.andWhere('maintenance.created_at BETWEEN :start AND :end', {
-        start: filterDto.date_from,
-        end: filterDto.date_to
+    if (filterDto.atmId) {
+      query.andWhere('maintenance.atmId = :atmId', { atmId: filterDto.atmId });
+    }
+
+    if (filterDto.requiresFollowUp !== undefined) {
+      query.andWhere('maintenance.requiresFollowUp = :requiresFollowUp', {
+        requiresFollowUp: filterDto.requiresFollowUp
       });
     }
 
-    const total = await query.getCount();
-    const records = await query
-      .skip((filterDto.page - 1) * filterDto.limit)
-      .take(filterDto.limit)
-      .getMany();
+    if (filterDto.startDate && filterDto.endDate) {
+      query.andWhere('maintenance.createdAt BETWEEN :startDate AND :endDate', {
+        startDate: filterDto.startDate,
+        endDate: filterDto.endDate
+      });
+    }
 
-    return { records, total };
+    // Ordenamiento
+    if (filterDto.sortBy) {
+      query.orderBy(`maintenance.${filterDto.sortBy}`, filterDto.sortOrder);
+    } else {
+      query.orderBy('maintenance.createdAt', 'DESC');
+    }
+
+    // Paginación
+    const page = filterDto.page || 1;
+    const limit = filterDto.limit || 10;
+    query.skip((page - 1) * limit).take(limit);
+
+    const [records, total] = await query.getManyAndCount();
+    return {
+      records,
+      total,
+      page,
+      limit,
+      totalPages: Math.ceil(total / limit)
+    };
   }
 
   async findOne(id: string): Promise<Maintenance> {
     const maintenance = await this.maintenanceRepository.findOne({
       where: { id },
-      relations: ['technician', 'atm', 'parts', 'measurements', 'comments']
+      relations: ['createdBy', 'assignedTo', 'parts', 'tasks', 'comments']
     });
 
     if (!maintenance) {
-      throw new NotFoundException(`Maintenance #${id} not found`);
+      throw new NotFoundException(`Maintenance record #${id} not found`);
     }
 
     return maintenance;
@@ -98,79 +117,69 @@ export class MaintenanceService {
 
   async update(id: string, updateMaintenanceDto: UpdateMaintenanceDto): Promise<Maintenance> {
     const maintenance = await this.findOne(id);
-
     Object.assign(maintenance, updateMaintenanceDto);
-
     return this.maintenanceRepository.save(maintenance);
   }
 
   async delete(id: string): Promise<void> {
     const result = await this.maintenanceRepository.delete(id);
     if (result.affected === 0) {
-      throw new NotFoundException(`Maintenance #${id} not found`);
+      throw new NotFoundException(`Maintenance record #${id} not found`);
     }
   }
 
-  async addParts(maintenanceId: string, parts: any[]): Promise<Maintenance> {
+  async findParts(maintenanceId: string): Promise<MaintenancePart[]> {
+    const maintenance = await this.findOne(maintenanceId);
+    return this.maintenancePartRepository.find({
+      where: { maintenance: { id: maintenanceId } },
+      relations: ['addedBy']
+    });
+  }
+
+  async addParts(maintenanceId: string, parts: MaintenancePart[]): Promise<Maintenance> {
     const maintenance = await this.findOne(maintenanceId);
 
-    const newParts = this.maintenancePartRepository.create(
-      parts.map(part => ({ ...part, maintenance }))
+    const newParts = parts.map(part =>
+      this.maintenancePartRepository.create({
+        ...part,
+        maintenance
+      })
     );
 
     await this.maintenancePartRepository.save(newParts);
     return this.findOne(maintenanceId);
   }
 
-  async addComment(maintenanceId: string, commentData: any): Promise<MaintenanceComment> {
+  async findComments(maintenanceId: string): Promise<MaintenanceComment[]> {
+    return this.maintenanceCommentRepository.find({
+      where: { maintenance: { id: maintenanceId } },
+      relations: ['createdBy'],
+      order: { createdAt: 'DESC' }
+    });
+  }
+
+  async addComment(
+    maintenanceId: string,
+    commentData: { content: string; created_by: User }
+  ): Promise<MaintenanceComment> {
     const maintenance = await this.findOne(maintenanceId);
 
     const comment = this.maintenanceCommentRepository.create({
-      ...commentData,
-      maintenance
+      content: commentData.content,
+      maintenance,
+      createdBy: commentData.created_by,
+      createdById: commentData.created_by.id
     });
 
     return this.maintenanceCommentRepository.save(comment);
   }
 
-  async addAttachment(maintenanceId: string, attachmentData: any): Promise<MaintenanceAttachment> {
+  async assignTechnician(maintenanceId: string, technicianId: string): Promise<Maintenance> {
     const maintenance = await this.findOne(maintenanceId);
 
-    const attachment = this.maintenanceAttachmentRepository.create({
-      ...attachmentData,
-      maintenance
-    });
+    maintenance.assignedToId = technicianId;
+    maintenance.assignedTo = { id: technicianId } as User;
 
-    return this.maintenanceAttachmentRepository.save(attachment);
-  }
-
-  async findInProgress(): Promise<Maintenance[]> {
-    return this.maintenanceRepository.find({
-      where: { status: MaintenanceStatus.IN_PROGRESS },
-      relations: ['technician', 'atm']
-    });
-  }
-
-  async findRequiringFollowUp(): Promise<Maintenance[]> {
-    return this.maintenanceRepository.find({
-      where: { requires_follow_up: true },
-      relations: ['technician', 'atm']
-    });
-  }
-
-  async findByATM(atmId: string): Promise<Maintenance[]> {
-    return this.maintenanceRepository.find({
-      where: { atm: { id: atmId } },
-      relations: ['technician'],
-      order: { created_at: 'DESC' }
-    });
-  }
-
-  async findByTechnician(technicianId: string): Promise<Maintenance[]> {
-    return this.maintenanceRepository.find({
-      where: { technician: { id: technicianId } },
-      relations: ['atm'],
-      order: { created_at: 'DESC' }
-    });
+    return this.maintenanceRepository.save(maintenance);
   }
 }

@@ -28,7 +28,7 @@ export class CommentsService {
 
     const comment = this.ticketCommentsRepository.create({
       ...dto,
-      created_by: { id: userId }
+      createdBy: { id: userId }
     });
 
     return this.ticketCommentsRepository.save(comment);
@@ -36,16 +36,16 @@ export class CommentsService {
 
   async getTicketComments(ticketId: string) {
     return this.ticketCommentsRepository.find({
-      where: { ticket_id: ticketId },
-      relations: ['created_by'],
-      order: { created_at: 'DESC' }
+      where: { ticketId },
+      relations: ['createdBy'],
+      order: { createdAt: 'DESC' }
     });
   }
 
   async getTicketCommentById(id: string) {
     const comment = await this.ticketCommentsRepository.findOne({
       where: { id },
-      relations: ['created_by']
+      relations: ['createdBy']
     });
 
     if (!comment) {
@@ -58,7 +58,7 @@ export class CommentsService {
   async updateTicketComment(id: string, dto: UpdateTicketCommentDto, userId: string) {
     const comment = await this.getTicketCommentById(id);
 
-    if (comment.created_by.id !== userId) {
+    if (comment.createdBy.id !== userId) {
       throw new ForbiddenException('No tienes permiso para editar este comentario');
     }
 
@@ -71,7 +71,7 @@ export class CommentsService {
   async deleteTicketComment(id: string, userId: string) {
     const comment = await this.getTicketCommentById(id);
 
-    if (comment.created_by.id !== userId) {
+    if (comment.createdBy.id !== userId) {
       throw new ForbiddenException('No tienes permiso para eliminar este comentario');
     }
 
@@ -87,7 +87,9 @@ export class CommentsService {
 
     const comment = this.maintenanceCommentsRepository.create({
       ...dto,
-      created_by_id: userId
+      createdById: userId,
+      maintenanceId: maintenance.id,
+      maintenance
     });
 
     return this.maintenanceCommentsRepository.save(comment);
@@ -95,16 +97,16 @@ export class CommentsService {
 
   async getMaintenanceComments(maintenanceId: string) {
     return this.maintenanceCommentsRepository.find({
-      where: { maintenance_record_id: maintenanceId },
-      relations: ['created_by', 'updated_by'],
-      order: { created_at: 'DESC' }
+      where: { maintenanceId },
+      relations: ['createdBy', 'editedBy'],
+      order: { createdAt: 'DESC' }
     });
   }
 
   async getMaintenanceCommentById(id: string) {
     const comment = await this.maintenanceCommentsRepository.findOne({
       where: { id },
-      relations: ['created_by', 'updated_by']
+      relations: ['createdBy', 'editedBy']
     });
 
     if (!comment) {
@@ -124,7 +126,8 @@ export class CommentsService {
     return this.maintenanceCommentsRepository.save({
       ...comment,
       ...dto,
-      updated_by_id: userId
+      editedById: userId,
+      editedAt: new Date()
     });
   }
 

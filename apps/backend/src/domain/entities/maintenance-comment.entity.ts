@@ -1,63 +1,78 @@
 import {
   Entity,
-  PrimaryGeneratedColumn,
   Column,
-  CreateDateColumn,
-  UpdateDateColumn,
+  PrimaryGeneratedColumn,
   ManyToOne,
-  JoinColumn
+  JoinColumn,
+  CreateDateColumn,
+  UpdateDateColumn
 } from 'typeorm';
-import { MaintenanceRecord } from './maintenance-record.entity';
 import { User } from './user.entity';
+import { Maintenance } from './maintenance.entity';
 
 @Entity('maintenance_comments')
 export class MaintenanceComment {
   @PrimaryGeneratedColumn('uuid')
   id: string;
 
-  @Column({ type: 'uuid' })
-  maintenance_record_id: string;
-
-  @Column({ type: 'text' })
+  @Column('text')
   content: string;
 
-  @Column({ type: 'boolean', default: false })
-  is_technical: boolean;
+  @ManyToOne(() => Maintenance)
+  @JoinColumn({ name: 'maintenance_id' })
+  maintenance: Maintenance;
 
-  @Column({ type: 'boolean', default: false })
-  is_internal: boolean;
+  @Column({ name: 'maintenance_id' })
+  maintenanceId: string;
 
-  @CreateDateColumn({ type: 'timestamp' })
-  created_at: Date;
+  @ManyToOne(() => User)
+  @JoinColumn({ name: 'created_by' })
+  createdBy: User;
 
-  @UpdateDateColumn({ type: 'timestamp' })
-  updated_at: Date;
+  @Column({ name: 'created_by' })
+  createdById: string;
 
-  @Column({ type: 'uuid', nullable: true })
-  created_by_id: string;
+  @Column({ name: 'is_technical', default: false })
+  isTechnical: boolean;
 
-  @Column({ type: 'uuid', nullable: true })
-  updated_by_id: string;
+  @Column({ name: 'is_private', default: false })
+  isPrivate: boolean;
 
-  // Relaciones
-  @ManyToOne(() => MaintenanceRecord, maintenance => maintenance.comments)
-  @JoinColumn({ name: 'maintenance_record_id' })
-  maintenance_record: MaintenanceRecord;
+  @Column({ type: 'jsonb', nullable: true })
+  metadata: Record<string, any>;
+
+  @Column({ name: 'parent_comment_id', nullable: true })
+  parentCommentId: string;
+
+  @ManyToOne(() => MaintenanceComment, { nullable: true })
+  @JoinColumn({ name: 'parent_comment_id' })
+  parentComment: MaintenanceComment;
+
+  @Column({ type: 'timestamp', nullable: true })
+  editedAt: Date;
 
   @ManyToOne(() => User, { nullable: true })
-  @JoinColumn({ name: 'created_by_id' })
-  created_by: User;
+  @JoinColumn({ name: 'edited_by' })
+  editedBy: User;
 
-  @ManyToOne(() => User, { nullable: true })
-  @JoinColumn({ name: 'updated_by_id' })
-  updated_by: User;
+  @Column({ name: 'edited_by_id', nullable: true })
+  editedById: string;
 
-  // Métodos de utilidad
-  isEdited(): boolean {
-    return this.created_at.getTime() !== this.updated_at.getTime();
-  }
+  @CreateDateColumn({ name: 'created_at' })
+  createdAt: Date;
+
+  @UpdateDateColumn({ name: 'updated_at' })
+  updatedAt: Date;
 
   canEdit(userId: string): boolean {
-    return this.created_by_id === userId;
+    if (this.createdById === userId) {
+      return true;
+    }
+
+    if (this.editedById) {
+      return this.editedById === userId;
+    }
+
+    return false;
   }
 }

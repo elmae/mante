@@ -1,48 +1,101 @@
 import { NestFactory } from '@nestjs/core';
-import { ValidationPipe, UnauthorizedException } from '@nestjs/common';
-import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
-import { AppModule } from './app.module';
-import * as compression from 'compression';
-import * as cors from 'cors';
+import { ValidationPipe, Logger } from '@nestjs/common';
+import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
+import compression from 'compression';
 import helmet from 'helmet';
+import { ConfigService } from '@nestjs/config';
+import { AppModule } from './app.module';
 
 async function bootstrap() {
-  const app = await NestFactory.create(AppModule);
+  const app = await NestFactory.create(AppModule, {
+    logger: ['error', 'warn', 'log', 'debug', 'verbose']
+  });
 
-  // Configuración de error handling global
-  app.useGlobalFilters(new UnauthorizedException());
+  const configService = app.get(ConfigService);
+  const port = configService.get<number>('PORT', 3000);
+  const environment = configService.get<string>('NODE_ENV', 'development');
 
-  // Configuración global de pipes
-  app.useGlobalPipes(
-    new ValidationPipe({
-      whitelist: true,
-      transform: true,
-      forbidNonWhitelisted: true
-    })
-  );
+  // Configuración global
+  app.enableCors({
+    origin: configService.get<string>('ALLOWED_ORIGINS', '*').split(','),
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
+    credentials: true,
+    exposedHeaders: ['Content-Disposition']
+  });
 
   // Middlewares
   app.use(compression());
-  app.use(cors());
-  app.use(helmet());
+  app.use(
+    helmet({
+      crossOriginResourcePolicy: { policy: 'cross-origin' },
+      contentSecurityPolicy: environment === 'production'
+    })
+  );
 
-  // Configurar prefijo global de API
+  // Validación global
+  app.useGlobalPipes(
+    new ValidationPipe({
+      transform: true,
+      whitelist: true,
+      forbidNonWhitelisted: true,
+      transformOptions: {
+        enableImplicitConversion: true
+      },
+      validateCustomDecorators: true
+    })
+  );
+
+  // Configuración de Swagger
+  if (environment !== 'production') {
+    const config = new DocumentBuilder()
+      .setTitle('ATM Maintenance API')
+      .setDescription('API para sistema de mantenimiento de ATMs')
+      .setVersion('1.0')
+      .addBearerAuth()
+      .addTag('auth', 'Endpoints de autenticación')
+      .addTag('users', 'Gestión de usuarios')
+      .addTag('atms', 'Gestión de ATMs')
+      .addTag('maintenance', 'Gestión de mantenimientos')
+      .addTag('tickets', 'Gestión de tickets')
+      .build();
+
+    const document = SwaggerModule.createDocument(app, config);
+    SwaggerModule.setup('api/docs', app, document, {
+      swaggerOptions: {
+        persistAuthorization: true,
+        tagsSorter: 'alpha',
+        operationsSorter: 'alpha'
+      }
+    });
+  }
+
+  // Prefix global
   app.setGlobalPrefix('api/v1');
 
-  // Configuración Swagger
-  const config = new DocumentBuilder()
-    .setTitle('Mante API')
-    .setDescription('API para el sistema de mantenimiento de ATMs')
-    .setVersion('1.0')
-    .addBearerAuth()
-    .build();
+  // Manejo de errores no capturados
+  process.on('unhandledRejection', (reason, promise) => {
+    Logger.error(`Unhandled Rejection at: ${promise}, reason: ${reason}`, 'Bootstrap');
+  });
 
-  const document = SwaggerModule.createDocument(app, config);
-  SwaggerModule.setup('api', app, document);
+  process.on('uncaughtException', error => {
+    Logger.error(`Uncaught Exception: ${error.message}`, error.stack, 'Bootstrap');
+    process.exit(1);
+  });
 
-  const port = process.env.PORT || 3000;
+  // Iniciar servidor
   await app.listen(port);
-  console.log(`🚀 Servidor corriendo en puerto ${port}`);
+
+  Logger.log(`🚀 Application is running on: http://localhost:${port}/api/v1`, 'Bootstrap');
+
+  if (environment !== 'production') {
+    Logger.log(
+      `📚 Swagger documentation is available at: http://localhost:${port}/api/docs`,
+      'Bootstrap'
+    );
+  }
 }
 
-bootstrap();
+bootstrap().catch(error => {
+  Logger.error(`❌ Error starting application: ${error.message}`, error.stack);
+  process.exit(1);
+});

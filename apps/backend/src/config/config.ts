@@ -1,41 +1,119 @@
-import * as dotenv from 'dotenv';
-import { join } from 'path';
+import { validationSchema } from './validation.schema';
+import { AppConfig, Environment } from './index';
 
-// Cargar variables de entorno según el ambiente
-const env = process.env.NODE_ENV || 'development';
-const envFile = env === 'test' ? '.env.test' : '.env';
-dotenv.config({ path: join(process.cwd(), envFile) });
-
-export const config = {
-  env,
-  port: parseInt(process.env.PORT || '3000', 10),
-  apiPrefix: process.env.API_PREFIX || '/api/v1',
-  database: {
-    host: process.env.DB_HOST || 'localhost',
-    port: parseInt(process.env.DB_PORT || '5432', 10),
-    username: process.env.DB_USER || 'cmms_user',
-    password: process.env.DB_PASS || 'cmms_password2',
-    database: process.env.DB_NAME || 'mante_db',
-    entities: [join(__dirname, '../domain/entities/*.entity{.ts,.js}')],
-    migrations: [join(__dirname, '../infrastructure/database/migrations/*.{ts,js}')],
-    synchronize: env === 'development',
-    logging: env === 'development'
-  },
-  jwt: {
-    secret: process.env.JWT_SECRET || 'your-secret-key',
-    expiresIn: process.env.JWT_EXPIRES_IN || '1h',
-    refreshExpiresIn: process.env.JWT_REFRESH_EXPIRES_IN || '7d'
-  },
-  redis: {
-    host: process.env.REDIS_HOST || 'localhost',
-    port: parseInt(process.env.REDIS_PORT || '6379', 10),
-    password: process.env.REDIS_PASSWORD,
-    db: parseInt(process.env.REDIS_DB || '0', 10)
-  },
-  cors: {
-    origin: process.env.CORS_ORIGIN?.split(',') || ['http://localhost:3000'],
-    credentials: process.env.CORS_CREDENTIALS === 'true'
-  }
+const isValidEnvironment = (env: string): env is Environment => {
+  return Object.values(Environment).includes(env as Environment);
 };
 
-export type Config = typeof config;
+export const config = (): AppConfig => {
+  const validation = validationSchema.validate(process.env, {
+    abortEarly: false,
+    allowUnknown: true,
+    stripUnknown: true
+  });
+
+  if (validation.error) {
+    throw new Error(`Config validation error: ${validation.error.message}`);
+  }
+
+  const { value: env } = validation;
+
+  const environment = env.NODE_ENV;
+  if (!isValidEnvironment(environment)) {
+    throw new Error(`Invalid environment: ${environment}`);
+  }
+
+  return {
+    env: environment,
+    port: parseInt(env.PORT, 10),
+    host: env.HOST,
+    apiPrefix: env.API_PREFIX,
+    apiVersion: env.API_VERSION,
+    database: {
+      type: 'postgres',
+      host: env.DB_HOST || '',
+      port: parseInt(env.DB_PORT, 10),
+      username: env.DB_USER || '',
+      password: env.DB_PASS || '',
+      database: env.DB_NAME || '',
+      schema: env.DB_SCHEMA,
+      synchronize: env.DB_SYNC === 'true',
+      ssl: env.DB_SSL === 'true',
+      logging: env.DB_LOGGING === 'true'
+    },
+    jwt: {
+      secret: env.JWT_SECRET,
+      expiresIn: env.JWT_EXPIRES_IN,
+      refreshExpiresIn: env.JWT_REFRESH_EXPIRES_IN,
+      algorithm: env.JWT_ALGORITHM
+    },
+    cors: {
+      origin: env.CORS_ORIGIN,
+      credentials: env.CORS_CREDENTIALS
+    },
+    redis: env.REDIS_URL
+      ? {
+          host: env.REDIS_HOST || 'localhost',
+          port: parseInt(env.REDIS_PORT, 10) || 6379,
+          password: env.REDIS_PASSWORD
+        }
+      : undefined,
+    email: env.SMTP_HOST
+      ? {
+          host: env.SMTP_HOST,
+          port: parseInt(env.SMTP_PORT, 10),
+          secure: env.SMTP_SECURE === 'true',
+          auth: {
+            user: env.SMTP_USER || '',
+            pass: env.SMTP_PASS || ''
+          }
+        }
+      : undefined,
+    storage: {
+      type: env.STORAGE_TYPE as 'local' | 's3',
+      local:
+        env.STORAGE_TYPE === 'local'
+          ? {
+              path: env.STORAGE_LOCAL_PATH || 'uploads'
+            }
+          : undefined,
+      s3:
+        env.STORAGE_TYPE === 's3'
+          ? {
+              bucket: env.AWS_S3_BUCKET || '',
+              region: env.AWS_S3_REGION || '',
+              accessKeyId: env.AWS_ACCESS_KEY_ID || '',
+              secretAccessKey: env.AWS_SECRET_ACCESS_KEY || ''
+            }
+          : undefined
+    },
+    logging: {
+      level: env.LOG_LEVEL || 'info',
+      format: env.LOG_FORMAT || 'json',
+      file: env.LOG_FILE
+    }
+  };
+};
+
+// Export a type-safe config getter function
+export function getConfig<T extends keyof AppConfig>(key: T): AppConfig[T] {
+  const configValue = config()[key];
+  if (configValue === undefined) {
+    throw new Error(`Configuration key "${key}" not found`);
+  }
+  return configValue;
+}
+
+// Export individual config getters for common use cases
+export const getEnvironment = (): Environment => {
+  const env = getConfig('env');
+  if (!isValidEnvironment(env)) {
+    throw new Error(`Invalid environment: ${env}`);
+  }
+  return env;
+};
+
+export const getDatabaseConfig = () => getConfig('database');
+export const getJwtConfig = () => getConfig('jwt');
+export const getStorageConfig = () => getConfig('storage');
+export const getLoggingConfig = () => getConfig('logging');

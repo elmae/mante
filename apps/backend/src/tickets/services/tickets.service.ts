@@ -1,219 +1,133 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { Ticket, TicketStatus } from '../../domain/entities/ticket.entity';
-import { Comment } from '../../domain/entities/comment.entity';
-import { Attachment } from '../../domain/entities/attachment.entity';
+import { Ticket, TicketStatus, User, Comment } from '../../domain/entities';
 import { CreateTicketDto } from '../dto/create-ticket.dto';
 import { UpdateTicketDto } from '../dto/update-ticket.dto';
-import { TicketFilterDto } from '../dto/filter-ticket.dto';
-import { User } from '../../domain/entities/user.entity';
+import { FilterTicketDto } from '../dto/filter-ticket.dto';
 
 @Injectable()
 export class TicketsService {
   constructor(
     @InjectRepository(Ticket)
-    private readonly ticketRepository: Repository<Ticket>,
+    private ticketRepository: Repository<Ticket>,
     @InjectRepository(Comment)
-    private readonly commentRepository: Repository<Comment>,
-    @InjectRepository(Attachment)
-    private readonly attachmentRepository: Repository<Attachment>
+    private commentRepository: Repository<Comment>
   ) {}
 
-  async create(createTicketDto: CreateTicketDto): Promise<Ticket> {
+  async create(createTicketDto: CreateTicketDto, user: User): Promise<Ticket> {
     const ticket = this.ticketRepository.create({
       ...createTicketDto,
-      status: TicketStatus.OPEN
+      createdBy: user,
+      createdById: user.id,
+      status: TicketStatus.PENDING
     });
 
-    await this.validateTicketData(ticket);
-    return await this.ticketRepository.save(ticket);
+    return this.ticketRepository.save(ticket);
+  }
+
+  async findAll(filterDto: FilterTicketDto) {
+    const query = this.ticketRepository
+      .createQueryBuilder('ticket')
+      .leftJoinAndSelect('ticket.createdBy', 'createdBy')
+      .leftJoinAndSelect('ticket.assignedTo', 'assignedTo')
+      .leftJoinAndSelect('ticket.comments', 'comments');
+
+    if (filterDto.status) {
+      query.andWhere('ticket.status = :status', { status: filterDto.status });
+    }
+
+    if (filterDto.priority) {
+      query.andWhere('ticket.priority = :priority', { priority: filterDto.priority });
+    }
+
+    if (filterDto.type) {
+      query.andWhere('ticket.type = :type', { type: filterDto.type });
+    }
+
+    if (filterDto.assignedToId) {
+      query.andWhere('ticket.assignedToId = :assignedToId', {
+        assignedToId: filterDto.assignedToId
+      });
+    }
+
+    return query.getMany();
   }
 
   async findById(id: string): Promise<Ticket> {
-    return await this.ticketRepository.findOneOrFail({
+    const ticket = await this.ticketRepository.findOne({
       where: { id },
-      relations: ['atm', 'assigned_to', 'comments', 'attachments']
+      relations: ['createdBy', 'assignedTo', 'comments']
     });
+
+    if (!ticket) {
+      throw new NotFoundException(`Ticket #${id} not found`);
+    }
+
+    return ticket;
   }
 
   async update(id: string, updateTicketDto: UpdateTicketDto): Promise<Ticket> {
     const ticket = await this.findById(id);
 
-    if (updateTicketDto.status && updateTicketDto.status !== ticket.status) {
-      await this.validateStatusTransition(ticket, updateTicketDto.status);
+    // Validar transiciones de estado
+    if (
+      updateTicketDto.status &&
+      !this.isValidStatusTransition(ticket.status, updateTicketDto.status)
+    ) {
+      throw new BadRequestException(
+        `Invalid status transition from ${ticket.status} to ${updateTicketDto.status}`
+      );
     }
 
     Object.assign(ticket, updateTicketDto);
-    return await this.ticketRepository.save(ticket);
-  }
 
-  async delete(id: string): Promise<void> {
-    const ticket = await this.findById(id);
-
-    if (ticket.status !== TicketStatus.OPEN) {
-      throw new Error('Solo se pueden eliminar tickets en estado OPEN');
+    if (updateTicketDto.status === TicketStatus.RESOLVED) {
+      ticket.resolvedAt = new Date();
+    } else if (updateTicketDto.status === TicketStatus.CLOSED) {
+      ticket.closedAt = new Date();
     }
 
-    await this.ticketRepository.remove(ticket);
-  }
-
-  async list(filters: TicketFilterDto): Promise<{ tickets: Ticket[]; total: number }> {
-    const queryBuilder = this.ticketRepository
-      .createQueryBuilder('ticket')
-      .leftJoinAndSelect('ticket.atm', 'atm')
-      .leftJoinAndSelect('ticket.assigned_to', 'assigned_to');
-
-    if (filters.status) {
-      queryBuilder.andWhere('ticket.status = :status', { status: filters.status });
-    }
-
-    if (filters.type) {
-      queryBuilder.andWhere('ticket.type = :type', { type: filters.type });
-    }
-
-    if (filters.priority) {
-      queryBuilder.andWhere('ticket.priority = :priority', {
-        priority: filters.priority
-      });
-    }
-
-    if (filters.atm_id) {
-      queryBuilder.andWhere('ticket.atm_id = :atmId', { atmId: filters.atm_id });
-    }
-
-    if (filters.technician_id) {
-      queryBuilder.andWhere('ticket.assigned_to = :technicianId', {
-        technicianId: filters.technician_id
-      });
-    }
-
-    if (filters.search) {
-      queryBuilder.andWhere('(ticket.title ILIKE :search OR ticket.description ILIKE :search)', {
-        search: `%${filters.search}%`
-      });
-    }
-
-    if (filters.start_date) {
-      queryBuilder.andWhere('ticket.created_at >= :startDate', {
-        startDate: filters.start_date
-      });
-    }
-
-    if (filters.end_date) {
-      queryBuilder.andWhere('ticket.created_at <= :endDate', {
-        endDate: filters.end_date
-      });
-    }
-
-    const page = filters.page || 1;
-    const limit = filters.limit || 10;
-
-    const [tickets, total] = await queryBuilder
-      .skip((page - 1) * limit)
-      .take(limit)
-      .getManyAndCount();
-
-    return { tickets, total };
+    return this.ticketRepository.save(ticket);
   }
 
   async assignTechnician(id: string, technicianId: string): Promise<Ticket> {
     const ticket = await this.findById(id);
 
-    if (ticket.status !== TicketStatus.OPEN) {
-      throw new Error('Solo se pueden asignar tickets en estado OPEN');
+    if (!ticket.canAssign()) {
+      throw new BadRequestException('Ticket cannot be assigned in its current status');
     }
 
-    ticket.assigned_to = { id: technicianId } as User;
+    ticket.assignedTo = { id: technicianId } as User;
+    ticket.assignedToId = technicianId;
     ticket.status = TicketStatus.IN_PROGRESS;
 
-    return await this.ticketRepository.save(ticket);
+    return this.ticketRepository.save(ticket);
   }
 
-  async updateStatus(id: string, status: TicketStatus): Promise<Ticket> {
-    const ticket = await this.findById(id);
-    await this.validateStatusTransition(ticket, status);
-
-    ticket.status = status;
-    if (status === TicketStatus.CLOSED) {
-      ticket.completion_date = new Date();
+  async delete(id: string): Promise<void> {
+    const result = await this.ticketRepository.delete(id);
+    if (result.affected === 0) {
+      throw new NotFoundException(`Ticket #${id} not found`);
     }
-
-    return await this.ticketRepository.save(ticket);
   }
 
-  async addComment(id: string, content: string): Promise<Comment> {
-    const ticket = await this.findById(id);
-
-    const comment = this.commentRepository.create({
-      content,
-      ticket
-    });
-
-    return await this.commentRepository.save(comment);
-  }
-
-  async getComments(id: string): Promise<Comment[]> {
-    return await this.commentRepository.find({
-      where: { ticket: { id } },
-      relations: ['created_by'],
-      order: { created_at: 'DESC' }
+  async findComments(ticketId: string) {
+    return this.commentRepository.find({
+      where: { ticketId },
+      relations: ['createdBy'],
+      order: { createdAt: 'DESC' }
     });
   }
 
-  async addAttachment(id: string, attachmentData: Partial<Attachment>): Promise<Attachment> {
-    const ticket = await this.findById(id);
-
-    const attachment = this.attachmentRepository.create({
-      ...attachmentData,
-      ticket
-    });
-
-    return await this.attachmentRepository.save(attachment);
-  }
-
-  async getAttachments(id: string): Promise<Attachment[]> {
-    return await this.attachmentRepository.find({
-      where: { ticket: { id } },
-      relations: ['created_by']
-    });
-  }
-
-  async deleteAttachment(ticketId: string, attachmentId: string): Promise<void> {
-    const attachment = await this.attachmentRepository.findOne({
-      where: { id: attachmentId, ticket: { id: ticketId } }
-    });
-
-    if (!attachment) {
-      throw new Error('Attachment not found');
-    }
-
-    await this.attachmentRepository.remove(attachment);
-  }
-
-  private async validateTicketData(ticket: Partial<Ticket>): Promise<void> {
-    if (!ticket.atm_id) {
-      throw new Error('ATM ID is required');
-    }
-
-    if (!ticket.title || !ticket.description) {
-      throw new Error('Title and description are required');
-    }
-
-    await Promise.resolve(); // Para satisfacer el lint de async/await
-  }
-
-  private async validateStatusTransition(ticket: Ticket, newStatus: TicketStatus): Promise<void> {
+  private isValidStatusTransition(fromStatus: TicketStatus, toStatus: TicketStatus): boolean {
     const validTransitions: Record<TicketStatus, TicketStatus[]> = {
-      [TicketStatus.OPEN]: [TicketStatus.IN_PROGRESS],
-      [TicketStatus.IN_PROGRESS]: [TicketStatus.CLOSED],
+      [TicketStatus.PENDING]: [TicketStatus.IN_PROGRESS],
+      [TicketStatus.IN_PROGRESS]: [TicketStatus.RESOLVED, TicketStatus.PENDING],
+      [TicketStatus.RESOLVED]: [TicketStatus.CLOSED, TicketStatus.IN_PROGRESS],
       [TicketStatus.CLOSED]: []
     };
 
-    if (!validTransitions[ticket.status].includes(newStatus)) {
-      throw new Error(`Invalid status transition from ${ticket.status} to ${newStatus}`);
-    }
-
-    await Promise.resolve(); // Para satisfacer el lint de async/await
+    return validTransitions[fromStatus]?.includes(toStatus) ?? false;
   }
 }

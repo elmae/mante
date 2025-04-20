@@ -1,16 +1,17 @@
-import { Module, forwardRef } from '@nestjs/common';
+import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
-import { MaintenanceController } from './controllers/maintenance.controller';
+import {
+  Maintenance,
+  MaintenancePart,
+  MaintenanceTask,
+  MaintenanceComment,
+  MaintenanceAttachment
+} from '../domain/entities';
 import { MaintenanceService } from './services/maintenance.service';
-import { Maintenance } from '../domain/entities/maintenance.entity';
-import { MaintenancePart } from '../domain/entities/maintenance-part.entity';
-import { MaintenanceTask } from '../domain/entities/maintenance-task.entity';
-import { MaintenanceComment } from '../domain/entities/maintenance-comment.entity';
-import { MaintenanceAttachment } from '../domain/entities/maintenance-attachment.entity';
-import { AuthModule } from '../auth/auth.module';
+import { MaintenanceTasksService } from './services/maintenance-tasks.service';
+import { MaintenanceController } from './controllers/maintenance.controller';
+import { MaintenanceTasksController } from './controllers/maintenance-tasks.controller';
 import { UsersModule } from '../users/users.module';
-import { AtmsModule } from '../atms/atms.module';
-import { TicketsModule } from '../tickets/tickets.module';
 
 @Module({
   imports: [
@@ -21,13 +22,10 @@ import { TicketsModule } from '../tickets/tickets.module';
       MaintenanceComment,
       MaintenanceAttachment
     ]),
-    forwardRef(() => AuthModule),
-    forwardRef(() => UsersModule),
-    forwardRef(() => AtmsModule),
-    forwardRef(() => TicketsModule)
+    UsersModule
   ],
-  controllers: [MaintenanceController],
-  providers: [MaintenanceService],
-  exports: [MaintenanceService]
+  controllers: [MaintenanceController, MaintenanceTasksController],
+  providers: [MaintenanceService, MaintenanceTasksService],
+  exports: [MaintenanceService, MaintenanceTasksService]
 })
 export class MaintenanceModule {}

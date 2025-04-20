@@ -1,11 +1,10 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { ATM } from '../../domain/entities/atm.entity';
+import { ATM } from '../../domain/entities';
 import { CreateAtmDto } from '../dto/create-atm.dto';
 import { UpdateAtmDto } from '../dto/update-atm.dto';
-import { FilterAtmDto } from '../dto/filter-atm.dto';
-import { Point } from 'geojson';
+import { FilterAtmDto, AtmSortField } from '../dto/filter-atm.dto';
 
 @Injectable()
 export class AtmsService {
@@ -14,160 +13,146 @@ export class AtmsService {
     private readonly atmRepository: Repository<ATM>
   ) {}
 
-  async create(createAtmDto: CreateAtmDto, userId: string): Promise<ATM> {
-    const atmData = {
-      ...createAtmDto,
-      created_by_id: userId,
-      updated_by_id: userId,
-      location:
-        createAtmDto.location &&
-        ({
-          type: 'Point' as const,
-          coordinates: createAtmDto.location.coordinates
-        } as Point),
-      technical_details: createAtmDto.technical_details && {
-        manufacturer: createAtmDto.technical_details.manufacturer || 'Unknown',
-        installation_date: new Date(createAtmDto.technical_details.installation_date || new Date()),
-        last_maintenance_date: createAtmDto.technical_details.last_maintenance_date
-          ? new Date(createAtmDto.technical_details.last_maintenance_date)
-          : new Date(),
-        software_version: createAtmDto.technical_details.software_version || '1.0.0',
-        hardware_version: createAtmDto.technical_details.hardware_version || '1.0.0',
-        network_config: {
-          ip_address: createAtmDto.technical_details.network_config?.ip_address || '0.0.0.0',
-          subnet_mask:
-            createAtmDto.technical_details.network_config?.subnet_mask || '255.255.255.0',
-          gateway: createAtmDto.technical_details.network_config?.gateway || '0.0.0.0'
-        },
-        capabilities: createAtmDto.technical_details.capabilities || []
-      }
-    };
-
-    const atm = this.atmRepository.create(atmData);
-    return await this.atmRepository.save(atm);
+  async create(createAtmDto: CreateAtmDto): Promise<ATM> {
+    const atm = this.atmRepository.create(createAtmDto);
+    return this.atmRepository.save(atm);
   }
 
-  async findAll(filterDto: FilterAtmDto): Promise<[ATM[], number]> {
-    const {
-      page = 1,
-      limit = 10,
-      search,
-      status,
-      client_id,
-      zone_id,
-      sort_by,
-      sort_order
-    } = filterDto;
-    const skip = (page - 1) * limit;
+  async findAll(filterDto: FilterAtmDto) {
+    const query = this.atmRepository
+      .createQueryBuilder('atm')
+      .leftJoinAndSelect('atm.branch', 'branch');
 
-    const queryBuilder = this.atmRepository.createQueryBuilder('atm');
-
-    if (search) {
-      queryBuilder.where(
-        '(atm.serial_number ILIKE :search OR atm.model ILIKE :search OR atm.address ILIKE :search)',
-        { search: `%${search}%` }
+    // Búsqueda general
+    if (filterDto.search) {
+      query.andWhere(
+        '(atm.serialNumber ILIKE :search OR atm.model ILIKE :search OR atm.manufacturer ILIKE :search)',
+        { search: `%${filterDto.search}%` }
       );
     }
 
-    if (status) {
-      queryBuilder.andWhere('atm.status = :status', { status });
+    // Filtros específicos
+    if (filterDto.serialNumber) {
+      query.andWhere('atm.serialNumber = :serialNumber', {
+        serialNumber: filterDto.serialNumber
+      });
     }
 
-    if (client_id) {
-      queryBuilder.andWhere('atm.client_id = :client_id', { client_id });
+    if (filterDto.model) {
+      query.andWhere('atm.model = :model', { model: filterDto.model });
     }
 
-    if (zone_id) {
-      queryBuilder.andWhere('atm.zone_id = :zone_id', { zone_id });
+    if (filterDto.manufacturer) {
+      query.andWhere('atm.manufacturer = :manufacturer', {
+        manufacturer: filterDto.manufacturer
+      });
     }
 
-    if (sort_by) {
-      queryBuilder.orderBy(`atm.${sort_by}`, sort_order || 'ASC');
+    if (filterDto.city) {
+      query.andWhere('atm.city = :city', { city: filterDto.city });
     }
 
-    queryBuilder.skip(skip).take(limit);
+    if (filterDto.state) {
+      query.andWhere('atm.state = :state', { state: filterDto.state });
+    }
 
-    const [atms, total] = await queryBuilder.getManyAndCount();
-    return [atms, total];
+    if (filterDto.branchId) {
+      query.andWhere('atm.branchId = :branchId', {
+        branchId: filterDto.branchId
+      });
+    }
+
+    if (filterDto.isOperational !== undefined) {
+      query.andWhere('atm.isOperational = :isOperational', {
+        isOperational: filterDto.isOperational
+      });
+    }
+
+    // Filtros de fecha de mantenimiento
+    if (filterDto.maintenanceFrom) {
+      query.andWhere('atm.lastMaintenanceDate >= :maintenanceFrom', {
+        maintenanceFrom: filterDto.maintenanceFrom
+      });
+    }
+
+    if (filterDto.maintenanceTo) {
+      query.andWhere('atm.lastMaintenanceDate <= :maintenanceTo', {
+        maintenanceTo: filterDto.maintenanceTo
+      });
+    }
+
+    // Filtros de ubicación
+    if (filterDto.latitude && filterDto.longitude && filterDto.radius) {
+      query.andWhere(
+        'ST_DWithin(ST_MakePoint(atm.location.coordinates.longitude, atm.location.coordinates.latitude)::geography, ST_MakePoint(:longitude, :latitude)::geography, :radius)',
+        {
+          latitude: filterDto.latitude,
+          longitude: filterDto.longitude,
+          radius: filterDto.radius * 1000 // Convertir km a metros
+        }
+      );
+    }
+
+    // Ordenamiento
+    if (filterDto.sortBy) {
+      const sortField = this.getSortField(filterDto.sortBy);
+      query.orderBy(`atm.${sortField}`, filterDto.sortOrder);
+    } else {
+      query.orderBy('atm.createdAt', 'DESC');
+    }
+
+    // Paginación
+    const page = filterDto.page || 1;
+    const limit = filterDto.limit || 10;
+    query.skip((page - 1) * limit).take(limit);
+
+    const [records, total] = await query.getManyAndCount();
+
+    return {
+      records,
+      total,
+      page,
+      limit,
+      totalPages: Math.ceil(total / limit)
+    };
   }
 
   async findOne(id: string): Promise<ATM> {
-    const atm = await this.atmRepository.findOne({ where: { id } });
+    const atm = await this.atmRepository.findOne({
+      where: { id },
+      relations: ['branch']
+    });
+
     if (!atm) {
-      throw new NotFoundException(`ATM con ID ${id} no encontrado`);
+      throw new NotFoundException(`ATM #${id} not found`);
     }
+
     return atm;
   }
 
-  async update(id: string, updateAtmDto: UpdateAtmDto, userId: string): Promise<ATM> {
-    const currentAtm = await this.findOne(id);
-    const { location, technical_details, ...updateData } = updateAtmDto;
-
-    const updatedData = {
-      ...updateData,
-      updated_by_id: userId,
-      ...(location && {
-        location: {
-          type: 'Point' as const,
-          coordinates: location.coordinates
-        } as Point
-      }),
-      ...(technical_details && {
-        technical_details: {
-          ...currentAtm.technical_details,
-          ...technical_details,
-          installation_date: technical_details.installation_date
-            ? new Date(technical_details.installation_date)
-            : currentAtm.technical_details?.installation_date,
-          last_maintenance_date: technical_details.last_maintenance_date
-            ? new Date(technical_details.last_maintenance_date)
-            : currentAtm.technical_details?.last_maintenance_date,
-          network_config: technical_details.network_config
-            ? {
-                ...currentAtm.technical_details?.network_config,
-                ...technical_details.network_config
-              }
-            : currentAtm.technical_details?.network_config
-        }
-      })
-    };
-
-    await this.atmRepository.update(id, updatedData);
-    return this.findOne(id);
+  async update(id: string, updateAtmDto: UpdateAtmDto): Promise<ATM> {
+    const atm = await this.findOne(id);
+    Object.assign(atm, updateAtmDto);
+    return this.atmRepository.save(atm);
   }
 
   async remove(id: string): Promise<void> {
     const result = await this.atmRepository.delete(id);
     if (result.affected === 0) {
-      throw new NotFoundException(`ATM con ID ${id} no encontrado`);
+      throw new NotFoundException(`ATM #${id} not found`);
     }
   }
 
-  async findByProximity(latitude: number, longitude: number, radiusInKm: number): Promise<ATM[]> {
-    const point: Point = {
-      type: 'Point',
-      coordinates: [longitude, latitude]
+  private getSortField(sortBy: AtmSortField): string {
+    const sortFieldMap: Record<AtmSortField, string> = {
+      [AtmSortField.SERIAL_NUMBER]: 'serialNumber',
+      [AtmSortField.MODEL]: 'model',
+      [AtmSortField.MANUFACTURER]: 'manufacturer',
+      [AtmSortField.CREATED_AT]: 'createdAt',
+      [AtmSortField.LAST_MAINTENANCE]: 'lastMaintenanceDate',
+      [AtmSortField.STATUS]: 'isOperational'
     };
 
-    // Convertir radio de km a metros para ST_DWithin
-    const radiusInMeters = radiusInKm * 1000;
-
-    const atms = await this.atmRepository
-      .createQueryBuilder('atm')
-      .where(
-        'ST_DWithin(atm.location::geography, ST_SetSRID(ST_MakePoint(:longitude, :latitude), 4326)::geography, :radius)',
-        {
-          latitude,
-          longitude,
-          radius: radiusInMeters
-        }
-      )
-      .orderBy(
-        'ST_Distance(atm.location::geography, ST_SetSRID(ST_MakePoint(:longitude, :latitude), 4326)::geography)',
-        'ASC'
-      )
-      .getMany();
-
-    return atms;
+    return sortFieldMap[sortBy] || 'createdAt';
   }
 }

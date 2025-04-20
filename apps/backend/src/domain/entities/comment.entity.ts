@@ -1,37 +1,68 @@
 import {
   Entity,
-  PrimaryGeneratedColumn,
   Column,
-  CreateDateColumn,
-  UpdateDateColumn,
+  PrimaryGeneratedColumn,
   ManyToOne,
   JoinColumn,
-} from "typeorm";
-import { User } from "./user.entity";
-import { Ticket } from "./ticket.entity";
+  CreateDateColumn,
+  UpdateDateColumn
+} from 'typeorm';
+import { User } from './user.entity';
+import { Ticket } from './ticket.entity';
 
-@Entity("ticket_comments")
+@Entity('comments')
 export class Comment {
-  @PrimaryGeneratedColumn("uuid")
+  @PrimaryGeneratedColumn('uuid')
   id: string;
 
-  @Column({ type: "text" })
+  @Column('text')
   content: string;
 
-  @Column({ type: "uuid" })
-  ticket_id: string;
+  @ManyToOne(() => Ticket, ticket => ticket.comments)
+  @JoinColumn({ name: 'ticket_id' })
+  ticket: Ticket;
 
-  @CreateDateColumn({ type: "timestamp" })
-  created_at: Date;
-
-  @UpdateDateColumn({ type: "timestamp" })
-  updated_at: Date;
+  @Column({ name: 'ticket_id' })
+  ticketId: string;
 
   @ManyToOne(() => User)
-  @JoinColumn({ name: "created_by" })
-  created_by: User;
+  @JoinColumn({ name: 'created_by_id' })
+  createdBy: User;
 
-  @ManyToOne(() => Ticket, (ticket: Ticket) => ticket.comments)
-  @JoinColumn({ name: "ticket_id" })
-  ticket: Ticket;
+  @Column({ name: 'created_by_id' })
+  createdById: string;
+
+  @Column({ name: 'is_private', default: false })
+  isPrivate: boolean;
+
+  @Column({ type: 'jsonb', nullable: true })
+  metadata: Record<string, any>;
+
+  @Column({ name: 'parent_comment_id', nullable: true })
+  parentCommentId: string;
+
+  @ManyToOne(() => Comment, { nullable: true })
+  @JoinColumn({ name: 'parent_comment_id' })
+  parentComment: Comment;
+
+  @Column({ name: 'edited_at', type: 'timestamp', nullable: true })
+  editedAt: Date;
+
+  @ManyToOne(() => User, { nullable: true })
+  @JoinColumn({ name: 'edited_by_id' })
+  editedBy: User;
+
+  @Column({ name: 'edited_by_id', nullable: true })
+  editedById: string;
+
+  @CreateDateColumn({ name: 'created_at' })
+  createdAt: Date;
+
+  @UpdateDateColumn({ name: 'updated_at' })
+  updatedAt: Date;
+
+  // Helper methods
+  canEdit(userId: string): boolean {
+    return this.createdById === userId || this.editedById === userId;
+  }
 }

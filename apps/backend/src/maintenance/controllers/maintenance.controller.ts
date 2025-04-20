@@ -2,83 +2,56 @@ import {
   Controller,
   Get,
   Post,
-  Put,
-  Delete,
   Body,
+  Patch,
   Param,
-  Query,
+  Delete,
   UseGuards,
-  ParseUUIDPipe,
-  NotFoundException
+  Query,
+  ParseUUIDPipe
 } from '@nestjs/common';
-import { AuthGuard } from '@nestjs/passport';
-import { RolesGuard } from '../../common/guards/roles.guard';
-import { Roles } from '../../common/decorators/roles.decorator';
-import { Role } from '../../common/types/auth.types';
 import { MaintenanceService } from '../services/maintenance.service';
 import { CreateMaintenanceDto } from '../dto/create-maintenance.dto';
 import { UpdateMaintenanceDto } from '../dto/update-maintenance.dto';
 import { FilterMaintenanceDto } from '../dto/filter-maintenance.dto';
-import { User } from '../../domain/entities/user.entity';
+import { AuthGuard } from '../../common/guards/auth.guard';
+import {
+  Roles,
+  AdminOnly,
+  TechnicalStaff,
+  ReadOnlyAccess,
+  AdminAndManager
+} from '../../common/decorators/roles.decorator';
+import { Role } from '../../common/types/roles.types';
 import { GetUser } from '../../common/decorators/get-user.decorator';
+import { User } from '../../domain/entities';
 
 @Controller('maintenance')
-@UseGuards(AuthGuard('jwt'), RolesGuard)
+@UseGuards(AuthGuard)
 export class MaintenanceController {
   constructor(private readonly maintenanceService: MaintenanceService) {}
 
   @Post()
-  @Roles(Role.ADMIN, Role.TECHNICIAN)
-  async create(@Body() createMaintenanceDto: CreateMaintenanceDto, @GetUser() user: User) {
-    return this.maintenanceService.create({
-      ...createMaintenanceDto,
-      created_by: user
-    });
+  @TechnicalStaff()
+  create(@Body() createMaintenanceDto: CreateMaintenanceDto, @GetUser() user: User) {
+    return this.maintenanceService.create(createMaintenanceDto, user);
   }
 
   @Get()
-  @Roles(Role.ADMIN, Role.TECHNICIAN, Role.MANAGER, Role.VIEWER)
-  async findAll(@Query() filterDto: FilterMaintenanceDto) {
+  @ReadOnlyAccess()
+  findAll(@Query() filterDto: FilterMaintenanceDto) {
     return this.maintenanceService.findAll(filterDto);
   }
 
-  @Get('stats/in-progress')
-  @Roles(Role.ADMIN, Role.MANAGER)
-  async getInProgressMaintenances() {
-    return this.maintenanceService.findInProgress();
-  }
-
-  @Get('stats/follow-up')
-  @Roles(Role.ADMIN, Role.MANAGER)
-  async getRequiringFollowUp() {
-    return this.maintenanceService.findRequiringFollowUp();
-  }
-
-  @Get('atm/:atmId')
-  @Roles(Role.ADMIN, Role.TECHNICIAN, Role.MANAGER, Role.VIEWER)
-  async getMaintenancesByATM(@Param('atmId', ParseUUIDPipe) atmId: string) {
-    return this.maintenanceService.findByATM(atmId);
-  }
-
-  @Get('technician/:technicianId')
-  @Roles(Role.ADMIN, Role.MANAGER)
-  async getMaintenancesByTechnician(@Param('technicianId', ParseUUIDPipe) technicianId: string) {
-    return this.maintenanceService.findByTechnician(technicianId);
-  }
-
   @Get(':id')
-  @Roles(Role.ADMIN, Role.TECHNICIAN, Role.MANAGER, Role.VIEWER)
-  async findOne(@Param('id', ParseUUIDPipe) id: string) {
-    const maintenance = await this.maintenanceService.findOne(id);
-    if (!maintenance) {
-      throw new NotFoundException(`Maintenance #${id} not found`);
-    }
-    return maintenance;
+  @ReadOnlyAccess()
+  findOne(@Param('id', ParseUUIDPipe) id: string) {
+    return this.maintenanceService.findOne(id);
   }
 
-  @Put(':id')
-  @Roles(Role.ADMIN, Role.TECHNICIAN)
-  async update(
+  @Patch(':id')
+  @TechnicalStaff()
+  update(
     @Param('id', ParseUUIDPipe) id: string,
     @Body() updateMaintenanceDto: UpdateMaintenanceDto
   ) {
@@ -86,9 +59,48 @@ export class MaintenanceController {
   }
 
   @Delete(':id')
-  @Roles(Role.ADMIN)
-  async delete(@Param('id', ParseUUIDPipe) id: string) {
-    await this.maintenanceService.delete(id);
-    return { message: 'Maintenance record deleted successfully' };
+  @AdminOnly()
+  remove(@Param('id', ParseUUIDPipe) id: string) {
+    return this.maintenanceService.delete(id);
+  }
+
+  @Get(':id/parts')
+  @ReadOnlyAccess()
+  getParts(@Param('id', ParseUUIDPipe) id: string) {
+    return this.maintenanceService.findParts(id);
+  }
+
+  @Post(':id/parts')
+  @TechnicalStaff()
+  addParts(@Param('id', ParseUUIDPipe) id: string, @Body() parts: any[]) {
+    return this.maintenanceService.addParts(id, parts);
+  }
+
+  @Get(':id/comments')
+  @ReadOnlyAccess()
+  getComments(@Param('id', ParseUUIDPipe) id: string) {
+    return this.maintenanceService.findComments(id);
+  }
+
+  @Post(':id/comments')
+  @TechnicalStaff()
+  addComment(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Body('content') content: string,
+    @GetUser() user: User
+  ) {
+    return this.maintenanceService.addComment(id, {
+      content,
+      created_by: user
+    });
+  }
+
+  @Post(':id/assign/:technicianId')
+  @Roles(Role.ADMIN, Role.SUPERVISOR)
+  assignTechnician(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Param('technicianId', ParseUUIDPipe) technicianId: string
+  ) {
+    return this.maintenanceService.assignTechnician(id, technicianId);
   }
 }

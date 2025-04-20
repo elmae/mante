@@ -1,92 +1,71 @@
 import {
   Entity,
-  PrimaryGeneratedColumn,
   Column,
-  CreateDateColumn,
-  UpdateDateColumn,
+  PrimaryGeneratedColumn,
   ManyToOne,
-  JoinColumn
+  JoinColumn,
+  CreateDateColumn,
+  UpdateDateColumn
 } from 'typeorm';
-import { MaintenanceRecord } from './maintenance-record.entity';
 import { User } from './user.entity';
-
-export enum AttachmentType {
-  IMAGE = 'image',
-  DOCUMENT = 'document',
-  VIDEO = 'video',
-  OTHER = 'other'
-}
+import { Maintenance } from './maintenance.entity';
 
 @Entity('maintenance_attachments')
 export class MaintenanceAttachment {
   @PrimaryGeneratedColumn('uuid')
   id: string;
 
-  @Column({ type: 'uuid' })
-  maintenance_record_id: string;
+  @Column({ name: 'file_name' })
+  fileName: string;
 
-  @Column({ type: 'varchar' })
-  file_name: string;
+  @Column({ name: 'file_path' })
+  filePath: string;
 
-  @Column({ type: 'varchar' })
-  file_path: string;
+  @Column({ name: 'mime_type' })
+  mimeType: string;
 
-  @Column({ type: 'varchar' })
-  mime_type: string;
+  @Column({ name: 'file_size', type: 'bigint' })
+  fileSize: number;
 
-  @Column({ type: 'int' })
-  file_size: number;
+  @ManyToOne(() => Maintenance)
+  @JoinColumn({ name: 'maintenance_id' })
+  maintenance: Maintenance;
 
-  @Column({
-    type: 'enum',
-    enum: AttachmentType,
-    default: AttachmentType.OTHER
-  })
-  type: AttachmentType;
+  @Column({ name: 'maintenance_id' })
+  maintenanceId: string;
 
-  @Column({ type: 'text', nullable: true })
+  @ManyToOne(() => User)
+  @JoinColumn({ name: 'uploaded_by' })
+  uploadedBy: User;
+
+  @Column({ name: 'uploaded_by' })
+  uploadedById: string;
+
+  @Column({ name: 'is_technical', default: false })
+  isTechnical: boolean;
+
+  @Column({ type: 'jsonb', nullable: true })
+  metadata: Record<string, any>;
+
+  @Column({ name: 'description', type: 'text', nullable: true })
   description: string;
 
-  @CreateDateColumn({ type: 'timestamp' })
-  created_at: Date;
+  @Column({ name: 'retention_date', type: 'timestamp', nullable: true })
+  retentionDate: Date;
 
-  @UpdateDateColumn({ type: 'timestamp' })
-  updated_at: Date;
-
-  @Column({ type: 'uuid', nullable: true })
-  created_by_id: string;
-
-  @Column({ type: 'uuid', nullable: true })
-  updated_by_id: string;
-
-  // Relaciones
-  @ManyToOne(() => MaintenanceRecord, maintenance => maintenance.attachments)
-  @JoinColumn({ name: 'maintenance_record_id' })
-  maintenance_record: MaintenanceRecord;
+  @Column({ name: 'deleted_at', type: 'timestamp', nullable: true })
+  deletedAt: Date;
 
   @ManyToOne(() => User, { nullable: true })
-  @JoinColumn({ name: 'created_by_id' })
-  created_by: User;
+  @JoinColumn({ name: 'deleted_by' })
+  deletedBy: User;
 
-  @ManyToOne(() => User, { nullable: true })
-  @JoinColumn({ name: 'updated_by_id' })
-  updated_by: User;
+  @Column({ name: 'deleted_by_id', nullable: true })
+  deletedById: string;
 
-  // Métodos de utilidad
-  getFileExtension(): string {
-    return this.file_name.split('.').pop() || '';
-  }
+  @CreateDateColumn({ name: 'created_at' })
+  createdAt: Date;
 
-  isImage(): boolean {
-    return this.type === AttachmentType.IMAGE;
-  }
-
-  getFormattedSize(): string {
-    const kb = this.file_size / 1024;
-    if (kb < 1024) {
-      return `${Math.round(kb * 10) / 10} KB`;
-    }
-    const mb = kb / 1024;
-    return `${Math.round(mb * 10) / 10} MB`;
-  }
+  @UpdateDateColumn({ name: 'updated_at' })
+  updatedAt: Date;
 }

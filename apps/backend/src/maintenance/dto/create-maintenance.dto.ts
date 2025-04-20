@@ -1,69 +1,59 @@
 import {
+  IsNotEmpty,
   IsString,
-  IsUUID,
+  IsEnum,
   IsOptional,
-  IsArray,
-  ValidateNested,
+  IsUUID,
+  IsDate,
   IsNumber,
   IsBoolean
 } from 'class-validator';
 import { Type } from 'class-transformer';
-
-export class MaintenancePartDto {
-  @IsString()
-  name: string;
-
-  @IsNumber()
-  quantity: number;
-
-  @IsString()
-  @IsOptional()
-  notes?: string;
-}
-
-export class MaintenanceMeasurementDto {
-  @IsString()
-  name: string;
-
-  @IsString()
-  value: string;
-
-  @IsString()
-  @IsOptional()
-  unit?: string;
-}
+import { MaintenanceStatus, MaintenanceType } from '../../domain/entities';
 
 export class CreateMaintenanceDto {
-  @IsUUID()
-  ticket_id: string;
+  @IsNotEmpty()
+  @IsString()
+  title: string;
 
-  @IsUUID()
-  atm_id: string;
-
-  @IsUUID()
-  @IsOptional()
-  technician_id?: string;
-
+  @IsNotEmpty()
   @IsString()
   description: string;
 
-  @IsArray()
-  @ValidateNested({ each: true })
-  @Type(() => MaintenancePartDto)
   @IsOptional()
-  parts?: MaintenancePartDto[];
+  @IsEnum(MaintenanceType)
+  type?: MaintenanceType;
 
-  @IsArray()
-  @ValidateNested({ each: true })
-  @Type(() => MaintenanceMeasurementDto)
+  @IsNotEmpty()
+  @IsUUID()
+  atmId: string;
+
   @IsOptional()
-  measurements?: MaintenanceMeasurementDto[];
+  @IsUUID()
+  assignedToId?: string;
 
+  @IsOptional()
+  @Type(() => Date)
+  @IsDate()
+  scheduledDate?: Date;
+
+  @IsOptional()
+  @IsNumber()
+  estimatedCost?: number;
+
+  @IsOptional()
   @IsBoolean()
-  @IsOptional()
-  requires_follow_up?: boolean;
+  requiresFollowUp?: boolean;
 
-  @IsString()
   @IsOptional()
-  follow_up_notes?: string;
+  technicalDetails?: Record<string, any>;
+
+  // Arrays de IDs para crear relaciones
+  @IsOptional()
+  @IsUUID(undefined, { each: true })
+  partIds?: string[];
+
+  @IsOptional()
+  @IsUUID(undefined, { each: true })
+  taskIds?: string[];
 }

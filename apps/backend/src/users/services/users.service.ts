@@ -1,136 +1,97 @@
 import { Injectable, NotFoundException, ConflictException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import * as bcrypt from 'bcryptjs';
-import { User } from '../../domain/entities/user.entity';
+import { User } from '../entities/user.entity';
 import { CreateUserDto } from '../dto/create-user.dto';
 import { UpdateUserDto } from '../dto/update-user.dto';
-import { UserFiltersDto } from '../dto/user-filters.dto';
+import { FilterUsersDto } from '../dto/filter-users.dto';
+import * as bcrypt from 'bcrypt';
 
 @Injectable()
 export class UsersService {
   constructor(
     @InjectRepository(User)
-    private usersRepository: Repository<User>
+    private readonly userRepository: Repository<User>
   ) {}
 
-  async list(filters: UserFiltersDto) {
-    const { page = 1, limit = 10, role, isActive, search } = filters;
-    const skip = (page - 1) * limit;
+  async create(createUserDto: CreateUserDto): Promise<User> {
+    const existingUser = await this.userRepository.findOne({
+      where: [{ email: createUserDto.email }, { username: createUserDto.username }]
+    });
 
-    const queryBuilder = this.usersRepository
-      .createQueryBuilder('user')
-      .leftJoinAndSelect('user.role', 'role')
-      .skip(skip)
-      .take(limit);
-
-    if (role) {
-      queryBuilder.andWhere('role.name = :role', { role });
+    if (existingUser) {
+      throw new ConflictException('Email or username already exists');
     }
 
-    if (isActive !== undefined) {
-      queryBuilder.andWhere('user.is_active = :isActive', { isActive });
-    }
+    const hashedPassword = await bcrypt.hash(createUserDto.password, 10);
+    const user = this.userRepository.create({
+      ...createUserDto,
+      password: hashedPassword
+    });
 
-    if (search) {
-      queryBuilder.andWhere(
-        '(user.email ILIKE :search OR user.username ILIKE :search OR user.first_name ILIKE :search OR user.last_name ILIKE :search)',
-        { search: `%${search}%` }
+    return this.userRepository.save(user);
+  }
+
+  async findAll(filterDto: FilterUsersDto): Promise<{ items: User[]; total: number }> {
+    const query = this.userRepository.createQueryBuilder('user');
+
+    if (filterDto.search) {
+      query.where(
+        '(user.email ILIKE :search OR user.username ILIKE :search OR user.firstName ILIKE :search OR user.lastName ILIKE :search)',
+        { search: `%${filterDto.search}%` }
       );
     }
 
-    const [users, total] = await queryBuilder.getManyAndCount();
+    if (filterDto.role) {
+      query.andWhere('user.role = :role', { role: filterDto.role });
+    }
 
-    return {
-      data: users.map(user => this.excludePassword(user)),
-      meta: {
-        total,
-        page,
-        limit,
-        totalPages: Math.ceil(total / limit)
-      }
-    };
+    if (filterDto.isActive !== undefined) {
+      query.andWhere('user.isActive = :isActive', { isActive: filterDto.isActive });
+    }
+
+    const page = filterDto.page || 1;
+    const limit = filterDto.limit || 10;
+    const skip = (page - 1) * limit;
+
+    const [items, total] = await query.skip(skip).take(limit).getManyAndCount();
+
+    return { items, total };
   }
 
-  async findById(id: string) {
-    const user = await this.usersRepository.findOne({ where: { id } });
+  async findOne(id: string): Promise<User> {
+    const user = await this.userRepository.findOne({ where: { id } });
     if (!user) {
-      throw new NotFoundException(`Usuario con ID "${id}" no encontrado`);
+      throw new NotFoundException(`User with ID ${id} not found`);
     }
-    return this.excludePassword(user);
+    return user;
   }
 
-  async findByEmail(email: string) {
-    return await this.usersRepository.findOne({ where: { email } });
+  async findByEmail(email: string): Promise<User | null> {
+    return this.userRepository.findOne({ where: { email } });
   }
 
-  async create(createUserDto: CreateUserDto) {
-    const { password, role_id, ...userData } = createUserDto;
+  async update(id: string, updateUserDto: UpdateUserDto): Promise<User> {
+    const user = await this.findOne(id);
 
-    // Verificar si ya existe un usuario con el mismo email o username
-    const existingUser = await this.usersRepository
-      .createQueryBuilder('user')
-      .where('user.email = :email OR user.username = :username', {
-        email: userData.email,
-        username: userData.username
-      })
-      .getOne();
-
-    if (existingUser) {
-      throw new ConflictException('Ya existe un usuario con ese email o nombre de usuario');
+    if (updateUserDto.password) {
+      updateUserDto.password = await bcrypt.hash(updateUserDto.password, 10);
     }
 
-    const user = this.usersRepository.create({
-      ...userData,
-      password_hash: await this.hashPassword(password),
-      role: { id: role_id } // Asignar el rol usando la relación
+    Object.assign(user, updateUserDto);
+    return this.userRepository.save(user);
+  }
+
+  async updateLastLogin(id: string): Promise<void> {
+    await this.userRepository.update(id, {
+      lastLoginAt: new Date()
     });
-
-    await this.usersRepository.save(user);
-    return this.excludePassword(user);
   }
 
-  async update(id: string, updateUserDto: UpdateUserDto) {
-    const user = await this.findById(id);
-    const { role_id, ...updateData } = updateUserDto;
-
-    if (updateData.email || updateData.username) {
-      const existingUser = await this.usersRepository
-        .createQueryBuilder('user')
-        .where('(user.email = :email OR user.username = :username) AND user.id != :id', {
-          email: updateData.email || user.email,
-          username: updateData.username || user.username,
-          id
-        })
-        .getOne();
-
-      if (existingUser) {
-        throw new ConflictException('Ya existe un usuario con ese email o nombre de usuario');
-      }
+  async remove(id: string): Promise<void> {
+    const result = await this.userRepository.delete(id);
+    if (result.affected === 0) {
+      throw new NotFoundException(`User with ID ${id} not found`);
     }
-
-    // Actualizar rol si se proporciona
-    if (role_id) {
-      user.role = { id: role_id } as any;
-    }
-
-    Object.assign(user, updateData);
-    const savedUser = await this.usersRepository.save(user);
-    return this.excludePassword(savedUser);
-  }
-
-  async delete(id: string): Promise<void> {
-    const user = await this.findById(id);
-    await this.usersRepository.delete(id);
-  }
-
-  private async hashPassword(password: string): Promise<string> {
-    const salt = await bcrypt.genSalt();
-    return await bcrypt.hash(password, salt);
-  }
-
-  private excludePassword(user: User): Omit<User, 'password_hash'> {
-    const { password_hash, ...userWithoutPassword } = user;
-    return userWithoutPassword;
   }
 }
